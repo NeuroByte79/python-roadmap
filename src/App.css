@@ -1,0 +1,1158 @@
+import { useState, useEffect } from "react";
+
+/* ═══════════════════════════════════════════════════════════════
+   MASTERPLAN DATA  –  4 Years to World-Class LLM Engineer
+═══════════════════════════════════════════════════════════════ */
+const PLAN = [
+  /* ━━━━━━━━━━━━━━━━━━━  YEAR 1  ━━━━━━━━━━━━━━━━━━━ */
+  {
+    year: 1, title: "Foundation Builder", subtitle: "Python · Math · ML Basics · DSA",
+    color: "#22d3ee", icon: "🧱",
+    mission: "Become dangerous with Python, understand the mathematics of ML, and ship your first real models. This year is about depth, not speed.",
+    quarters: [
+      {
+        q: 1, title: "Python Mastery + DSA + Git", color: "#22d3ee",
+        goal: "Write Python like breathing. Understand data structures deeply. Master Git workflow.",
+        topics: [
+          {
+            name: "Advanced Python Internals",
+            subtopics: ["CPython bytecode & GIL", "Memory management & garbage collection", "Descriptors, metaclasses, __slots__", "Async/await, event loops, asyncio deep dive", "C extensions & ctypes basics"],
+            project: { title: "Python Runtime Inspector", gh: "python-runtime-inspector", desc: "CLI tool that shows bytecode, memory usage, call stack of any Python function. Uses dis, tracemalloc, inspect modules.", tag: "Tool" },
+            innovation: "💡 Build a Python profiler that auto-suggests algorithmic improvements using static analysis.",
+            practice: ["Re-implement collections.OrderedDict from scratch", "Build a thread-safe cache using __slots__ + RLock", "Write a coroutine-based web crawler"]
+          },
+          {
+            name: "DSA — Arrays, Strings, Linked Lists",
+            subtopics: ["Two-pointer & sliding window patterns", "Prefix sums & difference arrays", "String hashing & Rabin-Karp", "Doubly linked lists + LRU Cache", "Big-O analysis — time & space"],
+            project: { title: "LRU Cache + Visualiser", gh: "lru-cache-visualiser", desc: "Full LRU cache (doubly linked list + hashmap). React visualiser shows evictions in real time. Used in real LLM KV-cache explanations.", tag: "DSA + Viz" },
+            innovation: "💡 Apply sliding-window to real-time token stream analysis for LLM outputs.",
+            practice: ["Solve 50 LeetCode Easy/Medium array problems", "Implement all 6 sorting algorithms from scratch", "Build a diff algorithm (like git diff)"]
+          },
+          {
+            name: "Trees, Graphs, Heaps",
+            subtopics: ["Binary trees, BST, AVL", "BFS, DFS, Dijkstra, A*", "Heaps & priority queues", "Union-Find / Disjoint Sets", "Topological sort"],
+            project: { title: "AI Pathfinder Visualiser", gh: "ai-pathfinder", desc: "A* and Dijkstra visualised on a grid. Add heuristics toggle. Show how graph search powers AI planning algorithms.", tag: "Algorithms + AI" },
+            innovation: "💡 Model an LLM's beam search as a graph traversal problem — visualise it.",
+            practice: ["Solve 30 tree + 30 graph LeetCode problems", "Implement Huffman encoding (used in tokenisers!)", "Build a social graph with BFS friend-of-friend search"]
+          },
+          {
+            name: "Dynamic Programming + Recursion",
+            subtopics: ["Memoisation vs tabulation", "Knapsack, LCS, LIS patterns", "Interval DP", "Tree DP", "Bitmask DP"],
+            project: { title: "Edit Distance Explorer", gh: "edit-distance-explorer", desc: "Visualise Levenshtein distance (used in spell-checkers AND tokeniser alignment). Show DP table filling step-by-step.", tag: "DSA + NLP" },
+            innovation: "💡 Edit distance underpins fuzzy string matching in embedding search — connect the dots.",
+            practice: ["Solve all classic DP patterns (25 problems)", "Implement spell-checker using edit distance", "Build a regex engine with DP"]
+          },
+          {
+            name: "Linux, Shell, Docker Basics",
+            subtopics: ["bash scripting — loops, functions, pipes", "process management: ps, kill, htop", "file permissions, cron jobs", "Docker: images, containers, volumes", "SSH, scp, tmux for remote ML training"],
+            project: { title: "ML Training Environment Setup Script", gh: "ml-env-setup", desc: "Bash script that auto-configures CUDA, conda, Jupyter, VS Code server on any Ubuntu machine. One command setup.", tag: "DevOps" },
+            innovation: "💡 Containerise your ML training jobs — reproducibility is a superpower.",
+            practice: ["Automate 10 daily tasks with bash scripts", "Dockerise a Flask ML app", "Set up a remote Jupyter server on a cloud VM"]
+          },
+        ]
+      },
+      {
+        q: 2, title: "Math for AI — Linear Algebra, Calculus, Stats", color: "#a78bfa",
+        goal: "Understand WHY neural networks work, not just how to use them. Math is your superpower.",
+        topics: [
+          {
+            name: "Linear Algebra for ML",
+            subtopics: ["Vectors, matrices, tensor operations", "Eigenvalues, eigenvectors, SVD", "Matrix multiplication as transformations", "Dot products & cosine similarity", "Principal Component Analysis (PCA)"],
+            project: { title: "Cosine Similarity Search Engine", gh: "cosine-similarity-search", desc: "Build a mini semantic search from scratch using only NumPy. Vectorise documents with TF-IDF, search by cosine similarity. Foundation of all embedding search.", tag: "Math + NLP" },
+            innovation: "💡 This is literally how every vector database works. Understanding this = understanding RAG.",
+            practice: ["Implement matrix multiply from scratch (no NumPy)", "Code PCA from scratch, visualise MNIST 2D", "Build an image compressor using SVD truncation"]
+          },
+          {
+            name: "Calculus & Backpropagation",
+            subtopics: ["Derivatives, chain rule, partial derivatives", "Gradient descent — intuition + math", "Backpropagation derivation by hand", "Jacobians and Hessians", "Numerical vs analytical gradients"],
+            project: { title: "Backprop from Scratch (micrograd clone)", gh: "minigrad", desc: "Build your own autograd engine like Andrej Karpathy's micrograd. Scalar-level backprop. Train a tiny neural net. Understand EVERY line.", tag: "Deep Learning Math" },
+            innovation: "💡 If you can build backprop from scratch, you can debug any model anywhere.",
+            practice: ["Derive backprop for 5 activation functions by hand", "Implement gradient checking for your engine", "Visualise loss landscapes in 3D with matplotlib"]
+          },
+          {
+            name: "Probability & Statistics for ML",
+            subtopics: ["Bayes theorem, conditional probability", "Distributions: Normal, Bernoulli, Categorical", "MLE and MAP estimation", "Cross-entropy and KL divergence", "Monte Carlo methods"],
+            project: { title: "LLM Token Probability Visualiser", gh: "token-probability-viz", desc: "Call an LLM API with logprobs enabled. Visualise the probability distribution over next tokens as a heatmap. Show top-k, temperature effects.", tag: "LLM + Stats" },
+            innovation: "💡 Temperature, top-p, top-k sampling are pure probability. Visualising this = deep intuition.",
+            practice: ["Derive cross-entropy loss from first principles", "Build a Naive Bayes classifier from scratch", "Simulate Monte Carlo estimation of π"]
+          },
+          {
+            name: "Information Theory Basics",
+            subtopics: ["Entropy and information content", "Mutual information", "Perplexity — the LLM metric", "Compression and coding theory", "KL divergence in VAEs and RLHF"],
+            project: { title: "LLM Perplexity Benchmarker", gh: "perplexity-benchmarker", desc: "Compute perplexity of different LLMs on a custom test set. Compare GPT-2 vs LLaMA vs Claude. Show what perplexity really means.", tag: "LLM Evaluation" },
+            innovation: "💡 Perplexity is THE fundamental LLM quality metric. Building this = understanding model evaluation deeply.",
+            practice: ["Compute entropy of English text vs code", "Implement Huffman coding (compression = information theory)", "Visualise KL divergence between two distributions"]
+          },
+        ]
+      },
+      {
+        q: 3, title: "Classical ML + Scikit-learn + Feature Engineering", color: "#34d399",
+        goal: "Master every classical ML algorithm. Know WHEN to use what. Build models that work in the real world.",
+        topics: [
+          {
+            name: "Regression & Classification Algorithms",
+            subtopics: ["Linear/Logistic/Polynomial Regression", "SVMs — kernel trick, margin maximisation", "Decision Trees — information gain, Gini", "Naive Bayes — Gaussian, Multinomial", "k-NN — distance metrics, curse of dimensionality"],
+            project: { title: "Algorithm Showdown Dashboard", gh: "ml-algo-showdown", desc: "Compare 8 classifiers on 5 datasets. Interactive Streamlit dashboard. Show accuracy, F1, training time, decision boundaries. Like a fantasy league for ML algorithms.", tag: "ML + Visualisation" },
+            innovation: "💡 Understanding classical ML deeply makes you a 10× better deep learning engineer.",
+            practice: ["Implement Linear Regression from scratch (no sklearn)", "Build SVM with SMO algorithm", "Code k-NN with KD-tree optimisation"]
+          },
+          {
+            name: "Ensemble Methods",
+            subtopics: ["Bagging — Random Forests internals", "Boosting — AdaBoost, Gradient Boosting", "XGBoost, LightGBM, CatBoost mastery", "Stacking and blending", "Feature importance analysis"],
+            project: { title: "Kaggle Competition Pipeline", gh: "kaggle-ml-pipeline", desc: "Full AutoML pipeline: EDA → feature engineering → XGBoost + LightGBM stacking → submission. Achieve top 10% on a Kaggle tabular competition.", tag: "Production ML" },
+            innovation: "💡 Gradient boosting still beats neural nets on tabular data. Every ML engineer needs this.",
+            practice: ["Win a Kaggle playground competition", "Tune XGBoost with Optuna (100 trials)", "Feature importance analysis on 3 different datasets"]
+          },
+          {
+            name: "Unsupervised Learning",
+            subtopics: ["K-Means, DBSCAN, hierarchical clustering", "Dimensionality reduction: PCA, t-SNE, UMAP", "Autoencoders", "Anomaly detection", "Topic modelling: LDA"],
+            project: { title: "News Topic Clustering System", gh: "news-topic-clustering", desc: "Scrape 10K news articles. TF-IDF + LDA topic modelling. UMAP 2D visualisation. Cluster similar news. Interactive plot where you can explore topics.", tag: "NLP + ML" },
+            innovation: "💡 UMAP is used to visualise embedding spaces of LLMs. Master it here first.",
+            practice: ["Cluster MNIST with K-Means, visualise with t-SNE", "Detect anomalies in stock prices with Isolation Forest", "Build a recommendation engine with matrix factorisation"]
+          },
+          {
+            name: "Feature Engineering & Pipelines",
+            subtopics: ["Missing data imputation strategies", "Encoding: one-hot, target, embeddings", "Scaling: StandardScaler, RobustScaler", "Feature selection: RFE, mutual info", "sklearn Pipelines + ColumnTransformer"],
+            project: { title: "AutoFeature Engineering Tool", gh: "autofeature-tool", desc: "Input any CSV → auto-detect feature types → apply best transformations → output engineered features with importance scores. Mini AutoML.", tag: "ML Tooling" },
+            innovation: "💡 Feature engineering = domain knowledge + creativity. This separates good from great ML engineers.",
+            practice: ["Build a complete pipeline with 0 data leakage", "Automate feature generation for time series", "Reduce a dataset from 500 features to 20 without losing accuracy"]
+          },
+        ]
+      },
+      {
+        q: 4, title: "Deep Learning + PyTorch Mastery", color: "#f59e0b",
+        goal: "Master PyTorch from tensors to custom training loops. Build every architecture from scratch.",
+        topics: [
+          {
+            name: "Neural Networks from Scratch",
+            subtopics: ["Forward pass, activation functions", "Backprop — full derivation in code", "Vanishing/exploding gradients", "Batch norm, layer norm, dropout", "Weight initialisation strategies"],
+            project: { title: "Neural Net Library (numpy only)", gh: "nanonet", desc: "Build a mini-PyTorch: Tensor class with autograd, Dense layer, Conv2D, LSTM, optimisers (SGD, Adam, RMSProp). Train on MNIST. Zero dependencies except NumPy.", tag: "Deep Learning Core" },
+            innovation: "💡 Building your own deep learning library is the single best thing you can do in Year 1.",
+            practice: ["Train a 3-layer MLP on MNIST — pure NumPy", "Implement BatchNorm forward + backward by hand", "Visualise gradient flow in a 20-layer network"]
+          },
+          {
+            name: "PyTorch — Tensors to Custom Training",
+            subtopics: ["Tensor operations, broadcasting, GPU", "Autograd — computational graphs", "nn.Module, DataLoader, Dataset", "Custom training loops", "Mixed precision (fp16/bf16) training"],
+            project: { title: "PyTorch Training Framework", gh: "pytorch-trainer", desc: "Build your own mini training framework: Trainer class, callbacks (EarlyStopping, LR scheduler, checkpoint), WandB logging, mixed precision. Like a mini HuggingFace Trainer.", tag: "ML Engineering" },
+            innovation: "💡 Understanding training loops deeply means you can fine-tune ANY model anywhere.",
+            practice: ["Reproduce ResNet-18 from the paper in PyTorch", "Build a custom Dataset for any file format", "Profile GPU memory usage during training"]
+          },
+          {
+            name: "CNNs + Computer Vision",
+            subtopics: ["Convolution, pooling, receptive fields", "VGG, ResNet, EfficientNet architectures", "Transfer learning & fine-tuning", "Object detection: YOLO intro", "Data augmentation strategies"],
+            project: { title: "Real-Time Object Detection App", gh: "realtime-object-detect", desc: "Fine-tune YOLOv8 on a custom dataset (your choice: campus objects, cricket shots, hand gestures). Deploy as a web app with live webcam feed. Gradio UI.", tag: "CV + Deploy" },
+            innovation: "💡 Vision + Language is the future. Mastering CNNs now prepares you for multimodal LLMs.",
+            practice: ["Fine-tune ResNet on a Kaggle vision dataset, beat baseline", "Implement attention-based image captioning", "Build a face recognition system from scratch"]
+          },
+          {
+            name: "RNNs, LSTMs, and Sequence Models",
+            subtopics: ["RNN internals — hidden state, BPTT", "LSTM and GRU — gating mechanisms", "Seq2seq with attention (Bahdanau)", "Beam search, greedy decoding", "Character-level language model"],
+            project: { title: "Shakespearean Text Generator", gh: "shakespeare-lstm", desc: "Train a character-level LSTM on Shakespeare's complete works. Generate text with temperature control. Compare with a simple bigram model. Visualise hidden state activations.", tag: "NLP + Seq Models" },
+            innovation: "💡 Understanding LSTMs makes Transformer attention click immediately. Never skip this step.",
+            practice: ["Build a handwriting generator with LSTM", "Implement sequence-to-sequence translation", "Visualise LSTM cell gate activations over time"]
+          },
+        ]
+      },
+    ]
+  },
+
+  /* ━━━━━━━━━━━━━━━━━━━  YEAR 2  ━━━━━━━━━━━━━━━━━━━ */
+  {
+    year: 2, title: "ML Engineer", subtitle: "Transformers · LLM APIs · RAG · Agents",
+    color: "#f97316", icon: "⚡",
+    mission: "Go from knowing ML to building real LLM-powered products. Master the Transformer inside-out. Ship things people use.",
+    quarters: [
+      {
+        q: 5, title: "Transformers — From Attention to GPT", color: "#f97316",
+        goal: "Understand every single line of the Transformer architecture. Read and implement 'Attention Is All You Need' from scratch.",
+        topics: [
+          {
+            name: "Attention Mechanism — Deep Dive",
+            subtopics: ["Self-attention: Q, K, V matrices", "Scaled dot-product attention", "Multi-head attention — why multiple heads?", "Positional encodings: sinusoidal vs learned vs RoPE", "Attention patterns — what do heads attend to?"],
+            project: { title: "Attention Visualiser", gh: "attention-visualiser", desc: "Load any HuggingFace model. Input a sentence. Show attention weights of every head on every layer as an interactive heatmap. Understand what the model 'looks at'.", tag: "Interpretability" },
+            innovation: "💡 Attention visualisation is a core interpretability skill. This makes you stand out in any interview.",
+            practice: ["Implement scaled dot-product attention from scratch", "Visualise how different heads specialise (syntax vs semantics)", "Compare sinusoidal vs RoPE positional encodings"]
+          },
+          {
+            name: "Transformer Architecture — Full Implementation",
+            subtopics: ["Encoder, decoder, encoder-decoder", "Layer norm vs batch norm in transformers", "FFN sublayer — why 4x hidden size?", "Residual connections — highway for gradients", "KV cache — inference optimisation"],
+            project: { title: "GPT-2 from Scratch (Karpathy-style)", gh: "nanogpt-implementation", desc: "Implement GPT-2 (124M params) from scratch in PyTorch following Andrej Karpathy's approach. Train on Shakespeare or your own dataset. Add your own improvements.", tag: "Architecture Core" },
+            innovation: "💡 The engineers who built GPT-4 can explain every parameter. You should be able to too.",
+            practice: ["Implement the full Transformer encoder from scratch", "Reproduce BERT pre-training on a small dataset", "Profile the KV cache memory savings during inference"]
+          },
+          {
+            name: "Hugging Face Ecosystem Mastery",
+            subtopics: ["Transformers library — models, tokenisers, configs", "Datasets library — streaming, mapping, filtering", "Tokenisers: BPE, WordPiece, SentencePiece", "AutoModel, pipeline API, model cards", "Accelerate for multi-GPU training"],
+            project: { title: "Multi-Task NLP Benchmark Suite", gh: "nlp-benchmark-suite", desc: "Benchmark 10 different HuggingFace models on 5 NLP tasks (sentiment, NER, QA, summarisation, translation). Auto-generate comparison report. Published on HF Spaces.", tag: "ML Engineering" },
+            innovation: "💡 Knowing the HF ecosystem deeply makes you 5× more productive. Learn it cold.",
+            practice: ["Fine-tune BERT for every NLP task type", "Build a custom tokeniser for a low-resource language", "Implement a custom HF Trainer callback"]
+          },
+          {
+            name: "BERT, GPT, T5 — Architecture Differences",
+            subtopics: ["BERT: masked LM + NSP, bidirectional", "GPT family: causal LM, autoregressive", "T5: text-to-text unification", "RoBERTa, DistilBERT, ELECTRA improvements", "Instruction-tuned models: T0, FLAN-T5"],
+            project: { title: "Model Architecture Comparison Tool", gh: "model-arch-compare", desc: "Visual interactive tool: select any 2 models (BERT, GPT-2, T5, LLaMA). Side-by-side architecture diff, parameter counts, attention pattern comparisons, benchmark scores.", tag: "Education + Research" },
+            innovation: "💡 Understanding why different architectures exist = knowing which to use for any task.",
+            practice: ["Fine-tune T5 for summarisation on CNN/DailyMail", "Compare BERT vs RoBERTa on GLUE benchmark", "Implement DistilBERT knowledge distillation from scratch"]
+          },
+        ]
+      },
+      {
+        q: 6, title: "LLM APIs + Prompt Engineering Mastery", color: "#a78bfa",
+        goal: "Master Claude, GPT-4, Gemini APIs. Become the best prompt engineer you know. Build products with LLMs.",
+        topics: [
+          {
+            name: "Claude API — Deep Mastery",
+            subtopics: ["Messages API: roles, content blocks, system prompts", "claude-opus-4-5 vs claude-sonnet-4-6 vs claude-haiku-4-5", "Extended thinking & budget tokens", "Tool use / function calling", "Streaming responses, vision, document analysis"],
+            project: { title: "Claude Prompt Lab", gh: "claude-prompt-lab", desc: "Web app to test Claude prompts: A/B test system prompts, compare models, measure response quality, track token costs. Your personal Claude playground.", tag: "Claude Engineering" },
+            innovation: "💡 Deep Claude knowledge = competitive advantage. Read Anthropic's docs, papers, and model cards fully.",
+            practice: ["Build 10 different Claude-powered tools", "Test every Claude capability: vision, tools, thinking", "Compare Claude vs GPT-4 on 20 specific tasks"]
+          },
+          {
+            name: "Prompt Engineering — Expert Level",
+            subtopics: ["Zero-shot, few-shot, chain-of-thought", "Tree of Thought, Self-consistency", "ReAct prompting for agents", "XML structuring for Claude", "Adversarial prompts & jailbreak prevention"],
+            project: { title: "Prompt Optimiser Engine", gh: "prompt-optimiser", desc: "Input a task + examples. Automatically generate, test, and score 20 prompt variants. Use LLM-as-judge to rank them. Output the best prompt. Meta-prompting.", tag: "Advanced Prompting" },
+            innovation: "💡 Automated prompt optimisation (DSPy-style) is the future of LLM engineering.",
+            practice: ["Achieve 90%+ on 5 NLP benchmarks using only prompting", "Build a chain-of-thought prompt for complex math problems", "Red-team your own prompts — find the failure modes"]
+          },
+          {
+            name: "OpenAI, Gemini, Mistral, Llama APIs",
+            subtopics: ["OpenAI: assistants, threads, function calling", "Gemini: multimodal inputs, grounding", "Mistral: efficient inference, MoE", "LLaMA / Ollama: local inference", "Model routing — when to use which model"],
+            project: { title: "Universal LLM Router", gh: "llm-router", desc: "Smart router that analyses your query and picks the best LLM (Claude for reasoning, GPT-4V for vision, Mistral for speed, LLaMA for privacy). Cost and latency optimised.", tag: "LLM Infrastructure" },
+            innovation: "💡 Model routing is a real production system. Companies save 70% cost with smart routing.",
+            practice: ["Build the same app with 5 different LLM providers", "Benchmark 10 models on the same 100 questions", "Implement automatic fallback when API fails"]
+          },
+          {
+            name: "LLM Evaluation & Benchmarking",
+            subtopics: ["MMLU, HumanEval, HellaSwag, BIG-Bench", "LLM-as-judge methodology", "G-Eval, MT-Bench, LMSYS Chatbot Arena", "Hallucination detection metrics", "Building your own evaluation harness"],
+            project: { title: "Personal LLM Evaluation Suite", gh: "llm-eval-suite", desc: "Build a full evaluation harness: create 200 custom test cases for your domain, run all major LLMs, LLM-as-judge scoring, auto-generate benchmark report. Publishable research.", tag: "Research + Evaluation" },
+            innovation: "💡 Evaluation is an underrated skill. The best engineers define how to measure quality.",
+            practice: ["Run MMLU on 5 open-source models", "Build a hallucination detector using self-consistency", "Create domain-specific evals for Indian languages"]
+          },
+        ]
+      },
+      {
+        q: 7, title: "RAG Systems + Vector Databases + Embeddings", color: "#34d399",
+        goal: "Build production-grade RAG systems. Understand embeddings deeply. Master vector databases.",
+        topics: [
+          {
+            name: "Embeddings — Theory to Practice",
+            subtopics: ["Word2Vec, GloVe — distributional semantics", "Sentence transformers & bi-encoders", "MTEB benchmark — evaluating embeddings", "OpenAI, Cohere, voyage-ai embedding APIs", "Embedding fine-tuning for domain adaptation"],
+            project: { title: "Semantic Code Search Engine", gh: "semantic-code-search", desc: "Index your entire GitHub codebase with code embeddings (CodeBERT). Search by natural language: 'find function that handles authentication'. Deploy as VS Code extension.", tag: "Developer Tool" },
+            innovation: "💡 Code semantic search is used by GitHub Copilot. Building it from scratch = deep understanding.",
+            practice: ["Compare 10 embedding models on a custom task", "Fine-tune a sentence transformer on domain data", "Build a clustering of 1M news articles with embeddings"]
+          },
+          {
+            name: "Vector Databases — Pinecone, Weaviate, Chroma, pgvector",
+            subtopics: ["HNSW algorithm — approximate nearest neighbour", "IVF indexing vs HNSW trade-offs", "Metadata filtering with vector search", "Hybrid search: dense + sparse (BM25)", "Production scaling: sharding, replication"],
+            project: { title: "Personal Knowledge Base (Second Brain AI)", gh: "second-brain-ai", desc: "Ingest all your notes, PDFs, bookmarks into a vector DB. Ask questions in natural language. Claude answers from YOUR knowledge. Full RAG pipeline with memory.", tag: "Personal Productivity + RAG" },
+            innovation: "💡 Build this for yourself first. Then sell it as a product. Millions of people need this.",
+            practice: ["Benchmark Pinecone vs Chroma vs pgvector on 1M vectors", "Implement HNSW from scratch in Python", "Build hybrid search combining BM25 + cosine similarity"]
+          },
+          {
+            name: "RAG Pipeline Architecture",
+            subtopics: ["Chunking strategies: fixed, recursive, semantic", "Query decomposition & HyDE", "Re-ranking with cross-encoders", "Contextual compression", "RAG evaluation: RAGAS framework"],
+            project: { title: "Production RAG System for Indian Legal Documents", gh: "legal-rag-india", desc: "Index 10,000 Indian court judgements. Semantic search + Claude for QA. Citation tracking. Lawyer-grade accuracy. Full RAGAS evaluation. Real product potential.", tag: "Production RAG" },
+            innovation: "💡 Domain-specific RAG in underserved markets (legal, medical, education in India) is a startup opportunity.",
+            practice: ["Compare 5 chunking strategies on the same corpus", "Implement HyDE (Hypothetical Document Embeddings)", "Build a RAG evaluation harness with RAGAS"]
+          },
+          {
+            name: "Advanced RAG — GraphRAG, Agentic RAG",
+            subtopics: ["Knowledge graphs + vector search (GraphRAG)", "Corrective RAG (CRAG) — self-correction", "Self-RAG — retrieve when needed", "Multi-hop reasoning across documents", "Long-context vs RAG trade-offs"],
+            project: { title: "Research Paper Assistant (GraphRAG)", gh: "research-graphrag", desc: "Index 5000 ML papers. Build a knowledge graph of concepts + citations. Ask complex multi-hop questions: 'What techniques evolved from attention to today?'. Claude as reasoner.", tag: "Advanced RAG + Research" },
+            innovation: "💡 GraphRAG is Microsoft's approach. Combining KG + vectors is the frontier of RAG research.",
+            practice: ["Implement Corrective RAG with self-grading", "Build a multi-hop QA system over Wikipedia", "Compare GraphRAG vs naive RAG on reasoning tasks"]
+          },
+        ]
+      },
+      {
+        q: 8, title: "LLM Agents + LangChain + Production", color: "#fb7185",
+        goal: "Build autonomous AI agents. Deploy LLM systems that run in production at scale.",
+        topics: [
+          {
+            name: "AI Agents — ReAct, Tool Use, Planning",
+            subtopics: ["ReAct: reason + act loops", "Tool use: web search, code execution, APIs", "Multi-agent systems — orchestrator + specialists", "Memory: episodic, semantic, procedural", "Agent evaluation & safety"],
+            project: { title: "Autonomous Research Agent", gh: "research-agent", desc: "Agent that takes a research question, autonomously searches the web, reads papers, writes code to verify claims, and produces a cited research report. Uses Claude + tools.", tag: "Agents + Claude" },
+            innovation: "💡 Autonomous research agents will replace junior research roles. Build it before someone builds it for you.",
+            practice: ["Build a coding agent that debugs its own errors", "Create a multi-agent debate system (pro vs con)", "Implement agent memory with episodic + semantic stores"]
+          },
+          {
+            name: "LangChain, LangGraph, LlamaIndex",
+            subtopics: ["LangChain chains, agents, memory", "LangGraph: stateful, multi-actor workflows", "LlamaIndex: data connectors, query engines", "Choosing between frameworks", "Building without frameworks (raw API)"],
+            project: { title: "Customer Support Agent System", gh: "customer-support-agent", desc: "Full LangGraph multi-agent system: triage agent → specialist agents (billing/tech/returns) → escalation agent. Memory, tool use, human-in-the-loop. Production-ready.", tag: "Production Agents" },
+            innovation: "💡 Companies are replacing tier-1 support with agent systems. This is a $100B market.",
+            practice: ["Build the same agent with and without LangChain (compare)", "Implement a stateful conversation with LangGraph", "Create a code generation + execution + debugging agent"]
+          },
+          {
+            name: "MLOps + Model Serving",
+            subtopics: ["Model versioning: MLflow, DVC", "Serving: FastAPI, TorchServe, vLLM", "Monitoring: data drift, concept drift", "A/B testing ML models in production", "Cost optimisation: batching, caching"],
+            project: { title: "ML Model Serving Platform", gh: "ml-serving-platform", desc: "Build a mini MLflow + serving system: register models, A/B test them, monitor accuracy drift, auto-rollback on degradation. Dashboard with Grafana/Streamlit.", tag: "MLOps" },
+            innovation: "💡 MLOps engineers earn 40% more than regular ML engineers. This skill is underrated.",
+            practice: ["Set up a full MLflow experiment tracking system", "Deploy a model with vLLM and benchmark throughput", "Build a data drift detector for a production model"]
+          },
+          {
+            name: "LLM Deployment + Cost Engineering",
+            subtopics: ["vLLM, TGI, Ollama for LLM serving", "Quantisation: GPTQ, GGUF, AWQ", "Batching strategies for inference", "Prompt caching (Anthropic, OpenAI)", "Cost modelling: tokens × price × traffic"],
+            project: { title: "LLM Cost Optimiser", gh: "llm-cost-optimiser", desc: "Analyse your LLM API usage. Auto-suggest: which queries to cache, which to route to cheaper models, which prompts to shorten. Save 60%+ on API costs.", tag: "Cost Engineering" },
+            innovation: "💡 Every company running LLMs in production needs cost optimisation. This is a real tool with real demand.",
+            practice: ["Deploy LLaMA 3.1 locally with Ollama, compare vs API", "Implement semantic caching with Redis", "Profile and reduce token usage in a complex prompt by 50%"]
+          },
+        ]
+      },
+    ]
+  },
+
+  /* ━━━━━━━━━━━━━━━━━━━  YEAR 3  ━━━━━━━━━━━━━━━━━━━ */
+  {
+    year: 3, title: "LLM Engineer", subtitle: "Fine-tuning · Safety · Multimodal · Research",
+    color: "#a78bfa", icon: "🧠",
+    mission: "Go from using LLMs to training them. Understand fine-tuning, alignment, safety, and multimodal. Start contributing to research.",
+    quarters: [
+      {
+        q: 9, title: "Fine-tuning + PEFT + Alignment", color: "#a78bfa",
+        goal: "Fine-tune LLMs efficiently. Understand RLHF and Constitutional AI (Claude's backbone). Build domain-specific models.",
+        topics: [
+          {
+            name: "Supervised Fine-tuning (SFT)",
+            subtopics: ["Instruction fine-tuning — Alpaca, FLAN", "Data formatting: chat templates, special tokens", "Catastrophic forgetting — mitigation strategies", "Learning rate warmup + cosine decay", "Gradient checkpointing for memory efficiency"],
+            project: { title: "Domain-Specific LLM (Indian Finance)", gh: "finllm-india", desc: "Fine-tune LLaMA 3.1 8B on Indian financial news, SEBI regulations, company filings. Create a financial advisor chatbot for Indian markets. Evaluate on custom benchmark.", tag: "Fine-tuning + Domain" },
+            innovation: "💡 Domain-specific LLMs in Indian markets are massively underbuilt. This could be a startup.",
+            practice: ["Fine-tune LLaMA on a custom dataset", "Create a high-quality instruction dataset using Claude", "Compare SFT vs few-shot prompting on the same task"]
+          },
+          {
+            name: "PEFT — LoRA, QLoRA, Adapters",
+            subtopics: ["LoRA: low-rank decomposition intuition + math", "QLoRA: 4-bit quantisation + LoRA", "Prefix tuning, prompt tuning, IA3", "Merging multiple LoRA adapters", "Choosing rank r and alpha hyperparameters"],
+            project: { title: "LoRA Adapter Marketplace", gh: "lora-marketplace", desc: "Train 5 LoRA adapters for different tasks (coding, medical, legal, creative writing, math). Allow users to dynamically merge adapters. Demo the personality blending.", tag: "Fine-tuning Research" },
+            innovation: "💡 Mergeable LoRA adapters are like app stores for LLM personalities. Novel research direction.",
+            practice: ["Fine-tune LLaMA 70B on a single A100 with QLoRA", "Compare full fine-tune vs LoRA on same dataset", "Tune LoRA rank from 4 to 256, plot accuracy vs memory"]
+          },
+          {
+            name: "RLHF + Constitutional AI + DPO",
+            subtopics: ["RLHF: reward model training + PPO", "Constitutional AI: Claude's alignment approach", "DPO: Direct Preference Optimisation", "RLAIF: RL from AI Feedback", "Preference datasets: Anthropic HH, ShareGPT"],
+            project: { title: "Mini RLHF Pipeline", gh: "mini-rlhf", desc: "Full RLHF pipeline on a small scale: train a reward model on human preferences, fine-tune a GPT-2 with PPO to maximise reward. Visualise reward learning curve.", tag: "Alignment + RLHF" },
+            innovation: "💡 Constitutional AI is Anthropic's breakthrough. Read the paper, understand it, implement it.",
+            practice: ["Train a reward model on Anthropic's HH dataset", "Implement DPO from scratch (simpler than RLHF)", "Compare RLHF vs DPO on the same preference dataset"]
+          },
+          {
+            name: "Data Engineering for LLMs",
+            subtopics: ["Web crawl processing: Common Crawl, C4", "Deduplication: MinHash, SimHash", "Quality filtering — fastText classifiers", "Tokeniser training: BPE from scratch", "Dataset mixing and weighting strategies"],
+            project: { title: "Indian Language Dataset Builder", gh: "indic-llm-dataset", desc: "Build a high-quality pre-training dataset for Indic languages: scrape, deduplicate, quality-filter, tokenise. Publish on Hugging Face. Contribute to open-source Indian AI.", tag: "Dataset + Open Source" },
+            innovation: "💡 High-quality Indian language datasets are desperately needed. This has research and social impact.",
+            practice: ["Process 10GB of Common Crawl for a specific domain", "Build a MinHash deduplication pipeline", "Train a BPE tokeniser for an Indic language from scratch"]
+          },
+        ]
+      },
+      {
+        q: 10, title: "Multimodal AI — Vision, Audio, Code", color: "#34d399",
+        goal: "Extend beyond text. Build systems that see, hear, and code. Multimodal is the future of AI.",
+        topics: [
+          {
+            name: "Vision-Language Models (VLMs)",
+            subtopics: ["CLIP — contrastive image-text training", "LLaVA architecture: vision encoder + LLM", "GPT-4V, Claude Vision, Gemini multimodal APIs", "Image grounding and referring expressions", "VQA, image captioning, document understanding"],
+            project: { title: "Visual Question Answering App for Education", gh: "vqa-education", desc: "Students can photograph their textbook problems. The app uses Claude Vision to solve math/science problems step-by-step, showing work. Real product for Indian students.", tag: "Multimodal + EdTech" },
+            innovation: "💡 Vision + education in regional languages could serve 500M Indian students.",
+            practice: ["Fine-tune LLaVA on a medical imaging dataset", "Build a document understanding pipeline for PDFs", "Compare CLIP vs SigLIP on zero-shot classification"]
+          },
+          {
+            name: "Audio AI — ASR, TTS, Audio LLMs",
+            subtopics: ["Whisper — architecture and fine-tuning", "Text-to-Speech: XTTS, Bark, ElevenLabs", "Audio embeddings and classification", "Multimodal audio+text models", "Real-time streaming ASR"],
+            project: { title: "Multilingual Voice Assistant (10 Indian Languages)", gh: "indic-voice-assistant", desc: "Whisper STT → Claude reasoning → XTTS TTS pipeline. Supports Hindi, Tamil, Bengali, Telugu + 6 more. Voice-first interface. Deploy as mobile-friendly web app.", tag: "Audio + Multilingual" },
+            innovation: "💡 Voice AI in Indian languages is barely started. First movers will capture a massive market.",
+            practice: ["Fine-tune Whisper on a low-resource Indian language", "Clone a voice with 3 seconds of audio using XTTS", "Build real-time streaming ASR with WebSockets"]
+          },
+          {
+            name: "Code LLMs — Understanding + Generation",
+            subtopics: ["CodeBERT, StarCoder, DeepSeek-Coder architectures", "Code tokenisation and AST-aware models", "Program synthesis and execution feedback", "Self-debugging: generate → execute → fix loop", "Code search, completion, explanation"],
+            project: { title: "AI Code Reviewer (GitHub App)", gh: "ai-code-reviewer", desc: "GitHub Action that reviews every PR with a fine-tuned code LLM. Detects bugs, security issues, style violations, suggests improvements. Uses Claude for explanations.", tag: "Developer Tools + LLM" },
+            innovation: "💡 AI code review is a $1B market. Build the best open-source version.",
+            practice: ["Fine-tune DeepSeek-Coder on your company's coding style", "Build a self-debugging agent (generate → test → fix)", "Implement a code plagiarism detector using AST embeddings"]
+          },
+          {
+            name: "Multimodal Fusion Architectures",
+            subtopics: ["Cross-attention for modality fusion", "Early vs late fusion strategies", "Unified sequence modelling (Gato approach)", "Instruction tuning for multimodal models", "Evaluation of multimodal systems"],
+            project: { title: "Multimodal Product Search (E-commerce)", gh: "multimodal-search", desc: "Search by image + text simultaneously. Take a photo of a shirt + type 'but in blue, under ₹500'. Vector search over image + text embeddings. Full e-commerce prototype.", tag: "Multimodal + Product" },
+            innovation: "💡 Multimodal search is coming to every e-commerce platform. Build it first.",
+            practice: ["Implement late fusion for image + text classification", "Fine-tune LLaVA for a domain-specific VQA task", "Build a multimodal embedding space and visualise it"]
+          },
+        ]
+      },
+      {
+        q: 11, title: "LLM Safety + Interpretability + Evaluation", color: "#f59e0b",
+        goal: "Understand how LLMs fail, how to make them safer, and how to interpret what they're doing internally.",
+        topics: [
+          {
+            name: "Mechanistic Interpretability",
+            subtopics: ["Circuits — what do attention heads compute?", "Superposition hypothesis", "Activation patching & causal tracing", "Logit lens — reading internal representations", "Sparse autoencoders for feature detection"],
+            project: { title: "Fact Recall Tracer", gh: "fact-recall-tracer", desc: "Use activation patching to trace WHERE a specific fact (e.g., 'Paris is the capital of France') is stored in a GPT-2 model. Replicate Meng et al. ROME paper findings.", tag: "Interpretability Research" },
+            innovation: "💡 Mechanistic interpretability is the most important open research area in AI safety.",
+            practice: ["Replicate the 'Indirect Object Identification' circuit paper", "Implement logit lens for GPT-2", "Find the 'attention heads that copy tokens' in any model"]
+          },
+          {
+            name: "AI Safety + Claude's Approach",
+            subtopics: ["Constitutional AI — principles and implementation", "Harmlessness, helpfulness, honesty (HHH)", "Red-teaming methodologies", "RLHF vs RLAIF vs Constitutional AI", "Anthropic's RSP and safety policies"],
+            project: { title: "Constitutional AI Classifier", gh: "constitutional-ai-classifier", desc: "Implement a mini Constitutional AI pipeline: red-team a model to find harmful outputs, train a classifier using Claude's critiques as labels, demonstrate reduction in harmful outputs.", tag: "AI Safety + Claude" },
+            innovation: "💡 Read every Anthropic safety paper. Claude's Constitutional AI is a genuine breakthrough in alignment.",
+            practice: ["Red-team an LLM on 50 adversarial prompts", "Build a harmlessness classifier using Constitutional AI", "Replicate the original Constitutional AI paper experiments"]
+          },
+          {
+            name: "LLM Failure Modes + Robustness",
+            subtopics: ["Hallucination types — intrinsic vs extrinsic", "Sycophancy and position bias", "Context length failures", "Prompt injection attacks", "Distribution shift in deployment"],
+            project: { title: "LLM Stress Test Suite", gh: "llm-stress-test", desc: "500 adversarial test cases: hallucination traps, sycophancy tests, long-context failure tests, prompt injection attempts. Run on any model. Generate a 'safety score'. Open-source.", tag: "Evaluation + Safety" },
+            innovation: "💡 Companies pay for LLM safety audits. This could be a consulting service or startup.",
+            practice: ["Build a hallucination detector using SelfCheckGPT", "Find 10 sycophancy failure cases in GPT-4", "Implement a prompt injection firewall for a RAG system"]
+          },
+          {
+            name: "Advanced Evaluation + Benchmarking",
+            subtopics: ["HELM, BIG-Bench, MMLU methodology", "Contamination detection", "Human evaluation design", "Statistical significance in NLP benchmarks", "Dynamic benchmarks — prevent overfitting"],
+            project: { title: "India-Specific LLM Benchmark (BharatBench)", gh: "bharatbench", desc: "Create the first comprehensive benchmark for LLMs on Indian contexts: Indian history, culture, languages, laws, geography. 1000 questions. Evaluate all major LLMs. Publish results.", tag: "Benchmark + Research" },
+            innovation: "💡 No comprehensive Indian LLM benchmark exists yet. Publishing BharatBench could make you famous.",
+            practice: ["Design a 100-question benchmark for your domain", "Run MMLU on 5 models and analyse failure patterns", "Implement a contamination detector for benchmark data"]
+          },
+        ]
+      },
+      {
+        q: 12, title: "Distributed Training + Advanced MLOps", color: "#22d3ee",
+        goal: "Train models at scale. Understand distributed systems for ML. Build infrastructure that powers production LLMs.",
+        topics: [
+          {
+            name: "Distributed Training Strategies",
+            subtopics: ["Data parallelism: DDP, FSDP", "Model parallelism: tensor, pipeline", "ZeRO optimizer stages 1/2/3", "Gradient accumulation and checkpointing", "Mixed precision: fp16, bf16, fp8"],
+            project: { title: "Multi-GPU Training Benchmark", gh: "multi-gpu-benchmark", desc: "Benchmark LLM training on 1/2/4/8 GPU configs. Compare DDP vs FSDP vs ZeRO. Measure throughput (tokens/sec), memory efficiency, communication overhead. Publish findings.", tag: "ML Infrastructure" },
+            innovation: "💡 Most companies don't know how to efficiently use multiple GPUs. This is a rare skill.",
+            practice: ["Train GPT-2 on 4 GPUs with FSDP", "Profile communication overhead in DDP training", "Implement gradient checkpointing to fit larger batch size"]
+          },
+          {
+            name: "Inference Optimisation",
+            subtopics: ["KV cache management and paged attention", "Speculative decoding", "Continuous batching", "Flash Attention 1/2/3 — algorithm + implementation", "Quantisation: GPTQ, AWQ, GGUF formats"],
+            project: { title: "LLM Inference Server from Scratch", gh: "llm-inference-server", desc: "Build a mini vLLM: continuous batching, KV cache management, tensor parallelism, streaming. Serve LLaMA 3.1 8B with 95% GPU utilisation. Benchmark against vLLM.", tag: "Systems + LLM" },
+            innovation: "💡 Inference efficiency = cost reduction. Engineers who build inference systems are paid the most.",
+            practice: ["Implement Flash Attention from scratch (forward pass)", "Benchmark speculative decoding speedup on LLaMA", "Quantise a 7B model with AWQ and measure quality drop"]
+          },
+          {
+            name: "Production LLM Systems",
+            subtopics: ["Load balancing multiple model replicas", "Rate limiting + quota management", "Observability: tracing LLM calls end-to-end", "Prompt injection prevention in production", "Cost dashboards + budget alerts"],
+            project: { title: "LLM Gateway (Production-Grade)", gh: "llm-gateway", desc: "Production API gateway for LLMs: load balancing, rate limiting, prompt injection firewall, cost tracking, model routing, caching. Used by your team every day.", tag: "Production Systems" },
+            innovation: "💡 Every company deploying LLMs needs an LLM gateway. Build the open-source version.",
+            practice: ["Set up LLM observability with LangSmith/Phoenix", "Build a rate limiter for LLM APIs with Redis", "Implement semantic caching — same question, zero API calls"]
+          },
+          {
+            name: "Cloud AI Platforms + GPU Economics",
+            subtopics: ["AWS SageMaker, GCP Vertex AI, Azure ML", "GPU types: A100, H100, L4, T4 — when to use", "Spot instances for training cost reduction", "Serverless inference: AWS Lambda, Modal", "Carbon footprint of model training"],
+            project: { title: "GPU Cost Calculator for ML Engineers", gh: "gpu-cost-calculator", desc: "Input: model size, dataset size, training duration. Output: cost on every major cloud (AWS, GCP, Azure, Lambda Labs, RunPod) with recommendations. Open-source tool.", tag: "Tooling + Community" },
+            innovation: "💡 GPU economics is an emerging field. Being the person who understands this saves companies millions.",
+            practice: ["Run a training job on spot instances with auto-resume", "Compare Modal vs AWS Lambda for LLM inference cost", "Calculate the carbon footprint of fine-tuning LLaMA 70B"]
+          },
+        ]
+      },
+    ]
+  },
+
+  /* ━━━━━━━━━━━━━━━━━━━  YEAR 4  ━━━━━━━━━━━━━━━━━━━ */
+  {
+    year: 4, title: "World-Class", subtitle: "Research · Open Source · Build the Future",
+    color: "#f43f5e", icon: "🚀",
+    mission: "You are now one of the best in the world. Time to push the frontier — publish research, build lasting products, shape the field, and inspire the next generation.",
+    quarters: [
+      {
+        q: 13, title: "Cutting-Edge Research + Novel Architectures", color: "#f43f5e",
+        goal: "Read papers the day they drop. Reproduce key results. Propose novel improvements. Write and publish research.",
+        topics: [
+          {
+            name: "State Space Models — Mamba, RWKV, RetNet",
+            subtopics: ["SSMs: selective state spaces vs attention", "Mamba architecture: input-selective SSMs", "RWKV: RNN-meets-transformer efficiency", "Linear attention approximations", "When to use SSMs vs Transformers"],
+            project: { title: "Mamba vs Transformer Benchmark", gh: "mamba-vs-transformer", desc: "Systematic comparison: train Mamba and Transformer of same size on 5 tasks. Measure: quality, speed, memory, long-context performance. Publish as a research blog post.", tag: "Research" },
+            innovation: "💡 SSMs might replace Transformers for certain tasks. Being an expert now = frontier position.",
+            practice: ["Implement Mamba selective scan from scratch", "Run RWKV inference and compare speed to Transformer", "Read every Mamba and follow-up paper since Dec 2023"]
+          },
+          {
+            name: "Mixture of Experts (MoE) — Mixtral, GPT-4",
+            subtopics: ["MoE routing mechanisms — token choice vs expert choice", "Load balancing losses", "Expert specialisation — what do experts learn?", "Sparse vs dense MoE", "Training stability challenges in MoE"],
+            project: { title: "Mini MoE Language Model", gh: "mini-moe-lm", desc: "Build and train a tiny MoE model from scratch. Visualise which experts activate for which inputs. Show expert specialisation emerging. Publish as educational blog.", tag: "Architecture + Research" },
+            innovation: "💡 GPT-4 is rumoured to be MoE. Understanding it means understanding frontier models.",
+            practice: ["Implement a MoE layer with top-k routing from scratch", "Visualise expert activation patterns on different text types", "Reproduce Switch Transformer paper on small scale"]
+          },
+          {
+            name: "Long Context + Memory Architectures",
+            subtopics: ["RoPE scaling: YaRN, NTK-aware", "Retrieval-augmented vs long context trade-offs", "Sliding window attention (Mistral)", "Memory-augmented transformers", "Infinite context approaches"],
+            project: { title: "Long Context Benchmark (1M tokens)", gh: "long-context-benchmark", desc: "Design 'needle in a haystack' tests for 1M token contexts. Test Claude, GPT-4, Gemini 1.5 Pro. Analyse failure modes. Find the actual limit of each model. Publishable results.", tag: "Research + Evaluation" },
+            innovation: "💡 Long context is the most active area of LLM development. Your benchmarks could guide the field.",
+            practice: ["Test all major LLMs on 128K+ context tasks", "Implement sliding window attention from scratch", "Reproduce the 'Lost in the Middle' paper findings"]
+          },
+          {
+            name: "Novel Research: Your Own Ideas",
+            subtopics: ["Literature review methodology", "Experiment design + ablations", "Writing an arXiv paper", "Peer review process", "Building a research community"],
+            project: { title: "YOUR FIRST ARXIV PAPER", gh: "your-research", desc: "Identify an open problem, design experiments, gather results, write a clear paper. Submit to arXiv and a workshop. Even a small finding, clearly written, establishes you as a researcher.", tag: "Original Research" },
+            innovation: "💡 Publishing a paper changes how the world sees you. It's the ultimate proof of mastery.",
+            practice: ["Read 200 papers in 12 months (3-4 per week)", "Reproduce 10 major papers exactly", "Submit to ACL/EMNLP/NeurIPS workshop"]
+          },
+        ]
+      },
+      {
+        q: 14, title: "Advanced DSA + System Design for AI", color: "#f97316",
+        goal: "Crack any technical interview at Anthropic, DeepMind, OpenAI. Master system design for AI-scale systems.",
+        topics: [
+          {
+            name: "Advanced DSA — Competitive Programming Level",
+            subtopics: ["Segment trees, Fenwick trees", "Tries and suffix arrays (used in tokenisers!)", "Advanced graph algorithms: min-cut, max-flow", "Computational geometry basics", "Bit manipulation tricks"],
+            project: { title: "Competitive Programming Portfolio", gh: "cp-solutions", desc: "Solve and document 300 LeetCode Medium/Hard, 50 Codeforces problems. For each, write a clear explanation. Become top 5% globally. This directly prepares you for FAANG/Anthropic interviews.", tag: "Interview Prep" },
+            innovation: "💡 Top-tier AI companies ask hard DSA. There's no shortcut — solve 300+ problems.",
+            practice: ["Solve 300 LeetCode Medium/Hard problems", "Participate in Codeforces Div. 2 contests weekly", "Implement a full trie-based autocomplete (used in tokenisers)"]
+          },
+          {
+            name: "System Design — AI Scale",
+            subtopics: ["Designing a ChatGPT-like system", "Streaming responses at 1M req/day", "Distributed vector database design", "Multi-tenant LLM platform architecture", "Failure modes and graceful degradation"],
+            project: { title: "Design Doc: Your Vision for Claude 10", gh: "claude-10-design", desc: "Write a comprehensive design document for what Claude 10 should be: architecture, capabilities, safety mechanisms, training approach, deployment. Make it publicly available.", tag: "System Design + Vision" },
+            innovation: "💡 Writing design docs for future AI systems shows visionary thinking. Share it — it could go viral.",
+            practice: ["Design a complete ML platform for a startup", "Whiteboard a real-time LLM streaming system end-to-end", "Design a multi-region LLM deployment with failover"]
+          },
+          {
+            name: "C++ and Rust for ML Systems",
+            subtopics: ["C++ for CUDA kernels", "Rust for ML inference servers", "Python ↔ C++ bindings (pybind11)", "SIMD operations for CPU inference", "Memory safety in ML systems"],
+            project: { title: "Custom CUDA Kernel for Attention", gh: "custom-cuda-attention", desc: "Write a custom CUDA kernel that implements a variant of Flash Attention. Benchmark against PyTorch's default. Show GPU memory and speed improvements. Real systems work.", tag: "GPU Programming" },
+            innovation: "💡 The engineers who write CUDA kernels are paid the most in the entire AI industry.",
+            practice: ["Write a matrix multiplication CUDA kernel", "Implement a fast tokeniser in Rust (like Hugging Face tokenizers)", "Benchmark Python vs Rust for a data processing pipeline"]
+          },
+          {
+            name: "Interview Prep — Anthropic, OpenAI, DeepMind",
+            subtopics: ["ML fundamentals questions (300 common)", "Coding: Python, system design, ML coding", "Research discussion — defend your papers", "Behavioural: impact, collaboration, vision", "Take-home ML projects"],
+            project: { title: "AI Interview Question Bank", gh: "ai-interview-prep", desc: "Comprehensive repo: 500 ML/LLM interview questions with detailed answers. Contributed to by the community. Becomes THE resource for AI engineering interviews.", tag: "Community Resource" },
+            innovation: "💡 Building public resources makes you a community leader. Leaders get recruited first.",
+            practice: ["Complete 5 mock interviews with peers", "Write detailed answers to 100 ML interview questions", "Build a system design presentation for ChatGPT architecture"]
+          },
+        ]
+      },
+      {
+        q: 15, title: "Open Source + Community + Products", color: "#34d399",
+        goal: "Build things the world uses. Contribute to major projects. Become a known name in the AI community.",
+        topics: [
+          {
+            name: "Open Source LLM Contributions",
+            subtopics: ["Contributing to HuggingFace Transformers", "LangChain, LlamaIndex contributions", "Creating widely-used tools", "Maintaining OSS projects professionally", "OSS governance and community building"],
+            project: { title: "Landmark Open Source Contribution", gh: "your-oss-contribution", desc: "Merge a significant feature into Transformers, vLLM, or LangChain. Not a typo fix — a real feature used by thousands. This single contribution can land you a job anywhere.", tag: "Open Source" },
+            innovation: "💡 A merged PR in a major OSS project is worth more than a degree on your resume.",
+            practice: ["Fix 5 bugs in major OSS ML projects", "Implement a requested feature in HuggingFace Transformers", "Maintain your own OSS tool with 100+ GitHub stars"]
+          },
+          {
+            name: "Building AI Products That Scale",
+            subtopics: ["Product-market fit for AI products", "LLM application architecture patterns", "Pricing AI products (per-token, subscription)", "AI UX principles — trust, transparency", "Handling AI failures gracefully in UX"],
+            project: { title: "Your Flagship AI Product", gh: "your-ai-product", desc: "Build and launch a real AI product that solves a real problem (not a demo). Get 1000 real users. Iterate based on feedback. This is your most important project of Year 4.", tag: "Entrepreneurship" },
+            innovation: "💡 The goal is building something people love, not something impressive. Start with one user.",
+            practice: ["Build and launch 3 small AI products on ProductHunt", "Interview 50 potential users before building", "Get to ₹10K MRR with an AI micro-SaaS"]
+          },
+          {
+            name: "Teaching + Content Creation",
+            subtopics: ["Writing technical blog posts (clear > impressive)", "YouTube / short-form video about AI", "Building a Twitter/LinkedIn following", "Speaking at conferences and meetups", "Online courses and workshops"],
+            project: { title: "Definitive LLM Engineering Course", gh: "llm-engineering-course", desc: "Create the best free course on LLM engineering in existence. 40 hours of content, hands-on projects, all concepts from scratch. Hosted on GitHub + YouTube. Reaches 100K learners.", tag: "Education + Impact" },
+            innovation: "💡 The best engineers teach. Teaching forces you to understand things perfectly.",
+            practice: ["Write 52 technical blog posts (one per week)", "Create 12 YouTube videos on LLM engineering", "Give a talk at a local AI meetup or college"]
+          },
+          {
+            name: "Indian AI Ecosystem Leadership",
+            subtopics: ["AI4Bharat — contributing to Indian language AI", "Building for Bharat: 22 languages, 1.4B people", "Government + startup AI ecosystem", "Mentoring the next generation", "AI policy and ethics in Indian context"],
+            project: { title: "Indic LLM — Open Source Indian Language Model", gh: "indic-llm", desc: "Collaborate with AI4Bharat or lead your own effort to train/fine-tune a high-quality open LLM for Indian languages. This is nation-building level impact. Your legacy project.", tag: "National Impact" },
+            innovation: "💡 India will have the world's largest AI market. The engineers who build for it will define the future.",
+            practice: ["Contribute to AI4Bharat datasets and models", "Build an app that genuinely helps rural India", "Mentor 10 students through their first ML projects"]
+          },
+        ]
+      },
+      {
+        q: 16, title: "The Summit — Portfolio, Publications, Legacy", color: "#a78bfa",
+        goal: "Cement your position as world-class. Your portfolio speaks for itself. The world knows your name.",
+        topics: [
+          {
+            name: "Your Research Portfolio",
+            subtopics: ["arXiv papers — 2+ published", "Google Scholar profile setup", "Reproducible research practices", "Building on others' work with credit", "Long-term research agenda"],
+            project: { title: "2 arXiv Papers Published", gh: "your-arxiv-papers", desc: "By now you have at least 2 papers on arXiv. One could be BharatBench, one on your LLM research. These are permanent contributions to human knowledge. Celebrate this.", tag: "Research Legacy" },
+            innovation: "💡 Two papers in 4 years is absolutely achievable with consistent effort. Start Year 1 reading papers.",
+            practice: ["Peer-review papers for workshops", "Write a literature review on your specialisation", "Collaborate with a professor or researcher you admire"]
+          },
+          {
+            name: "Career Positioning",
+            subtopics: ["Building a world-class resume/portfolio", "Targeting Anthropic, DeepMind, OpenAI, Google DeepMind", "Negotiating offers at top companies", "Starting your own AI company", "Consulting and advisory roles"],
+            project: { title: "Dream Job or Dream Company", gh: "your-career", desc: "After 4 years: your GitHub has 20+ impressive projects, 2 papers, OSS contributions, a product with users. Apply to Anthropic. Or start your company. Either way — you're ready.", tag: "Career Summit" },
+            innovation: "💡 The question by Year 4 isn't 'can I get hired' — it's 'which of the 5 offers should I take'.",
+            practice: ["Apply to 10 top AI companies", "Negotiate your offer (don't accept first offer)", "Decide: employee, founder, or researcher"]
+          },
+          {
+            name: "Staying at the Frontier",
+            subtopics: ["Daily paper reading habits", "Following key researchers", "Experiment-first learning culture", "The 1% rule — improve 1% every day", "Giving back more than you take"],
+            project: { title: "Your AI Learning System", gh: "continuous-learning", desc: "Build your personal system for staying at the frontier: paper reading tracker, weekly experiment log, monthly skill assessment, annual research agenda. Share it publicly.", tag: "Lifelong Learning" },
+            innovation: "💡 The world will change faster than any roadmap. Build the habit of learning, not the knowledge.",
+            practice: ["Read one paper every day for the rest of your career", "Run one experiment every week, log the results", "Teach someone something new every month"]
+          },
+          {
+            name: "Impact Measurement + Legacy",
+            subtopics: ["Defining your personal AI vision", "Measuring societal impact of your work", "Ethical AI framework for your projects", "Mentoring and knowledge transfer", "The next 10 years — your place in AI history"],
+            project: { title: "Year 4 Impact Review", gh: "impact-review", desc: "Write a public retrospective: 4 years, 1440 days, what you built, what you learned, what changed in the world because of you. Inspire the next person starting their journey.", tag: "Reflection + Inspiration" },
+            innovation: "💡 The best engineers measure impact in lives improved, not GitHub stars. Keep that perspective.",
+            practice: ["Identify the single most important thing you built", "Write a letter to your Year-1 self", "Set your 10-year vision and share it publicly"]
+          },
+        ]
+      },
+    ]
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM
+═══════════════════════════════════════════════════════════════ */
+const DS = {
+  bg:     "#08080f",
+  panel:  "#0d0d18",
+  card:   "#111120",
+  border: "#1a1a2e",
+  hover:  "#161628",
+  t1: "#f0f0fa",
+  t2: "#8888aa",
+  t3: "#3a3a56",
+  green:  "#22c55e",
+  amber:  "#f59e0b",
+  red:    "#ef4444",
+};
+
+const TAG_COLORS = {
+  "Tool":              { bg:"#0c1a3a", border:"#1d4ed8", text:"#60a5fa" },
+  "DSA + Viz":         { bg:"#0c1a3a", border:"#1d4ed8", text:"#60a5fa" },
+  "Algorithms + AI":   { bg:"#0c1a3a", border:"#1d4ed8", text:"#60a5fa" },
+  "DSA + NLP":         { bg:"#0c1a3a", border:"#1d4ed8", text:"#60a5fa" },
+  "DevOps":            { bg:"#1a0c3a", border:"#7c3aed", text:"#a78bfa" },
+  "Math + NLP":        { bg:"#1a0c3a", border:"#7c3aed", text:"#a78bfa" },
+  "Deep Learning Math":{ bg:"#1a1a0c", border:"#b45309", text:"#fbbf24" },
+  "LLM + Stats":       { bg:"#1a1a0c", border:"#b45309", text:"#fbbf24" },
+  "LLM Evaluation":    { bg:"#1a1a0c", border:"#b45309", text:"#fbbf24" },
+  "ML + Visualisation":{ bg:"#0c2a1a", border:"#15803d", text:"#4ade80" },
+  "Production ML":     { bg:"#0c2a1a", border:"#15803d", text:"#4ade80" },
+  "NLP + ML":          { bg:"#0c2a1a", border:"#15803d", text:"#4ade80" },
+  "ML Tooling":        { bg:"#0c2a1a", border:"#15803d", text:"#4ade80" },
+  "Architecture Core": { bg:"#2a0c0c", border:"#b91c1c", text:"#f87171" },
+  "Research":          { bg:"#2a0c0c", border:"#b91c1c", text:"#f87171" },
+  "Production Agents": { bg:"#2a0c0c", border:"#b91c1c", text:"#f87171" },
+  "Career Summit":     { bg:"#2a0c0c", border:"#b91c1c", text:"#f87171" },
+};
+function tagStyle(tag) {
+  return TAG_COLORS[tag] || { bg:"#1a1a2e", border:"#3a3a56", text:"#8888aa" };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT
+═══════════════════════════════════════════════════════════════ */
+export default function Masterplan() {
+  const [yIdx, setYIdx] = useState(0);
+  const [qIdx, setQIdx] = useState(0);
+  const [tIdx, setTIdx] = useState(0);
+  const [tab,  setTab]  = useState("overview"); // overview | topics | project | practice
+  const [checks, setChecks] = useState({});
+  const [expanded, setExpanded] = useState({});
+  const [pulse, setPulse] = useState(true);
+
+  useEffect(() => { const t = setInterval(() => setPulse(p=>!p),1400); return ()=>clearInterval(t); }, []);
+
+  const year    = PLAN[yIdx];
+  const quarter = year.quarters[qIdx];
+  const topic   = quarter.topics[tIdx];
+  const yc      = year.color;
+  const qc      = quarter.color;
+
+  const toggle = k => setChecks(p=>({...p,[k]:!p[k]}));
+  const toggleExp = k => setExpanded(p=>({...p,[k]:!p[k]}));
+
+  const totalTopics = PLAN.reduce((s,y)=>s+y.quarters.reduce((qs,q)=>qs+q.topics.length,0),0);
+  const doneTopics  = Object.values(checks).filter(Boolean).length;
+  const globalPct   = Math.round((doneTopics/totalTopics)*100);
+
+  const yearDone = y => {
+    let done=0, total=0;
+    y.quarters.forEach(q => q.topics.forEach((_,ti) => {
+      total++;
+      if (checks[`${y.year}-${q.q}-${ti}`]) done++;
+    }));
+    return total>0 ? Math.round((done/total)*100) : 0;
+  };
+
+  const qDone = q => {
+    const done  = q.topics.filter((_,ti)=>checks[`${year.year}-${q.q}-${ti}`]).length;
+    return Math.round((done/q.topics.length)*100);
+  };
+
+  return (
+    <div style={{ display:"flex", height:"100vh", width:"100vw", background:DS.bg, color:DS.t1, overflow:"hidden",
+      fontFamily:"-apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif" }}>
+
+      {/* ══════ FAR LEFT — YEAR NAV ══════ */}
+      <aside style={{ width:68, flexShrink:0, borderRight:`1px solid ${DS.border}`, display:"flex", flexDirection:"column", alignItems:"center", background:DS.panel, paddingTop:16, gap:6 }}>
+        <div style={{ width:38, height:38, borderRadius:10, background:`linear-gradient(135deg,${PLAN[0].color},${PLAN[3].color})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, marginBottom:12 }}>🧠</div>
+        {PLAN.map((y,i) => {
+          const active = yIdx===i;
+          const pct = yearDone(y);
+          return (
+            <div key={i} onClick={()=>{setYIdx(i);setQIdx(0);setTIdx(0);setTab("overview");}}
+              title={`Year ${y.year}: ${y.title}`}
+              style={{ width:48, borderRadius:10, padding:"8px 4px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+                background: active ? `${y.color}20` : "transparent", border:`1px solid ${active ? y.color+"50":"transparent"}`, transition:"all .2s" }}>
+              <span style={{ fontSize:20 }}>{y.icon}</span>
+              <span style={{ fontSize:8, fontWeight:800, color: active ? y.color : DS.t3 }}>Y{y.year}</span>
+              <div style={{ width:28, height:3, background:DS.border, borderRadius:2 }}>
+                <div style={{ height:"100%", width:`${pct}%`, background:y.color, borderRadius:2 }} />
+              </div>
+            </div>
+          );
+        })}
+        {/* Global */}
+        <div style={{ marginTop:"auto", marginBottom:16, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+          <div style={{ fontSize:14, fontWeight:900, color: globalPct===0 ? DS.t3 : DS.amber }}>{globalPct}%</div>
+          <div style={{ fontSize:7, color:DS.t3, textTransform:"uppercase", letterSpacing:0.5 }}>Global</div>
+        </div>
+      </aside>
+
+      {/* ══════ LEFT — QUARTER + TOPIC NAV ══════ */}
+      <aside style={{ width:240, flexShrink:0, borderRight:`1px solid ${DS.border}`, display:"flex", flexDirection:"column", background:DS.bg, overflow:"hidden" }}>
+        {/* Year header */}
+        <div style={{ padding:"14px 14px 12px", borderBottom:`1px solid ${DS.border}`, background:DS.panel }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+            <span style={{ fontSize:22 }}>{year.icon}</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:yc }}>Year {year.year}: {year.title}</div>
+              <div style={{ fontSize:10, color:DS.t3 }}>{year.subtitle}</div>
+            </div>
+          </div>
+          <div style={{ fontSize:11, color:DS.t2, lineHeight:1.6, borderLeft:`3px solid ${yc}40`, paddingLeft:8 }}>{year.mission.slice(0,120)}...</div>
+        </div>
+
+        {/* Quarter + Topic list */}
+        <div style={{ flex:1, overflowY:"auto", padding:"10px 8px" }}>
+          {year.quarters.map((q,qi) => {
+            const qActive = qIdx===qi;
+            const pct = qDone(q);
+            return (
+              <div key={qi} style={{ marginBottom:6 }}>
+                <div onClick={()=>{setQIdx(qi);setTIdx(0);setTab("overview");}}
+                  style={{ borderRadius:9, padding:"9px 10px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center",
+                    background: qActive ? `${q.color}15` : DS.card,
+                    border:`1px solid ${qActive ? q.color+"35" : DS.border}`, transition:"all .15s", marginBottom: qActive ? 4 : 0 }}>
+                  <div>
+                    <div style={{ fontSize:9, fontWeight:800, color: qActive ? q.color : DS.t3, letterSpacing:1, textTransform:"uppercase" }}>Q{q.q}</div>
+                    <div style={{ fontSize:11, fontWeight:700, color: qActive ? DS.t1 : DS.t2, marginTop:1 }}>{q.title}</div>
+                  </div>
+                  <div style={{ textAlign:"right" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color: pct===100 ? DS.green : qActive ? q.color : DS.t3 }}>{pct}%</div>
+                    <div style={{ width:30, height:3, background:DS.border, borderRadius:2, marginTop:4 }}>
+                      <div style={{ height:"100%", width:`${pct}%`, background: pct===100 ? DS.green : q.color, borderRadius:2 }} />
+                    </div>
+                  </div>
+                </div>
+
+                {qActive && q.topics.map((t,ti) => {
+                  const key = `${year.year}-${q.q}-${ti}`;
+                  const done = !!checks[key];
+                  const tActive = tIdx===ti;
+                  return (
+                    <div key={ti} onClick={()=>{setTIdx(ti);setTab("overview");}}
+                      style={{ borderRadius:8, padding:"7px 10px 7px 14px", cursor:"pointer", marginBottom:2, display:"flex", alignItems:"center", gap:8,
+                        background: tActive ? `${qc}10` : "transparent",
+                        border:`1px solid ${tActive ? qc+"30" : "transparent"}`, transition:"all .15s" }}>
+                      <div onClick={e=>{e.stopPropagation();toggle(key);}}
+                        style={{ width:14, height:14, borderRadius:4, border:`2px solid ${done ? DS.green : DS.t3}`, background: done ? DS.green : "transparent",
+                          display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, cursor:"pointer", transition:"all .15s" }}>
+                        {done && <span style={{ color:"#fff", fontSize:9, lineHeight:1 }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize:11, color: tActive ? DS.t1 : done ? DS.t3 : DS.t2, textDecoration: done?"line-through":"none", lineHeight:1.3 }}>{t.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* ══════ MAIN CONTENT AREA ══════ */}
+      <main style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+
+        {/* Top bar */}
+        <div style={{ padding:"13px 24px", borderBottom:`1px solid ${DS.border}`, background:DS.panel, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:3 }}>
+              <div style={{ background:qc, color:"#fff", borderRadius:6, padding:"2px 9px", fontSize:10, fontWeight:800 }}>Q{quarter.q}</div>
+              <div style={{ background:DS.card, border:`1px solid ${DS.border}`, borderRadius:6, padding:"2px 9px", fontSize:10, fontWeight:700, color:qc }}>{topic.name}</div>
+              {/* tag */}
+              {(() => { const s=tagStyle(topic.project.tag); return (
+                <div style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:6, padding:"2px 9px", fontSize:10, fontWeight:700, color:s.text }}>{topic.project.tag}</div>
+              ); })()}
+            </div>
+            <div style={{ fontSize:10, color:DS.t3 }}>Year {year.year} · Q{quarter.q} · {quarter.title}</div>
+          </div>
+          {/* Tab switcher */}
+          <div style={{ display:"flex", gap:4 }}>
+            {[["overview","🗺️ Overview"],["topics","📚 Subtopics"],["project","🏗️ Project"],["practice","⚡ Practice"]].map(([v,l])=>(
+              <button key={v} onClick={()=>setTab(v)}
+                style={{ background: tab===v ? qc : DS.card, border:`1px solid ${tab===v ? qc : DS.border}`,
+                  borderRadius:7, padding:"6px 12px", cursor:"pointer", color: tab===v ? "#fff" : DS.t2,
+                  fontSize:10, fontWeight:700, transition:"all .15s" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
+
+          {/* ── OVERVIEW TAB ── */}
+          {tab==="overview" && (
+            <div style={{ display:"grid", gridTemplateColumns:"1.1fr 1fr", gap:16, alignItems:"start" }}>
+              {/* Left: Quarter goal + all topics */}
+              <div>
+                {/* Quarter mission */}
+                <div style={{ background:`${qc}0d`, border:`1px solid ${qc}25`, borderRadius:13, padding:"16px 18px", marginBottom:14 }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:qc, letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>Q{quarter.q} MISSION</div>
+                  <div style={{ fontSize:14, fontWeight:700, color:DS.t1, lineHeight:1.6 }}>{quarter.goal}</div>
+                </div>
+
+                {/* All topics in this quarter */}
+                <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:8 }}>Topics in this Quarter</div>
+                {quarter.topics.map((t,ti)=>{
+                  const key = `${year.year}-${quarter.q}-${ti}`;
+                  const done = !!checks[key];
+                  const active = tIdx===ti;
+                  const s = tagStyle(t.project.tag);
+                  return (
+                    <div key={ti} onClick={()=>setTIdx(ti)}
+                      style={{ borderRadius:11, padding:"12px 14px", marginBottom:7, cursor:"pointer",
+                        background: active ? `${qc}0f` : DS.card,
+                        border:`1px solid ${active ? qc+"40" : DS.border}`, transition:"all .15s" }}>
+                      <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                        <div onClick={e=>{e.stopPropagation();toggle(key);}}
+                          style={{ width:18, height:18, borderRadius:5, border:`2px solid ${done ? DS.green : DS.t3}`, background: done ? DS.green : "transparent",
+                            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1, cursor:"pointer", transition:"all .15s" }}>
+                          {done && <span style={{ color:"#fff", fontSize:11, lineHeight:1 }}>✓</span>}
+                        </div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:13, fontWeight:700, color: done ? DS.t3 : DS.t1, textDecoration: done?"line-through":"none", marginBottom:3 }}>{t.name}</div>
+                          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                            <div style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:5, padding:"1px 7px", fontSize:9, fontWeight:700, color:s.text }}>{t.project.tag}</div>
+                            <span style={{ fontSize:10, color:DS.t3 }}>→ {t.project.title}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right: Current topic details */}
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                {/* Innovation idea */}
+                <div style={{ background:`linear-gradient(135deg, ${qc}15, ${qc}08)`, border:`1px solid ${qc}35`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:qc, letterSpacing:1.5, textTransform:"uppercase", marginBottom:8 }}>
+                    <span style={{ display:"inline-block", width:6, height:6, borderRadius:"50%", background: pulse ? qc : "transparent", marginRight:6, border:`1px solid ${qc}`, transition:"background .4s" }} />
+                    Innovation Insight
+                  </div>
+                  <div style={{ fontSize:13, color:DS.t1, lineHeight:1.7 }}>{topic.innovation}</div>
+                </div>
+
+                {/* GitHub project */}
+                <div style={{ background:DS.card, border:`1px solid ${DS.border}`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                    <div style={{ fontSize:9, fontWeight:800, color:DS.t2, letterSpacing:1.5, textTransform:"uppercase" }}>🐙 GitHub Project</div>
+                    {(()=>{const s=tagStyle(topic.project.tag);return(
+                      <div style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:5, padding:"2px 8px", fontSize:9, fontWeight:700, color:s.text }}>{topic.project.tag}</div>
+                    );})()}
+                  </div>
+                  <div style={{ fontSize:15, fontWeight:800, color:DS.t1, marginBottom:6 }}>{topic.project.title}</div>
+                  <div style={{ fontSize:9, fontWeight:700, color:qc, marginBottom:6 }}>github.com/you/{topic.project.gh}</div>
+                  <div style={{ fontSize:12, color:DS.t2, lineHeight:1.7 }}>{topic.project.desc}</div>
+                </div>
+
+                {/* Quick subtopics */}
+                <div style={{ background:DS.card, border:`1px solid ${DS.border}`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:DS.t2, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Subtopics (click for details)</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                    {topic.subtopics.map((s,si)=>(
+                      <div key={si} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ width:5, height:5, borderRadius:"50%", background:qc, flexShrink:0 }} />
+                        <span style={{ fontSize:12, color:DS.t2 }}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── SUBTOPICS TAB ── */}
+          {tab==="topics" && (
+            <div>
+              <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12 }}>Deep-Dive Subtopics with Project Ideas</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                {topic.subtopics.map((s,si)=>{
+                  const k = `sub-${year.year}-${quarter.q}-${tIdx}-${si}`;
+                  const open = !!expanded[k];
+                  const done = !!checks[k+"-done"];
+                  return (
+                    <div key={si} style={{ background: done ? "#0a150a" : open ? `${qc}0a` : DS.card,
+                      border:`1px solid ${done ? DS.green+"30" : open ? qc+"40" : DS.border}`,
+                      borderRadius:11, overflow:"hidden", transition:"all .15s" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:9, padding:"11px 13px", cursor:"pointer" }}
+                        onClick={()=>toggleExp(k)}>
+                        <div onClick={e=>{e.stopPropagation();toggle(k+"-done");}}
+                          style={{ width:17, height:17, borderRadius:5, border:`2px solid ${done ? DS.green : DS.t3}`, background: done ? DS.green : "transparent",
+                            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, cursor:"pointer", transition:"all .15s" }}>
+                          {done && <span style={{ color:"#fff", fontSize:10, lineHeight:1 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:12, fontWeight:600, color: done ? DS.t3 : DS.t1, textDecoration: done?"line-through":"none", flex:1, lineHeight:1.4 }}>{s}</span>
+                        <span style={{ fontSize:10, color: open ? qc : DS.t3 }}>{open?"▲":"▼"}</span>
+                      </div>
+                      {open && (
+                        <div style={{ padding:"0 13px 12px 39px", borderTop:`1px solid ${qc}15` }}>
+                          <div style={{ background:`${qc}10`, border:`1px solid ${qc}20`, borderRadius:8, padding:"10px 12px", marginTop:8 }}>
+                            <div style={{ fontSize:9, fontWeight:800, color:qc, letterSpacing:1.5, textTransform:"uppercase", marginBottom:5 }}>🔨 Build This</div>
+                            <div style={{ fontSize:11, color:DS.t1, lineHeight:1.6 }}>
+                              {/* Contextual project idea per subtopic */}
+                              {`Master "${s}" by implementing it from scratch. Every concept you can build, you truly own. Create a small demo, add it to your GitHub, and write a short explanation. This turns passive knowledge into active skill.`}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Innovation */}
+              <div style={{ marginTop:16, background:`${qc}10`, border:`1px solid ${qc}25`, borderRadius:13, padding:"14px 16px" }}>
+                <div style={{ fontSize:9, fontWeight:800, color:qc, letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>💡 Innovation Idea for this Topic</div>
+                <div style={{ fontSize:13, color:DS.t1, lineHeight:1.7 }}>{topic.innovation}</div>
+              </div>
+            </div>
+          )}
+
+          {/* ── PROJECT TAB ── */}
+          {tab==="project" && (
+            <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1fr", gap:16, alignItems:"start" }}>
+              <div>
+                <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Main GitHub Project</div>
+                <div style={{ background:`${qc}10`, border:`1px solid ${qc}35`, borderRadius:14, padding:"20px 22px", marginBottom:14 }}>
+                  {(()=>{const s=tagStyle(topic.project.tag);return(
+                    <div style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:6, padding:"3px 10px", fontSize:10, fontWeight:700, color:s.text, display:"inline-block", marginBottom:10 }}>{topic.project.tag}</div>
+                  );})()}
+                  <div style={{ fontSize:20, fontWeight:900, color:DS.t1, marginBottom:8, lineHeight:1.3 }}>{topic.project.title}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:qc, marginBottom:10 }}>github.com/you/{topic.project.gh}</div>
+                  <div style={{ fontSize:13, color:DS.t2, lineHeight:1.8 }}>{topic.project.desc}</div>
+                </div>
+
+                <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Innovation Direction</div>
+                <div style={{ background:DS.card, border:`1px solid ${DS.border}`, borderRadius:12, padding:"14px 16px", marginBottom:14 }}>
+                  <div style={{ fontSize:13, color:DS.t1, lineHeight:1.7 }}>{topic.innovation}</div>
+                </div>
+
+                <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>All Quarter Projects (Quick View)</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {quarter.topics.map((t,ti)=>{
+                    const s=tagStyle(t.project.tag);
+                    return (
+                      <div key={ti} onClick={()=>setTIdx(ti)}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", background: tIdx===ti ? `${qc}10` : DS.card, border:`1px solid ${tIdx===ti ? qc+"35" : DS.border}`, borderRadius:9, cursor:"pointer", transition:"all .15s" }}>
+                        <div style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:4, padding:"1px 7px", fontSize:8, fontWeight:700, color:s.text, flexShrink:0 }}>{t.project.tag}</div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:11, fontWeight:700, color: tIdx===ti ? DS.t1 : DS.t2 }}>{t.project.title}</div>
+                          <div style={{ fontSize:9, color:DS.t3 }}>/{t.project.gh}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Subtopics to Master</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:14 }}>
+                  {topic.subtopics.map((s,si)=>(
+                    <div key={si} style={{ display:"flex", gap:9, padding:"8px 12px", background:DS.card, border:`1px solid ${DS.border}`, borderRadius:8 }}>
+                      <div style={{ fontSize:13, color:qc, flexShrink:0, marginTop:1 }}>→</div>
+                      <span style={{ fontSize:12, color:DS.t2, lineHeight:1.5 }}>{s}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background:`linear-gradient(135deg,#0f0f2a,#1a0f2a)`, border:`1px solid #2d2d45`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:DS.t1, marginBottom:6 }}>📏 Definition of Done</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                    {["GitHub repo with README and live demo","Core algorithm implemented from scratch","Benchmarked against baseline (better or analysed why not)","Blog post / write-up explaining what you built and learned","Someone else ran your code and it worked"].map((d,di)=>(
+                      <div key={di} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                        <div style={{ width:14, height:14, borderRadius:4, border:`1px solid ${DS.t3}`, flexShrink:0, marginTop:1 }} />
+                        <span style={{ fontSize:11, color:DS.t2 }}>{d}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── PRACTICE TAB ── */}
+          {tab==="practice" && (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, alignItems:"start" }}>
+              <div>
+                <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Practice Projects (Do These Every Day)</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {topic.practice.map((p,pi)=>{
+                    const k = `prac-${year.year}-${quarter.q}-${tIdx}-${pi}`;
+                    const done = !!checks[k];
+                    return (
+                      <div key={pi} style={{ display:"flex", gap:10, padding:"13px 14px", background: done ? "#0a150a" : DS.card,
+                        border:`1px solid ${done ? DS.green+"35" : DS.border}`, borderRadius:11, transition:"all .15s" }}>
+                        <div onClick={()=>toggle(k)}
+                          style={{ width:20, height:20, borderRadius:6, border:`2px solid ${done ? DS.green : DS.t3}`, background: done ? DS.green : "transparent",
+                            display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, cursor:"pointer", transition:"all .15s" }}>
+                          {done && <span style={{ color:"#fff", fontSize:12, lineHeight:1 }}>✓</span>}
+                        </div>
+                        <div style={{ fontSize:13, color: done ? DS.t3 : DS.t1, textDecoration: done?"line-through":"none", lineHeight:1.5 }}>{p}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ marginTop:14, background:`${qc}0d`, border:`1px solid ${qc}25`, borderRadius:12, padding:"14px 16px" }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:qc, letterSpacing:1.5, textTransform:"uppercase", marginBottom:8 }}>🔥 Daily Habit (Every Single Day)</div>
+                  {["Write and run at least 1 piece of new code","Read at least 1 paper or technical article","Push at least 1 meaningful commit to GitHub","Journal: what did I learn, what confused me, what's tomorrow's focus"].map((h,hi)=>(
+                    <div key={hi} style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
+                      <div style={{ width:6, height:6, borderRadius:"50%", background:qc, flexShrink:0, marginTop:5 }} />
+                      <span style={{ fontSize:12, color:DS.t2, lineHeight:1.5 }}>{h}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                {/* New Ideas */}
+                <div style={{ background:DS.card, border:`1px solid ${DS.border}`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:DS.amber, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>💡 New Ideas to Explore</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {[
+                      `Combine ${topic.name} with something completely unrelated to your field — the intersection is often where breakthroughs happen.`,
+                      `What would this look like applied to an Indian language or Indian context? This market is wide open.`,
+                      `Can you make a teaching tool out of this concept? If you can explain it to a beginner, you've mastered it.`,
+                      `What's the most efficient possible version of this? Profile it, optimise it, publish the results.`,
+                    ].map((idea,ii)=>(
+                      <div key={ii} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                        <div style={{ color:DS.amber, fontSize:12, flexShrink:0, marginTop:1 }}>→</div>
+                        <span style={{ fontSize:12, color:DS.t2, lineHeight:1.6 }}>{idea}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Year mission reminder */}
+                <div style={{ background:`${yc}0d`, border:`1px solid ${yc}25`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:yc, letterSpacing:1.5, textTransform:"uppercase", marginBottom:8 }}>Year {year.year} Mission</div>
+                  <div style={{ fontSize:12, color:DS.t2, lineHeight:1.7 }}>{year.mission}</div>
+                </div>
+
+                {/* Iron rules */}
+                <div style={{ background:"linear-gradient(135deg,#0f0f2a,#1a0f2a)", border:`1px solid #2d2d45`, borderRadius:13, padding:"14px 16px" }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:DS.t1, marginBottom:8 }}>⚡ The Iron Rules</div>
+                  {["Never go 2 days without coding","Read > Watch. Build > Read.","Confused? Build it from scratch. The confusion disappears.","Share everything publicly. Every project, every insight.","Consistency over intensity. 2 hours daily beats 14 hours Sunday."].map((r,ri)=>(
+                    <div key={ri} style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:5 }}>
+                      <div style={{ color:yc, fontSize:10, flexShrink:0, marginTop:2 }}>▶</div>
+                      <span style={{ fontSize:11, color:DS.t2, lineHeight:1.5 }}>{r}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </main>
+
+      {/* ══════ RIGHT PANEL ══════ */}
+      <aside style={{ width:240, flexShrink:0, borderLeft:`1px solid ${DS.border}`, display:"flex", flexDirection:"column", background:DS.panel, overflow:"hidden" }}>
+        {/* Live stats */}
+        <div style={{ padding:"14px 14px 12px", borderBottom:`1px solid ${DS.border}` }}>
+          <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Your Stats</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:7, marginBottom:10 }}>
+            {[
+              { l:"Topics Done",  v:doneTopics,           c:DS.amber },
+              { l:"Remaining",    v:totalTopics-doneTopics,c:DS.t3 },
+              { l:"Global %",     v:`${globalPct}%`,       c:yc },
+              { l:"Year "+year.year+" %", v:`${yearDone(year)}%`, c:qc },
+            ].map((s,i)=>(
+              <div key={i} style={{ background:DS.card, border:`1px solid ${DS.border}`, borderRadius:9, padding:"9px 10px" }}>
+                <div style={{ fontSize:17, fontWeight:900, color:s.c }}>{s.v}</div>
+                <div style={{ fontSize:8, color:DS.t3, marginTop:2, textTransform:"uppercase", letterSpacing:0.5 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 4-year progress */}
+          {PLAN.map((y,yi)=>{
+            const pct = yearDone(y);
+            return (
+              <div key={yi} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                <span style={{ fontSize:12 }}>{y.icon}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
+                    <span style={{ fontSize:9, color: yIdx===yi ? y.color : DS.t3, fontWeight: yIdx===yi ? 700 : 400 }}>Y{y.year} {y.title}</span>
+                    <span style={{ fontSize:9, fontWeight:700, color: pct===100 ? DS.green : y.color }}>{pct}%</span>
+                  </div>
+                  <div style={{ background:DS.border, borderRadius:3, height:4 }}>
+                    <div style={{ height:"100%", width:`${pct}%`, background: pct===100 ? DS.green : y.color, borderRadius:3, transition:"width .4s" }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* The path */}
+        <div style={{ padding:"12px 14px 10px", borderBottom:`1px solid ${DS.border}` }}>
+          <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>The 4-Year Path</div>
+          {[
+            { y:1, title:"Foundation", desc:"Python · Math · Classical ML · Deep Learning", c:PLAN[0].color },
+            { y:2, title:"ML Engineer", desc:"Transformers · LLM APIs · RAG · Agents", c:PLAN[1].color },
+            { y:3, title:"LLM Engineer", desc:"Fine-tuning · Safety · Multimodal · MLOps", c:PLAN[2].color },
+            { y:4, title:"World-Class", desc:"Research · OSS · Products · Legacy", c:PLAN[3].color },
+          ].map((p,pi)=>(
+            <div key={pi} onClick={()=>{setYIdx(pi);setQIdx(0);setTIdx(0);setTab("overview");}}
+              style={{ display:"flex", gap:10, padding:"8px 10px", borderRadius:9, cursor:"pointer", marginBottom:4,
+                background: yIdx===pi ? `${p.c}18` : "transparent",
+                border:`1px solid ${yIdx===pi ? p.c+"35" : "transparent"}`, transition:"all .15s" }}>
+              <div style={{ width:24, height:24, borderRadius:6, background:`${p.c}25`, border:`1px solid ${p.c}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:900, color:p.c, flexShrink:0 }}>{p.y}</div>
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, color: yIdx===pi ? DS.t1 : DS.t2 }}>Y{p.y}: {p.title}</div>
+                <div style={{ fontSize:9, color:DS.t3, lineHeight:1.4 }}>{p.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Resources */}
+        <div style={{ flex:1, overflowY:"auto", padding:"12px 14px" }}>
+          <div style={{ fontSize:9, fontWeight:800, color:DS.t3, letterSpacing:1.5, textTransform:"uppercase", marginBottom:10 }}>Essential Resources</div>
+          {[
+            { name:"Andrej Karpathy's YouTube",  type:"Video", c:"#ef4444", desc:"neural nets from scratch" },
+            { name:"Anthropic Research Papers",  type:"Papers", c:PLAN[2].color, desc:"Constitutional AI, Claude" },
+            { name:"Hugging Face Course",         type:"Course", c:"#f97316", desc:"transformers & fine-tuning" },
+            { name:"fast.ai Practical DL",        type:"Course", c:"#22d3ee", desc:"top-down deep learning" },
+            { name:"Papers With Code",            type:"Research", c:"#a78bfa", desc:"SOTA methods + code" },
+            { name:"LeetCode (300 problems)",     type:"DSA", c:"#f59e0b", desc:"Medium/Hard target" },
+            { name:"arXiv cs.LG / cs.CL",         type:"Papers", c:"#34d399", desc:"read daily" },
+          ].map((r,ri)=>(
+            <div key={ri} style={{ display:"flex", gap:9, padding:"8px 10px", background:DS.card, border:`1px solid ${DS.border}`, borderRadius:9, marginBottom:5 }}>
+              <div style={{ background:r.c+"20", border:`1px solid ${r.c}40`, borderRadius:5, padding:"2px 7px", fontSize:8, fontWeight:700, color:r.c, flexShrink:0, height:"fit-content" }}>{r.type}</div>
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, color:DS.t1 }}>{r.name}</div>
+                <div style={{ fontSize:9, color:DS.t3 }}>{r.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Final footer */}
+        <div style={{ padding:"12px 14px", borderTop:`1px solid ${DS.border}` }}>
+          <div style={{ background:`linear-gradient(135deg,#0f0f2a,#1a0f2a)`, border:`1px solid #2d2d45`, borderRadius:10, padding:"11px 13px" }}>
+            <div style={{ fontSize:11, fontWeight:800, color:DS.t1, marginBottom:4 }}>1440 Days</div>
+            <div style={{ fontSize:10, color:DS.t3, lineHeight:1.6 }}>Ek aisa engineer jisne kabhi haara nahi. Build, ship, share, repeat. 🇮🇳🚀</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
