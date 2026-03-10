@@ -706,7 +706,7 @@ const PYTHON_MONTHS = [
 
 /* ─────────────────────────── QUESTION GENERATOR (Claude API) ─────────────────────────── */
 async function generateQuestions(topicText, weekTitle) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://acequiz.ai/ai-coding-quiz-generator", {
     method: "POST",
     headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
