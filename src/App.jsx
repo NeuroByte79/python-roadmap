@@ -1,805 +1,739 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-/* ─────────────────────────── GLOBAL CSS ─────────────────────────── */
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+/* ===================================================================
+   GLOBAL CSS — Futuristic Neon-Cyber Dark Theme
+=================================================================== */
+const GLOBAL_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:#04040f;overflow-x:hidden}
+body{background:#050510;overflow-x:hidden}
 ::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:#07071a}
-::-webkit-scrollbar-thumb{background:#1c1c42;border-radius:4px}
-.app{font-family:'DM Sans',sans-serif;background:#04040f;min-height:100vh;color:#e8e8f5}
+::-webkit-scrollbar-track{background:#08081a}
+::-webkit-scrollbar-thumb{background:#1e1e48;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#2e2e68}
+.app{font-family:'Outfit',sans-serif;background:#050510;min-height:100vh;color:#eeeef8}
 .mono{font-family:'JetBrains Mono',monospace}
-.syne{font-family:'Syne',sans-serif}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes shimmer{0%{background-position:-300% 0}100%{background-position:300% 0}}
-@keyframes glow{0%,100%{opacity:.6}50%{opacity:1}}
-@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
-@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
-@keyframes unlockPulse{0%{box-shadow:0 0 0 0 #10b98160}70%{box-shadow:0 0 0 18px #10b98100}100%{box-shadow:0 0 0 0 #10b98100}}
-
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 10px var(--gc,#8b5cf640)}50%{box-shadow:0 0 28px var(--gc,#8b5cf640)}}
+@keyframes barGrow{from{width:0}to{width:var(--w)}}
+@keyframes xpPop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes borderGlow{0%,100%{border-color:#1e1e48}50%{border-color:#8b5cf660}}
 .fade-up{animation:fadeUp .4s ease both}
 .fade-in{animation:fadeIn .3s ease both}
-.float{animation:float 3s ease-in-out infinite}
-.spin{animation:spin .7s linear infinite;display:inline-block}
-.pop{animation:pop .3s ease}
-.unlock-pulse{animation:unlockPulse 1.2s ease 2}
+.float{animation:float 3.5s ease-in-out infinite}
+.pulse{animation:pulse 2.2s ease-in-out infinite}
+.spin{animation:spin .75s linear infinite;display:inline-block}
 
 /* Layout */
-.wrap{display:flex;min-height:100vh}
-.sidebar{width:240px;flex-shrink:0;background:#06061c;border-right:1px solid #0f0f30;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
-.main{flex:1;overflow-x:hidden;min-width:0;padding-bottom:80px}
-@media(max-width:860px){.sidebar{display:none}.mob{display:flex!important}}
-.mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:#06061c;border-top:1px solid #0f0f30;padding:6px 0}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:228px;flex-shrink:0;background:#06061a;border-right:1px solid #121234;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main-content{flex:1;overflow-x:hidden;min-width:0}
+@media(max-width:820px){.sidebar{display:none}.mob-nav{display:flex!important}}
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#06061a;border-top:1px solid #121234;z-index:100;padding:6px 4px;justify-content:space-around}
 
 /* Cards */
-.card{background:#080820;border:1px solid #12123a;border-radius:14px;transition:border-color .2s}
-.card:hover{border-color:#22225a}
-.card-hi{border-color:#3b82f640;box-shadow:0 0 24px #3b82f614}
-.card-green{border-color:#10b98150;box-shadow:0 0 20px #10b98112}
-.card-gold{border-color:#f59e0b50;box-shadow:0 0 20px #f59e0b12}
+.card{background:#0b0b22;border:1px solid #161640;border-radius:14px;transition:border-color .2s,transform .15s}
+.card:hover{border-color:#28286a}
+.card-glow{box-shadow:0 0 0 1px #8b5cf620,0 6px 28px #8b5cf610}
+.card-glow-cyan{box-shadow:0 0 0 1px #00d4ff20,0 6px 28px #00d4ff10}
+.card-glow-green{box-shadow:0 0 0 1px #10b98120,0 6px 28px #10b98110}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:9px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;transition:all .18s;white-space:nowrap;user-select:none}
-.btn-py{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 0 16px #3b82f630}
-.btn-py:hover{filter:brightness(1.15);transform:translateY(-1px)}
-.btn-green{background:linear-gradient(135deg,#059669,#047857);color:#fff;box-shadow:0 0 16px #10b98130}
-.btn-green:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;transition:all .2s;user-select:none;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;box-shadow:0 0 18px #8b5cf630}
+.btn-primary:hover{background:linear-gradient(135deg,#8b50f5,#7c3aed);box-shadow:0 0 28px #8b5cf645;transform:translateY(-1px)}
+.btn-cyan{background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;box-shadow:0 0 18px #00d4ff30}
+.btn-cyan:hover{background:linear-gradient(135deg,#0ea5e9,#0284c7);transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid #1e1e48;color:#6464a0}
+.btn-ghost:hover{background:#0e0e2c;color:#eeeef8;border-color:#2e2e68}
+.btn-success{background:#031a0c;border:1px solid #14532d;color:#4ade80}
+.btn-success:hover{background:#062514}
+.btn-danger{background:#1a0308;border:1px solid #7f1d1d;color:#fca5a5}
 .btn-amber{background:linear-gradient(135deg,#d97706,#b45309);color:#fff}
-.btn-amber:hover{filter:brightness(1.12);transform:translateY(-1px)}
-.btn-ghost{background:transparent;border:1px solid #1a1a48;color:#5050a0}
-.btn-ghost:hover{background:#0c0c30;color:#e8e8f5;border-color:#2a2a68}
-.btn-sm{padding:5px 12px;font-size:12px;border-radius:7px}
-.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+.btn-amber:hover{background:linear-gradient(135deg,#f59e0b,#d97706);transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
 
 /* Inputs */
-.inp{width:100%;background:#05051a;border:1px solid #101038;border-radius:8px;padding:9px 14px;color:#e8e8f5;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
-.inp:focus{border-color:#3b82f6;box-shadow:0 0 0 3px #3b82f618}
-.inp::placeholder{color:#222248}
-
-/* Badges */
-.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid}
-.b-easy{color:#4ade80;background:#021a09;border-color:#14532d}
-.b-med{color:#fbbf24;background:#180d00;border-color:#7c3800}
-.b-hard{color:#f87171;background:#1a0404;border-color:#7f1d1d}
-.b-vhard{color:#c084fc;background:#120525;border-color:#6b21a8}
-
-/* Progress */
-.pbar{height:5px;background:#08082a;border-radius:999px;overflow:hidden}
-.pfill{height:100%;border-radius:999px;transition:width .7s cubic-bezier(.4,0,.2,1)}
-
-/* Nav */
-.nav-it{display:flex;align-items:center;gap:9px;padding:9px 14px;margin:1px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:#3a3a70;transition:all .18s;border:1px solid transparent;position:relative}
-.nav-it:hover{color:#7070b8;background:#0a0a2c}
-.nav-it.on{color:#e8e8f5;background:#0e0e38;border-color:#1e1e58}
-.nav-it.on::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:linear-gradient(180deg,#3b82f6,#10b981);border-radius:2px}
-
-/* Topic checkbox */
-.topic-row{display:flex;gap:12px;padding:11px 14px;border-radius:10px;cursor:pointer;transition:all .2s;align-items:flex-start;border:1px solid transparent}
-.topic-row:hover{background:#0a0a28;border-color:#1a1a48}
-.topic-row.done{background:#021508;border-color:#14532d60}
-
-/* Q card */
-.q-row{padding:11px 14px;border-radius:9px;border:1px solid #0e0e30;background:#060618;transition:border-color .15s;margin-bottom:6px}
-.q-row:hover{border-color:#1e1e50}
-
-/* Repo card */
-.repo-card{background:#060618;border:1px solid #0e0e30;border-radius:10px;padding:14px 16px;transition:all .22s;cursor:pointer}
-.repo-card:hover{border-color:#3b82f640;transform:translateY(-2px);box-shadow:0 6px 20px #3b82f612}
-
-/* Section label */
-.sec-label{font-size:11px;font-weight:700;color:#30305a;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
-
-/* Scrollable row */
-.srow{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px}
-.srow::-webkit-scrollbar{display:none}
+.inp{width:100%;background:#06061e;border:1px solid #141440;border-radius:8px;padding:10px 14px;color:#eeeef8;font-family:'Outfit',sans-serif;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
+.inp:focus{border-color:#8b5cf6;box-shadow:0 0 0 3px #8b5cf618}
+.inp::placeholder{color:#28284a}
+textarea.inp{resize:vertical;min-height:80px;line-height:1.6}
 
 /* Tabs */
-.tab-row{display:flex;gap:3px;border-bottom:1px solid #0f0f30;padding-bottom:4px;margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
-.tab-row::-webkit-scrollbar{display:none}
-.tab-b{flex-shrink:0;padding:7px 14px;border-radius:8px;border:none;background:transparent;color:#303060;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .2s}
-.tab-b.on{background:#0c0c34;color:#e8e8f5}
-.tab-b:hover:not(.on){color:#6060a8;background:#080826}
+.tab-bar{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:8px 14px;border-radius:8px;border:none;background:transparent;color:#40407a;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:#0f0f34;color:#eeeef8}
+.tab-btn:hover:not(.active){color:#7878a8;background:#0a0a28}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid}
+.easy{color:#4ade80;background:#031b0e;border-color:#14532d}
+.medium{color:#fbbf24;background:#1f1200;border-color:#92400e}
+.hard{color:#f87171;background:#1f0606;border-color:#991b1b}
+.co-google{color:#4285f4;background:#030f22;border-color:#1e3a6e}
+.co-openai{color:#19c37d;background:#020d08;border-color:#065f46}
+.co-anthropic{color:#cf9c6e;background:#120a02;border-color:#44280a}
+.co-meta{color:#0ea5e9;background:#020c18;border-color:#0c4a6e}
+
+/* Progress */
+.prog-track{height:5px;background:#0c0c2a;border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;border-radius:999px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+/* Nav items */
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-radius:8px;margin:1px 8px;font-size:13px;font-weight:500;color:#40407a;transition:all .2s;border:1px solid transparent;position:relative}
+.nav-item:hover{color:#7878a8;background:#0c0c2c}
+.nav-item.active{color:#eeeef8;background:#0f0f34;border-color:#20205a}
+.nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:linear-gradient(180deg,#8b5cf6,#00d4ff);border-radius:2px}
+
+/* Question cards */
+.q-card{background:#08082a;border:1px solid #141440;border-radius:10px;padding:14px 16px;transition:all .2s;cursor:pointer}
+.q-card:hover{border-color:#28286a;background:#0c0c34}
+
+/* Challenge card */
+.ch-card{background:#08082a;border:1px solid #141440;border-radius:12px;padding:16px 18px;transition:all .25s}
+.ch-card:hover{border-color:#2e2e70;background:#0c0c34;transform:translateY(-1px)}
+.ch-card.solved{opacity:.55;border-color:#14532d;background:#020d06}
+
+/* Upload zone */
+.upload-zone{border:2px dashed #1a1a48;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .25s}
+.upload-zone:hover,.upload-zone.drag{border-color:#8b5cf6;background:#8b5cf60e}
+
+/* Section headings */
+.sec-h{font-size:clamp(18px,3vw,24px);font-weight:800;color:#eeeef8;margin-bottom:4px}
+.sec-sub{font-size:13px;color:#40407a}
 
 /* Grids */
 .g2{display:grid;grid-template-columns:1fr;gap:12px}
-@media(min-width:580px){.g2{grid-template-columns:1fr 1fr}}
-.g3{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:720px){.g3{grid-template-columns:1fr 1fr}}
+@media(min-width:600px){.g2{grid-template-columns:1fr 1fr}}
+.g3{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:700px){.g3{grid-template-columns:1fr 1fr}}
 @media(min-width:1100px){.g3{grid-template-columns:1fr 1fr 1fr}}
 .g4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 @media(min-width:900px){.g4{grid-template-columns:repeat(4,1fr)}}
 
-/* Code */
-.code{background:#02020c;border:1px solid #0e0e2a;border-radius:9px;padding:12px 15px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#7070c8;overflow-x:auto;white-space:pre;line-height:1.75}
+/* Code block */
+.code-block{background:#03030e;border:1px solid #141440;border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8888c8;overflow-x:auto;white-space:pre;line-height:1.7}
 
-/* shimmer xp bar */
-.xp-bar{background:linear-gradient(90deg,#3b82f6,#10b981,#f59e0b,#3b82f6);background-size:300% 100%;animation:shimmer 3s linear infinite}
+/* Review section */
+.rev-sec{background:#06061e;border:1px solid #141440;border-radius:10px;padding:14px 18px;margin-bottom:10px}
 
-/* ML unlock banner */
-.ml-banner{background:linear-gradient(135deg,#03190e,#051a0a);border:1px solid #10b98160;border-radius:16px;padding:28px 24px;animation:unlockPulse 1.5s ease 2}
+/* Glow utilities */
+.glow-purple{box-shadow:0 0 24px #8b5cf625}
+.glow-cyan{box-shadow:0 0 24px #00d4ff25}
+.glow-green{box-shadow:0 0 24px #10b98125}
+.glow-amber{box-shadow:0 0 24px #f59e0b25}
+
+/* Month pill */
+.month-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid;cursor:pointer;transition:all .2s}
+
+/* XP bar shimmer */
+.xp-shimmer{background:linear-gradient(90deg,#8b5cf6,#00d4ff,#10b981,#8b5cf6);background-size:200% 100%;animation:shimmer 2.5s linear infinite}
+
+/* Scrollable row */
+.scroll-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.scroll-row::-webkit-scrollbar{display:none}
 `;
 
-/* ─────────────────────────── THEME ─────────────────────────── */
+/* ===================================================================
+   THEME
+=================================================================== */
 const T = {
-  bg:"#04040f", surf:"#06061c", card:"#080820", border:"#12123a",
-  t1:"#e8e8f5", t2:"#5050a0", t3:"#1a1a42",
-  blue:"#3b82f6", green:"#10b981", amber:"#f59e0b",
-  red:"#ef4444", purple:"#a855f7", cyan:"#06b6d4",
+  bg:"#050510", surface:"#06061a", card:"#0b0b22", cardHover:"#0f0f30",
+  border:"#161640", borderHover:"#28286a",
+  t1:"#eeeef8", t2:"#6464a0", t3:"#20204a",
+  cyan:"#00d4ff", purple:"#8b5cf6", emerald:"#10b981",
+  amber:"#f59e0b", red:"#ef4444", blue:"#3b82f6",
+  pink:"#ec4899", orange:"#f97316",
 };
 
-/* ─────────────────────────── STORAGE ─────────────────────────── */
-function useStorage(key, def) {
-  const [v, setV] = useState(def);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    (async () => {
-      try { const r = await window.storage.get(key); if (r?.value !== undefined) setV(JSON.parse(r.value)); }
-      catch {}
-      setLoaded(true);
-    })();
-  }, [key]);
-  const save = useCallback(async (nv) => {
-    const val = typeof nv === "function" ? nv(v) : nv;
-    setV(val);
-    try { await window.storage.set(key, JSON.stringify(val)); } catch {}
-  }, [key, v]);
-  return [v, save, loaded];
-}
+const DIFF_STYLE = {
+  Easy:    { bg:"#031b0e", border:"#14532d", text:"#4ade80", cls:"easy" },
+  Medium:  { bg:"#1f1200", border:"#92400e", text:"#fbbf24", cls:"medium" },
+  Hard:    { bg:"#1f0606", border:"#991b1b", text:"#f87171", cls:"hard" },
+  Starter: { bg:"#031b0e", border:"#14532d", text:"#4ade80", cls:"easy" },
+};
 
-/* ─────────────────────────── PYTHON CURRICULUM ─────────────────────────── */
-/* 6 focused Python months. Each week has: topics[], projects[], repos[] */
-const PYTHON_MONTHS = [
+/* ===================================================================
+   XP LEVEL SYSTEM
+=================================================================== */
+const XP_LEVELS = [
+  { level:1, title:"Beginner",     min:0,    max:200,  color:"#6b7280", emoji:"🌱" },
+  { level:2, title:"Apprentice",   min:200,  max:500,  color:"#3b82f6", emoji:"📘" },
+  { level:3, title:"Practitioner", min:500,  max:1000, color:"#10b981", emoji:"⚡" },
+  { level:4, title:"Developer",    min:1000, max:1800, color:"#f59e0b", emoji:"🔥" },
+  { level:5, title:"Engineer",     min:1800, max:3000, color:"#a855f7", emoji:"🚀" },
+  { level:6, title:"Architect",    min:3000, max:4500, color:"#ec4899", emoji:"🏆" },
+  { level:7, title:"AI Master",    min:4500, max:99999,color:"#00d4ff", emoji:"🌌" },
+];
+const getLevel = (xp) => XP_LEVELS.find(l => xp >= l.min && xp < l.max) || XP_LEVELS[XP_LEVELS.length-1];
+
+/* ===================================================================
+   7-MONTH CURRICULUM
+=================================================================== */
+const CURRICULUM = [
   {
-    id: 1, emoji: "🐍", title: "Python Foundations", color: "#3b82f6",
-    sub: "Syntax, variables, control flow & functions",
-    weeks: [
-      {
-        n: 1, title: "Setup & Basic Syntax",
-        topics: [
-          "Python installation, VS Code setup, running .py files",
-          "Variables, data types: int, float, str, bool, None",
-          "print(), input(), f-strings and string formatting",
-          "Type casting: int(), str(), float(), bool()",
-          "Comments, PEP 8 style guide, naming conventions",
-        ],
-        projects: [
-          { title: "Personal Bio Card", desc: "Ask user for name/age/city/hobby, print a formatted card with borders", diff: "Easy" },
-          { title: "Unit Converter", desc: "Convert km↔miles, kg↔pounds, Celsius↔Fahrenheit", diff: "Easy" },
-          { title: "Receipt Generator", desc: "3 items + prices + 18% GST, formatted with ₹ symbol and totals", diff: "Medium" },
-        ],
-        repos: [
-          { name: "python-beginner-projects", url: "github.com/zhiwehu/Python-programming-exercises", stars: "18k", desc: "100 Python beginner exercises with solutions" },
-          { name: "the-algorithms/python", url: "github.com/TheAlgorithms/Python", stars: "190k", desc: "All algorithms implemented in Python" },
-          { name: "practical-python", url: "github.com/dabeaz-course/practical-python", stars: "9.5k", desc: "David Beazley's practical Python course materials" },
-        ],
-      },
-      {
-        n: 2, title: "Control Flow & Logic",
-        topics: [
-          "if / elif / else conditional statements",
-          "Comparison operators: ==, !=, <, >, <=, >=",
-          "Logical operators: and, or, not",
-          "Nested conditions and complex boolean logic",
-          "Ternary expression: value_if_true if condition else value_if_false",
-        ],
-        projects: [
-          { title: "Grade Calculator", desc: "Take 5 subject marks, compute weighted average, assign A+/A/B/C/D/F", diff: "Easy" },
-          { title: "BMI Analyzer", desc: "Input height+weight, calculate BMI, classify, give tailored advice", diff: "Easy" },
-          { title: "Income Tax Calculator", desc: "Indian tax slabs 2024, show breakdown at each slab, effective rate", diff: "Medium" },
-        ],
-        repos: [
-          { name: "python-exercises", url: "github.com/darkprinx/100-plus-Python-programming-exercises-extended", stars: "3.2k", desc: "100+ Python exercises with tests" },
-          { name: "coding-interview-gym", url: "github.com/partik-joshi/python-coding-interview", stars: "1.8k", desc: "Python interview questions with solutions" },
-          { name: "awesome-python", url: "github.com/vinta/awesome-python", stars: "220k", desc: "Curated list of awesome Python frameworks & resources" },
-        ],
-      },
-      {
-        n: 3, title: "Loops & Iteration",
-        topics: [
-          "for loops with range(start, stop, step)",
-          "while loops, break, continue, pass keywords",
-          "Nested loops and pattern printing",
-          "enumerate(), zip(), reversed(), sorted()",
-          "Loop-based algorithms: sum, count, min, max without builtins",
-        ],
-        projects: [
-          { title: "Number Guessing Game", desc: "Random 1-100, binary search hints, track attempts, session leaderboard", diff: "Easy" },
-          { title: "Star Pattern Gallery", desc: "8 patterns: pyramid, diamond, hollow square, X, Z using nested loops", diff: "Easy" },
-          { title: "Sorting Visualizer", desc: "Bubble + insertion sort step-by-step, show array as # bar chart each step", diff: "Hard" },
-        ],
-        repos: [
-          { name: "python-patterns", url: "github.com/faif/python-patterns", stars: "40k", desc: "Design patterns implemented in Python" },
-          { name: "leetcode-python", url: "github.com/neetcode-gh/leetcode", stars: "18k", desc: "LeetCode solutions with NeetCode explanations" },
-          { name: "algorithm-visualizer", url: "github.com/algorithm-visualizer/algorithm-visualizer", stars: "46k", desc: "Algorithm visualization tool" },
-        ],
-      },
-      {
-        n: 4, title: "Functions & Scope",
-        topics: [
-          "Defining functions: def, return, docstrings",
-          "Parameters: positional, keyword, default, *args, **kwargs",
-          "Variable scope: local, global, nonlocal",
-          "Lambda functions and anonymous functions",
-          "Recursion: base case, recursive case, call stack",
-        ],
-        projects: [
-          { title: "Calculator with History", desc: "All arithmetic + modulo + power. Log each operation with timestamp", diff: "Easy" },
-          { title: "Password Generator", desc: "Length + complexity config, check strength, generate multiple passwords", diff: "Medium" },
-          { title: "Fibonacci & Memoization", desc: "Compare naive recursion vs memoized vs iterative — show timing", diff: "Medium" },
-        ],
-        repos: [
-          { name: "python-cookbook", url: "github.com/dabeaz/python-cookbook", stars: "8.2k", desc: "Python Cookbook 3rd edition code samples" },
-          { name: "clean-code-python", url: "github.com/zedr/clean-code-python", stars: "21k", desc: "Clean Code principles applied to Python" },
-          { name: "wtfpython", url: "github.com/satwikkansal/wtfpython", stars: "35k", desc: "Exploring surprising Python snippets" },
-        ],
-      },
+    id:1, emoji:"🐍", title:"Python Mastery", color:"#3b82f6",
+    sub:"Core language, data structures & OOP",
+    totalXP:500,
+    weeks:[
+      { n:1, title:"Dev Setup & Computer Basics", topics:["VS Code, Python, Git installation","Binary & hexadecimal systems","Terminal commands (cd,ls,mkdir)","Variables & data types","Running first Python scripts"] },
+      { n:2, title:"Python Syntax & Variables",   topics:["Strings, ints, floats, booleans","f-strings & formatting","Type casting","String methods (.upper/.lower/.split)","Input/output & comments"] },
+      { n:3, title:"Control Flow & Logic",        topics:["if/elif/else statements","Logical operators: and, or, not","Comparison operators","Nested conditions","Boolean logic & truth tables"] },
+      { n:4, title:"Loops & Iteration",           topics:["for loops with range()","while loops & break/continue","enumerate() and zip()","Nested loops & patterns","Accumulator patterns"] },
+    ],
+    interviewQ:[
+      { q:"What is the difference between a list and a tuple in Python?", co:"Google", diff:"Easy" },
+      { q:"Explain Python's GIL and its impact on multi-threading.", co:"Anthropic", diff:"Hard" },
+      { q:"Write a function to flatten a deeply nested list without imports.", co:"Meta", diff:"Medium" },
+      { q:"What are Python generators? When would you prefer them over lists?", co:"OpenAI", diff:"Medium" },
+      { q:"Explain the difference between == and 'is' in Python.", co:"Google", diff:"Easy" },
+      { q:"Write a decorator that logs function execution time.", co:"Anthropic", diff:"Hard" },
+    ],
+    capstone:"CLI Task Manager with SQLite persistence, CRUD operations, and priority levels",
+  },
+  {
+    id:2, emoji:"⚙️", title:"Advanced Python & Data", color:"#f97316",
+    sub:"OOP, libraries, APIs & async",
+    totalXP:600,
+    weeks:[
+      { n:5, title:"Functions & Functional Programming", topics:["*args & **kwargs","Lambda, map, filter, reduce","Closures & decorators","Generators & yield","functools module"] },
+      { n:6, title:"OOP Deep Dive",                      topics:["Classes, inheritance, polymorphism","Magic/dunder methods","Abstract classes (ABC)","Properties & class methods","Design patterns intro"] },
+      { n:7, title:"File I/O & Databases",               topics:["Reading/writing files","JSON & CSV handling","SQLite with sqlite3","Context managers","Robust error handling"] },
+      { n:8, title:"NumPy, Pandas & APIs",               topics:["NumPy arrays & broadcasting","Pandas DataFrames & EDA","Data cleaning & missing values","requests library","REST API consumption"] },
+    ],
+    interviewQ:[
+      { q:"What is the difference between @classmethod and @staticmethod?", co:"Google", diff:"Medium" },
+      { q:"Explain Python's memory management and garbage collection.", co:"Anthropic", diff:"Hard" },
+      { q:"Write a context manager class for timing code execution.", co:"Meta", diff:"Medium" },
+      { q:"What is the difference between deep copy and shallow copy?", co:"OpenAI", diff:"Easy" },
+      { q:"How does Pandas handle missing data? What are best practices?", co:"Google", diff:"Medium" },
+      { q:"Design a simple event system using Python's built-in features.", co:"Anthropic", diff:"Hard" },
+    ],
+    capstone:"Data analysis pipeline: fetch from API → process with Pandas → visualize → save to SQLite",
+  },
+  {
+    id:3, emoji:"🤖", title:"LLM Fundamentals", color:"#a855f7",
+    sub:"Transformers, tokenization & prompt engineering",
+    totalXP:700,
+    weeks:[
+      { n:9,  title:"How LLMs Work",           topics:["Transformer architecture overview","Attention mechanism intuition","Tokenization & vocabulary","Context windows & limits","Temperature, top-p & sampling"] },
+      { n:10, title:"Prompt Engineering",       topics:["Zero-shot, few-shot, chain-of-thought","System prompts & personas","Role prompting techniques","Prompt injection & safety","Structured output prompting"] },
+      { n:11, title:"LLM APIs & Integration",   topics:["OpenAI & Anthropic APIs","Streaming responses","Token counting & cost optimization","Retry logic & error handling","Building multi-turn chatbots"] },
+      { n:12, title:"Embeddings & Search",      topics:["Vector embeddings concept","Cosine similarity from scratch","Semantic search implementation","Embedding models comparison","Use cases: search, recommendation"] },
+    ],
+    interviewQ:[
+      { q:"Explain the attention mechanism. Why is self-attention O(n²)?", co:"OpenAI", diff:"Hard" },
+      { q:"What is the difference between fine-tuning and prompt engineering?", co:"Anthropic", diff:"Medium" },
+      { q:"How would you reduce hallucinations in an LLM application?", co:"Google", diff:"Medium" },
+      { q:"What is tokenization? Why do some words split into multiple tokens?", co:"Meta", diff:"Easy" },
+      { q:"Explain the trade-offs between different temperature values.", co:"OpenAI", diff:"Medium" },
+      { q:"Design a prompt to reliably extract structured JSON from unstructured text.", co:"Anthropic", diff:"Hard" },
+    ],
+    capstone:"AI-powered document Q&A: upload PDF → extract text → semantic search → answer with LLM",
+  },
+  {
+    id:4, emoji:"🧠", title:"AI Engineering", color:"#10b981",
+    sub:"RAG, agents, tool use & evaluation",
+    totalXP:750,
+    weeks:[
+      { n:13, title:"Retrieval-Augmented Generation", topics:["RAG architecture & components","Vector databases (Chroma, Pinecone)","Chunking strategies","Embedding + retrieval pipeline","RAG evaluation metrics"] },
+      { n:14, title:"LLM Agents",                     topics:["Agent loop: perceive-reason-act","Tool calling & function use","ReAct pattern","Multi-step reasoning chains","Agent memory patterns"] },
+      { n:15, title:"LangChain & LlamaIndex",         topics:["LangChain fundamentals","Chains & pipelines","Document loaders","Memory modules","Building production agents"] },
+      { n:16, title:"Evaluation & Observability",     topics:["LLM eval frameworks","RAGAS for RAG evaluation","Logging & tracing (LangSmith)","Cost monitoring strategies","A/B testing LLM outputs"] },
+    ],
+    interviewQ:[
+      { q:"What are the key components of a RAG system and how do they interact?", co:"Anthropic", diff:"Medium" },
+      { q:"How do you evaluate the quality of a RAG pipeline? What metrics matter?", co:"Google", diff:"Hard" },
+      { q:"Explain the ReAct prompting pattern. When would you use it?", co:"OpenAI", diff:"Medium" },
+      { q:"What are the limitations of LLM agents in production?", co:"Meta", diff:"Hard" },
+      { q:"How would you handle context window limits in a document chat app?", co:"Anthropic", diff:"Medium" },
+      { q:"Design a tool-calling system where an LLM can query a database.", co:"Google", diff:"Hard" },
+    ],
+    capstone:"Full RAG agent: crawl website → build vector store → agent with web search + code tools",
+  },
+  {
+    id:5, emoji:"🔬", title:"ML & Deep Learning", color:"#f59e0b",
+    sub:"Scikit-learn, PyTorch & NLP",
+    totalXP:800,
+    weeks:[
+      { n:17, title:"ML Foundations",            topics:["Supervised vs unsupervised learning","Train/val/test splits","Bias-variance tradeoff","Scikit-learn pipeline","Cross-validation strategies"] },
+      { n:18, title:"Classical ML Algorithms",   topics:["Linear & logistic regression","Decision trees & random forests","SVM fundamentals","Gradient boosting (XGBoost)","Feature engineering techniques"] },
+      { n:19, title:"Neural Networks & PyTorch", topics:["Perceptron & MLP architecture","Backpropagation intuition","PyTorch tensors & autograd","Training loop from scratch","CNNs for image classification"] },
+      { n:20, title:"NLP & Fine-tuning",         topics:["Text preprocessing pipeline","TF-IDF vs embeddings","BERT fine-tuning with HuggingFace","Named entity recognition","Sentiment analysis project"] },
+    ],
+    interviewQ:[
+      { q:"Explain the bias-variance tradeoff. How do you diagnose and fix each?", co:"Google", diff:"Medium" },
+      { q:"What is gradient descent? Why do we use mini-batch instead of full batch?", co:"Meta", diff:"Medium" },
+      { q:"How does backpropagation work? Walk me through the math.", co:"OpenAI", diff:"Hard" },
+      { q:"When would you choose a random forest over a neural network?", co:"Anthropic", diff:"Medium" },
+      { q:"What is dropout and batch normalization? Why do they help?", co:"Google", diff:"Hard" },
+      { q:"How do you handle severe class imbalance in classification?", co:"Meta", diff:"Easy" },
+    ],
+    capstone:"End-to-end NLP classifier: fine-tune BERT on domain data, evaluate with custom metrics, deploy as API",
+  },
+  {
+    id:6, emoji:"🚀", title:"Production AI Systems", color:"#ef4444",
+    sub:"Deployment, safety & career prep",
+    totalXP:900,
+    weeks:[
+      { n:21, title:"AI System Design",    topics:["Latency vs cost tradeoffs","LLM caching strategies","Async processing & queues","Rate limiting & throttling","Multi-model routing"] },
+      { n:22, title:"Deployment & MLOps", topics:["Docker & containerization","FastAPI for ML serving","Model versioning (MLflow)","CI/CD for ML pipelines","Performance monitoring & drift"] },
+      { n:23, title:"AI Safety & Ethics",  topics:["Prompt injection attacks","Content filtering strategies","Bias detection & mitigation","RLHF & Constitutional AI","Responsible AI principles"] },
+      { n:24, title:"Fine-tuning & Career",topics:["When to fine-tune vs prompt","LoRA & PEFT methods","Building your AI portfolio","Technical interview prep","Open source contributions"] },
+    ],
+    interviewQ:[
+      { q:"Design a production LLM system to handle 10,000 requests/second.", co:"Google", diff:"Hard" },
+      { q:"Explain prompt injection attacks. How do you defend against them?", co:"Anthropic", diff:"Hard" },
+      { q:"What is LoRA fine-tuning? When is it better than full fine-tuning?", co:"OpenAI", diff:"Medium" },
+      { q:"How do you monitor model performance in production? What metrics?", co:"Meta", diff:"Medium" },
+      { q:"Design a content moderation system for social media using LLMs.", co:"Google", diff:"Hard" },
+      { q:"Walk me through your best AI project end-to-end.", co:"Anthropic", diff:"Medium" },
+    ],
+    capstone:"Production AI service: fine-tuned model + RAG + agent, deployed on cloud with monitoring",
+  },
+  {
+    id:7, emoji:"🌌", title:"ML Transition & Capstone", color:"#6366f1",
+    sub:"Advanced ML + graduation project",
+    totalXP:1000,
+    weeks:[
+      { n:25, title:"Advanced ML & Research",  topics:["Reading & implementing ML papers","Transformer architecture deep dive","Diffusion models overview","Frontier models landscape","Contributing to open source"] },
+      { n:26, title:"Capstone Project Sprint", topics:["Problem definition & research","System design document","Implementation & testing","Evaluation & iteration","Demo, deploy & open-source"] },
+    ],
+    interviewQ:[
+      { q:"Explain the architecture of a large language model. What innovations matter?", co:"OpenAI", diff:"Hard" },
+      { q:"What are the key differences between BERT and GPT architectures?", co:"Google", diff:"Hard" },
+      { q:"How does RLHF (Reinforcement Learning from Human Feedback) work?", co:"Anthropic", diff:"Hard" },
+      { q:"How do you stay current with ML research? Walk through your process.", co:"Meta", diff:"Easy" },
+      { q:"What would you build if you had access to frontier model APIs and 30 days?", co:"Anthropic", diff:"Medium" },
+    ],
+    capstone:"Your signature AI project: novel application combining everything, deployed live, open-sourced",
+  },
+];
+
+/* ===================================================================
+   ALL CODING CHALLENGES (42 total, 6 per month)
+=================================================================== */
+const ALL_CHALLENGES = [
+  // ── Month 1: Python Mastery ──
+  { id:"m1c1", title:"FizzBuzz Advanced",       diff:"Easy",   xp:30,  month:1,
+    desc:"Print 1–100. Multiples of 3→'Fizz', 5→'Buzz', 15→'FizzBuzz', 7→'Whizz'. Handle ALL combinations.",
+    hint:"Check combined conditions first (e.g. 105=3×5×7). Use modulo % for each divisor." },
+  { id:"m1c2", title:"Caesar Cipher",           diff:"Easy",   xp:40,  month:1,
+    desc:"Encrypt & decrypt a string using Caesar cipher. Preserve case, skip non-alpha chars. Support any shift value.",
+    hint:"Use ord()/chr(). Keep within a-z range: (ord(c)-65+shift)%26 + 65 for uppercase." },
+  { id:"m1c3", title:"Number System Converter", diff:"Easy",   xp:35,  month:1,
+    desc:"Convert numbers between binary, decimal, octal, and hex WITHOUT using bin()/hex()/oct(). Support fractions.",
+    hint:"For dec→bin: repeatedly divide by 2, collect remainders. For fractions: multiply × 2." },
+  { id:"m1c4", title:"Roman Numeral Converter", diff:"Medium", xp:65,  month:1,
+    desc:"Convert integers (1–3999) to Roman numerals and back. Handle all subtractive forms (IV, IX, XL, etc.).",
+    hint:"Use [(1000,'M'),(900,'CM'),...(1,'I')] pairs. Greedy subtraction for int→Roman." },
+  { id:"m1c5", title:"Sorting Visualizer",      diff:"Medium", xp:75,  month:1,
+    desc:"Implement bubble, selection & insertion sort. Count comparisons & swaps. Print array state after each step.",
+    hint:"Nested loops for each. Track ops with a counter variable. Print array as bar chart using '#'." },
+  { id:"m1c6", title:"Mini In-Memory Database", diff:"Hard",   xp:110, month:1,
+    desc:"Build a simple in-memory database supporting INSERT, SELECT with WHERE (AND/OR), UPDATE, DELETE.",
+    hint:"Store as list of dicts. Parse WHERE string manually. Support int/str type coercion in comparisons." },
+
+  // ── Month 2: Advanced Python ──
+  { id:"m2c1", title:"Decorator Stack",         diff:"Easy",   xp:45,  month:2,
+    desc:"Write 3 decorators: @timer, @retry(n), and @memoize. Stack them. Show that order changes behavior.",
+    hint:"@retry loops n times on exception. @memoize uses a dict cache. functools.wraps preserves signature." },
+  { id:"m2c2", title:"Class Hierarchy Zoo",     diff:"Easy",   xp:50,  month:2,
+    desc:"Build Animal→Mammal→Dog/Cat class hierarchy. Use abstract methods, properties, dunder methods. Make sortable by age.",
+    hint:"from abc import ABC, abstractmethod. __lt__ for <. __repr__ for clean display. @property for computed attrs." },
+  { id:"m2c3", title:"Async Web Scraper",       diff:"Medium", xp:85,  month:2,
+    desc:"Use asyncio + aiohttp to fetch 10 URLs concurrently. Collect titles, status codes, and response times.",
+    hint:"async def + await aiohttp.ClientSession(). asyncio.gather() for concurrent fetching. Try/except per URL." },
+  { id:"m2c4", title:"Pandas Data Pipeline",   diff:"Medium", xp:90,  month:2,
+    desc:"Load a messy CSV, clean nulls, normalize types, detect outliers via IQR, export clean data + stats report.",
+    hint:"Chain .pipe() calls. IQR = Q3-Q1, outlier if <Q1-1.5*IQR. df.to_csv() + df.describe().to_json()." },
+  { id:"m2c5", title:"Custom ORM",             diff:"Hard",   xp:125, month:2,
+    desc:"Build a mini ORM over SQLite. Define models as classes. Support: User.where(age>18).order_by('name').limit(5).",
+    hint:"Metaclass to register models. Build SQL from method chain (return self for chaining). sqlite3 for execution." },
+  { id:"m2c6", title:"Plugin Architecture",    diff:"Hard",   xp:115, month:2,
+    desc:"Design a plugin system: plugins are .py files in a folder, auto-discovered, registered by name, hot-reloadable.",
+    hint:"importlib.import_module() for dynamic loading. importlib.reload() for hot reload. Registry as dict." },
+
+  // ── Month 3: LLM Fundamentals ──
+  { id:"m3c1", title:"Prompt Template Engine", diff:"Easy",   xp:55,  month:3,
+    desc:"Build a prompt template system with {variables}, version history, A/B test tracking, and usage statistics.",
+    hint:"str.format(**kwargs) for templates. Store versions in list. Dict for usage stats." },
+  { id:"m3c2", title:"Token Counter & Optimizer",diff:"Easy", xp:50,  month:3,
+    desc:"Build a token counter (using tiktoken) that estimates cost for GPT-3.5/4 and Claude. Show cost breakdown per message.",
+    hint:"import tiktoken. cl100k_base encoding for GPT. Cost = token_count × price_per_token. Show a table." },
+  { id:"m3c3", title:"Streaming Chatbot CLI",   diff:"Medium", xp:85, month:3,
+    desc:"Terminal chatbot using Claude API with streaming output, full conversation history, system prompt, and /commands.",
+    hint:"stream=True in API call. Append assistant message to history after each turn. /clear resets history." },
+  { id:"m3c4", title:"Semantic Search Engine",  diff:"Medium", xp:95, month:3,
+    desc:"Semantic search over 50+ text snippets: generate embeddings, store in numpy, search by cosine similarity, top-k results.",
+    hint:"sentence-transformers or OpenAI embeddings. np.dot(a,b)/(norm(a)*norm(b)) for cosine. np.argsort for ranking." },
+  { id:"m3c5", title:"Structured Data Extractor",diff:"Hard", xp:130, month:3,
+    desc:"Reliably extract structured data from any text using LLMs. Handle validation, retries on invalid output, schema enforcement.",
+    hint:"Pydantic schemas. Retry with corrective prompt on ValidationError. Include schema in system prompt." },
+  { id:"m3c6", title:"Multi-Persona Chatbot",   diff:"Hard",  xp:135, month:3,
+    desc:"Chatbot with 3 personas (teacher, code reviewer, debugger) that can hand off context between each other.",
+    hint:"Separate system prompt per persona. Shared message history. Parse 'HANDOFF:persona' trigger in responses." },
+
+  // ── Month 4: AI Engineering ──
+  { id:"m4c1", title:"Basic RAG System",        diff:"Easy",  xp:70,  month:4,
+    desc:"Load a PDF, chunk it, embed with any model, store in dict, retrieve by similarity, answer questions with LLM.",
+    hint:"PyPDF2 for PDF. Split by paragraph. Store {idx: (text, embedding)}. Retrieve top-3 for context." },
+  { id:"m4c2", title:"Tool-Calling Agent",       diff:"Medium",xp:105, month:4,
+    desc:"ReAct agent with 3 tools: web_search, calculator, and code_runner. Solve multi-step problems autonomously.",
+    hint:"Define tools as JSON schema. Loop: LLM decides → call tool → return result. Max 5 iterations." },
+  { id:"m4c3", title:"RAG Evaluation Harness",  diff:"Medium", xp:95, month:4,
+    desc:"Evaluate a RAG pipeline: measure faithfulness, answer relevance, and context precision. Generate test QA dataset.",
+    hint:"Create QA pairs from docs manually. Use second LLM as judge. Score 0-1 per metric. Average across questions." },
+  { id:"m4c4", title:"Memory-Augmented Agent",  diff:"Hard",  xp:140, month:4,
+    desc:"Agent with episodic memory: stores session summaries, retrieves relevant past context, uses it to improve responses.",
+    hint:"Summarize past sessions with LLM. Embed summaries. Retrieve top-2 on each new query. Inject as context." },
+  { id:"m4c5", title:"Multi-Agent Pipeline",    diff:"Hard",  xp:155, month:4,
+    desc:"3-agent pipeline: Researcher → Analyst → Writer. Each specializes and builds on the previous agent's structured output.",
+    hint:"Pass outputs as structured JSON between agents. Each agent has specialized system prompt and unique tools." },
+  { id:"m4c6", title:"Hybrid Search RAG",       diff:"Hard",  xp:145, month:4,
+    desc:"Combine BM25 (keyword) + vector search. Merge results with reciprocal rank fusion (RRF). Compare vs each alone.",
+    hint:"rank_bm25 library. Chroma for vectors. RRF: score = Σ 1/(k+rank_i). k=60 is standard." },
+
+  // ── Month 5: ML & Deep Learning ──
+  { id:"m5c1", title:"Linear Regression from Scratch",diff:"Easy",xp:65, month:5,
+    desc:"Implement linear regression with gradient descent in pure NumPy. Plot loss curve. Compare to sklearn's result.",
+    hint:"Loss = MSE. Gradient = -(2/n)*X.T @ (y-Xw). Update: w -= lr*grad. Track loss every 100 steps." },
+  { id:"m5c2", title:"Decision Tree from Scratch",diff:"Medium",xp:105, month:5,
+    desc:"Implement decision tree classifier using gini impurity. No sklearn. Compare to sklearn's DecisionTreeClassifier.",
+    hint:"Recursive splitting. Gini: 1-Σp². Best split: max info gain. Base cases: pure node or max depth." },
+  { id:"m5c3", title:"Neural Net from Scratch", diff:"Hard",  xp:160, month:5,
+    desc:"2-layer neural net in pure NumPy: forward pass, backprop, SGD. Train on XOR, then MNIST subset.",
+    hint:"Linear→ReLU→Linear→Softmax. Backprop with chain rule. dW1 = X.T @ (dA1 * relu_grad). Small learning rate." },
+  { id:"m5c4", title:"BERT Sentiment Classifier",diff:"Medium",xp:95, month:5,
+    desc:"Fine-tune DistilBERT on custom sentiment dataset using HuggingFace Trainer API. Achieve >90% accuracy.",
+    hint:"AutoTokenizer + AutoModelForSequenceClassification. TrainingArguments. Trainer.train(). evaluate()." },
+  { id:"m5c5", title:"Feature Engineering Pipeline",diff:"Medium",xp:85, month:5,
+    desc:"Robust sklearn pipeline: feature selection, categorical encoding, scaling, imputation for a messy tabular dataset.",
+    hint:"ColumnTransformer for mixed types. SelectKBest(f_classif). StandardScaler. SimpleImputer. Pipeline chaining." },
+  { id:"m5c6", title:"Mini AutoML System",      diff:"Hard",  xp:145, month:5,
+    desc:"Try 5 models with different hyperparameters, select best by cross-validation, explain with SHAP values.",
+    hint:"GridSearchCV per model. Best: max cv_score. SHAP: shap.TreeExplainer for trees, KernelExplainer for others." },
+
+  // ── Month 6: Production AI ──
+  { id:"m6c1", title:"FastAPI ML Service",      diff:"Easy",  xp:75,  month:6,
+    desc:"Wrap a trained model in FastAPI: /predict endpoint, /health check, Pydantic validation, auto-swagger docs.",
+    hint:"@app.post('/predict'). Load model at startup with lifespan context manager. BaseModel for request/response." },
+  { id:"m6c2", title:"Docker ML Pipeline",      diff:"Medium",xp:105, month:6,
+    desc:"Containerize ML service: multi-stage Docker build. Docker Compose: model server + Redis cache + nginx proxy.",
+    hint:"FROM python:3.11-slim. Multi-stage: builder → runner. COPY requirements.txt first for caching." },
+  { id:"m6c3", title:"Prompt Injection Defense",diff:"Medium",xp:115, month:6,
+    desc:"Build a system that detects & blocks prompt injection attacks. Test against 20 known patterns. Measure false positive rate.",
+    hint:"Hybrid classifier + rule-based. Train on injection examples dataset. Threshold tuning for false positive balance." },
+  { id:"m6c4", title:"LLM Cost Router",         diff:"Hard",  xp:145, month:6,
+    desc:"Auto-route queries to cheapest model meeting quality requirements. Benchmark cost vs quality tradeoff.",
+    hint:"Complexity classifier (tiny model). Route: simple→Haiku, medium→Sonnet, complex→Opus. Log cost per request." },
+  { id:"m6c5", title:"A/B Testing Framework",   diff:"Hard",  xp:135, month:6,
+    desc:"A/B test LLM prompts: split traffic, collect ratings, compute statistical significance, auto-select winner.",
+    hint:"Hash(user_id) for consistent routing. Wilson score for confidence. Chi-square test for significance at p<0.05." },
+  { id:"m6c6", title:"Full MLOps Pipeline",     diff:"Hard",  xp:155, month:6,
+    desc:"Complete MLOps: data versioning, model training, evaluation gates, staging, production deploy with rollback.",
+    hint:"DVC for data. MLflow for experiments. GitHub Actions for CI/CD. Blue-green deployment with health checks." },
+
+  // ── Month 7: Capstone ──
+  { id:"m7c1", title:"Implement an ML Paper",   diff:"Hard",  xp:200, month:7,
+    desc:"Pick a recent arXiv paper (last 6 months). Implement the key algorithm from scratch. Write a blog post explaining it.",
+    hint:"Start with papers that have clear pseudocode. Test on toy dataset first. Papers With Code is a great resource." },
+  { id:"m7c2", title:"Capstone AI Product",     diff:"Hard",  xp:300, month:7,
+    desc:"Build your signature AI project: novel application combining LLMs, RAG, or fine-tuning that solves a real problem.",
+    hint:"What daily problem can AI solve? Build MVP first. Add features iteratively. Deploy on Hugging Face Spaces or Railway." },
+].map(c => {
+  const m = CURRICULUM.find(x => x.id === c.month);
+  return { ...c, monthTitle: m?.title || "", monthColor: m?.color || T.purple, monthEmoji: m?.emoji || "📚" };
+});
+
+/* ===================================================================
+   WEEKEND MODULES (6 enhanced modules)
+=================================================================== */
+const WEEKEND_MODULES = [
+  {
+    id:"git", emoji:"🌿", title:"Git & GitHub Mastery", color:"#f97316", day:"Saturday",
+    description:"Version control is a superpower. Track history, collaborate, and build your public portfolio.",
+    topics:[
+      { title:"Git Basics", content:"init, add, commit, status, log — daily workflow", exercises:["5 commits with conventional messages (feat:, fix:, docs:)","Practice git log --oneline --graph","Run git diff HEAD~3 to see changes"] },
+      { title:"Branching", content:"Feature branches, merge, rebase, conflict resolution", exercises:["Create feature/calculator branch","Intentionally create and resolve a merge conflict","Cherry-pick a commit from another branch"] },
+      { title:"GitHub Remote", content:"push, pull, clone, fork, pull requests", exercises:["Push local repo to GitHub","Fork a public repo and open a PR","Add a CI badge to your README"] },
+      { title:"Best Practices", content:"Conventional commits, .gitignore, README badges", exercises:["Write a perfect README with setup instructions","Set up .gitignore for Python projects","Add GitHub Actions workflow for auto-testing"] },
+    ],
+    challenge:"Fork any open-source Python project, fix a bug or add a feature, and open a real Pull Request.",
+  },
+  {
+    id:"dsa", emoji:"🧮", title:"DSA Interview Prep", color:"#3b82f6", day:"Sunday",
+    description:"The language of technical interviews. Master these patterns to crack FAANG.",
+    topics:[
+      { title:"Arrays & Two Pointers", content:"Sliding window, prefix sums, two pointer patterns", exercises:["Two Sum with HashMap","Longest substring without repeating chars","Maximum subarray sum (Kadane's)"] },
+      { title:"Recursion & Backtracking", content:"Call stack, base cases, recursive trees", exercises:["Fibonacci with memoization","All permutations of a string","Solve N-Queens for N=4"] },
+      { title:"Sorting & Searching", content:"QuickSort, MergeSort, Binary Search", exercises:["Implement QuickSort from scratch","Binary search on rotated sorted array","Find kth largest element"] },
+      { title:"Trees & Graphs", content:"BFS, DFS, tree traversals", exercises:["Level-order traversal (BFS)","Detect cycle in directed graph","Lowest common ancestor of BST"] },
+    ],
+    challenge:"Solve 3 LeetCode Mediums using patterns learned today. Document time/space complexity for each.",
+  },
+  {
+    id:"llmarch", emoji:"🧬", title:"LLM Architecture Deep Dive", color:"#a855f7", day:"Saturday",
+    description:"Understand what's really happening inside large language models.",
+    topics:[
+      { title:"Transformer Architecture", content:"Encoder/decoder, attention heads, positional encoding", exercises:["Draw the full transformer architecture from memory","Explain why positional encoding is needed","Calculate params in a 7B model"] },
+      { title:"Training Dynamics", content:"Pre-training, fine-tuning, RLHF, Constitutional AI", exercises:["Explain what happens during pre-training","How does RLHF change model behavior?","What is Constitutional AI and why does it matter?"] },
+      { title:"Model Families", content:"GPT, Claude, Llama, Mistral — key differences", exercises:["Compare GPT-4 vs Claude 3 architecturally","Why do some models have different context lengths?","What is mixture-of-experts (MoE)?"] },
+      { title:"Inference & Optimization", content:"KV cache, quantization, speculative decoding", exercises:["Explain how KV caching reduces compute","What does 4-bit quantization sacrifice?","How does speculative decoding work?"] },
+    ],
+    challenge:"Write a detailed blog post explaining one LLM concept (your choice) to a general technical audience.",
+  },
+  {
+    id:"prompteng", emoji:"⚡", title:"Advanced Prompt Engineering", color:"#10b981", day:"Sunday",
+    description:"Master the craft of getting the best out of LLMs through expert prompting.",
+    topics:[
+      { title:"Advanced Techniques", content:"CoT, ToT, self-consistency, meta-prompting", exercises:["Implement chain-of-thought for a math problem","Try tree-of-thought on a planning problem","Self-consistency: run 5x, take majority vote"] },
+      { title:"Prompt Optimization", content:"DSPy, automatic prompt optimization, eval-driven", exercises:["Set up DSPy for a simple task","A/B test two prompt versions on 20 examples","Measure prompt performance with custom metric"] },
+      { title:"Safety & Red-teaming", content:"Jailbreaks, injection, refusal calibration", exercises:["Try 10 known jailbreak attempts on Claude","Document 5 prompt injection vectors","Design safety system prompt for a chatbot"] },
+      { title:"Production Prompts", content:"Versioning, testing, deployment best practices", exercises:["Create a prompt registry with versioning","Write tests for your most critical prompts","Measure latency impact of prompt length"] },
+    ],
+    challenge:"Build a prompt optimization system: given a task and examples, automatically improve a prompt.",
+  },
+  {
+    id:"opensrc", emoji:"🌍", title:"Open Source AI Projects", color:"#f59e0b", day:"Saturday",
+    description:"Learn by contributing to real AI projects used by millions.",
+    topics:[
+      { title:"Finding Good Issues", content:"good-first-issue, help-wanted, documentation", exercises:["Browse LangChain/LlamaIndex open issues","Find 3 issues you could realistically fix","Read the contributing guide of any major AI repo"] },
+      { title:"Code Reading Skills", content:"Understanding large codebases quickly", exercises:["Map the architecture of LangChain in 30 min","Trace a request through the codebase","Find where a specific feature is implemented"] },
+      { title:"Making Contributions", content:"Forking, PR etiquette, reviews", exercises:["Fix a documentation typo (any repo)","Add a test for an untested function","Improve an error message in any library"] },
+      { title:"Building in Public", content:"Blogging, X/Twitter threads, demos", exercises:["Write a tutorial for something you built","Post a demo on Hugging Face Spaces","Tweet about what you learned this week"] },
+    ],
+    challenge:"Make your first merged contribution to any open-source AI/ML project by end of the week.",
+  },
+  {
+    id:"sysdesign", emoji:"🏛️", title:"AI System Design", color:"#ec4899", day:"Sunday",
+    description:"Design scalable AI systems like a senior engineer at a top tech company.",
+    topics:[
+      { title:"AI System Patterns", content:"Caching, async queues, model routing, fallbacks", exercises:["Design caching strategy for LLM responses","When to use async vs sync for ML inference?","Design a fallback chain: Claude → GPT-4 → cached"] },
+      { title:"Scalability", content:"Horizontal scaling, load balancing, batch inference", exercises:["How would you scale to 1M users?","Design batch inference for overnight jobs","Estimate cost for 10K daily AI queries"] },
+      { title:"Data Architecture", content:"Vector DBs, SQL, event streaming", exercises:["Design schema for a RAG system","Choose between Pinecone, Chroma, and PgVector","When would you use Kafka for an AI system?"] },
+      { title:"Case Studies", content:"ChatGPT, Claude, Gemini — production learnings", exercises:["Estimate ChatGPT's infrastructure cost per query","How does Anthropic likely handle Claude's safety filters?","Design the architecture for a coding assistant like Cursor"] },
+    ],
+    challenge:"Design the full system architecture for a Perplexity-like AI search engine. Draw the diagram, estimate costs.",
+  },
+];
+
+/* ===================================================================
+   DETAILED WEEK DATA (Month 1 — kept for Day Tracker)
+=================================================================== */
+const WEEKS_DATA = [
+  {
+    id:"w1", n:1, month:1, title:"Dev Setup & Computer Basics", color:"#3b82f6",
+    topics:[
+      { text:"Hardware: CPU, RAM, Storage, GPU roles",           idea:"Build: System Info Printer using platform module" },
+      { text:"Binary & hexadecimal number systems",             idea:"Build: Number Converter CLI — binary/decimal/hex" },
+      { text:"Terminal commands: cd, ls, mkdir, touch, rm",      idea:"Build: Folder Organiser using os.walk()" },
+      { text:"Python installation, VS Code, Git setup",          idea:"Build: Dev Environment Checker script" },
+      { text:"Running your first .py file from terminal",        idea:"Build: Hello World → Personal Bio program" },
+    ],
+    days:[
+      { n:1, label:"System Explorer",     plan:"List PC specs in specs.txt via terminal" },
+      { n:2, label:"Binary Converter",    plan:"Convert 0–15 to binary by hand, verify with Python" },
+      { n:3, label:"First .py File",      plan:"Create hello.py — print name, age, college" },
+      { n:4, label:"Folder Structure",    plan:"mkdir my-projects/week{1..26} from terminal" },
+      { n:5, label:"About Me Program",    plan:"Use input() to ask name/age/city, print formatted" },
+      { n:6, label:"Number Systems Quiz", plan:"Convert 42→binary, 0b11010→decimal, 0xFF→decimal" },
+      { n:7, label:"Week README Push",    plan:"Write README.md with learnings and push to GitHub" },
     ],
   },
   {
-    id: 2, emoji: "📦", title: "Data Structures", color: "#f97316",
-    sub: "Lists, dicts, sets, tuples & comprehensions",
-    weeks: [
-      {
-        n: 5, title: "Lists & Tuples",
-        topics: [
-          "List creation, indexing, slicing [start:stop:step]",
-          "List methods: append, insert, remove, pop, sort, reverse",
-          "List comprehensions with conditions and nested loops",
-          "Tuples: immutability, packing/unpacking, named tuples",
-          "2D lists / matrices: creation, access, iteration patterns",
-        ],
-        projects: [
-          { title: "Student Grade Manager", desc: "Add/remove/update students. Sort by name or grade. Compute class stats.", diff: "Easy" },
-          { title: "Matrix Operations", desc: "Add, multiply, transpose matrices using only 2D lists (no numpy)", diff: "Medium" },
-          { title: "Sliding Window Algorithms", desc: "Max subarray, longest substring — implement 5 classic sliding window problems", diff: "Hard" },
-        ],
-        repos: [
-          { name: "python-ds", url: "github.com/prabhupant/python-ds", stars: "2.1k", desc: "Data structures in Python with visualizations" },
-          { name: "algorithms-python", url: "github.com/keon/algorithms", stars: "24k", desc: "Minimal examples of data structures and algorithms" },
-          { name: "pygorithm", url: "github.com/OmkarPathak/pygorithm", stars: "3.7k", desc: "Python module for learning algorithms with step-by-step display" },
-        ],
-      },
-      {
-        n: 6, title: "Dictionaries & Sets",
-        topics: [
-          "Dict creation, access, .get(), .keys(), .values(), .items()",
-          "Dict comprehensions and nested dicts",
-          "Sets: union, intersection, difference, symmetric difference",
-          "Frozen sets and set operations for deduplication",
-          "collections module: Counter, defaultdict, OrderedDict, deque",
-        ],
-        projects: [
-          { title: "Word Frequency Analyzer", desc: "Input any text. Top 10 words, bar chart with #, unique words, avg length", diff: "Easy" },
-          { title: "Contact Book", desc: "CRUD contacts (name/phone/email). Search by any field. Export to CSV.", diff: "Medium" },
-          { title: "LRU Cache", desc: "Implement LRU cache from scratch using OrderedDict. Support get() and put()", diff: "Hard" },
-        ],
-        repos: [
-          { name: "python-cheatsheet", url: "github.com/gto76/python-cheatsheet", stars: "37k", desc: "Comprehensive Python cheatsheet with examples" },
-          { name: "collections-examples", url: "github.com/pymotw/pymotw-3", stars: "1.9k", desc: "Python Module of the Week — all stdlib examples" },
-          { name: "interview-prep", url: "github.com/donnemartin/interactive-coding-challenges", stars: "29k", desc: "Interactive coding challenges with Jupyter notebooks" },
-        ],
-      },
-      {
-        n: 7, title: "Strings & File I/O",
-        topics: [
-          "String methods: split, join, strip, replace, find, count, format",
-          "Regular expressions with re module: search, findall, sub, groups",
-          "File handling: open(), read, write, append, context managers with",
-          "CSV and JSON reading/writing with csv and json modules",
-          "Error handling: try/except/finally, custom exceptions",
-        ],
-        projects: [
-          { title: "Log File Analyzer", desc: "Parse a server log file. Count errors/warnings by type. Show timeline.", diff: "Medium" },
-          { title: "Mini Markdown Parser", desc: "Convert # headings, **bold**, *italic*, - lists to HTML output", diff: "Medium" },
-          { title: "Data Cleaning Tool", desc: "Read messy CSV, fix nulls/duplicates/types, write clean version + report", diff: "Hard" },
-        ],
-        repos: [
-          { name: "regex101", url: "github.com/nicktindall/cyclon.p2p", stars: "—", desc: "Use regex101.com — best regex learning tool online" },
-          { name: "python-json-tutorial", url: "github.com/realpython/python-basics-exercises", stars: "2.4k", desc: "Real Python exercises for beginners" },
-          { name: "textblob", url: "github.com/sloria/TextBlob", stars: "9.1k", desc: "Simple text processing library — great for learning NLP basics" },
-        ],
-      },
-      {
-        n: 8, title: "Algorithms & Big-O",
-        topics: [
-          "Big-O notation: O(1), O(log n), O(n), O(n log n), O(n²)",
-          "Searching: linear search, binary search, interpolation search",
-          "Sorting: bubble, selection, insertion, merge, quick sort",
-          "Recursion: factorial, Fibonacci, Tower of Hanoi, flood fill",
-          "Two pointers, sliding window, prefix sums — classic patterns",
-        ],
-        projects: [
-          { title: "Sort Comparator", desc: "Implement 5 sorts. Time each on same list (100/1000/10000 elements). Plot.", diff: "Medium" },
-          { title: "Binary Search Library", desc: "find_first(), find_last(), count_occurrences() on sorted list in O(log n)", diff: "Medium" },
-          { title: "Maze Solver", desc: "DFS and BFS maze solver on 2D grid. Show path. Compare steps taken.", diff: "Hard" },
-        ],
-        repos: [
-          { name: "algo-visualizer", url: "github.com/algorithm-visualizer/algorithm-visualizer", stars: "46k", desc: "Interactive algorithm visualization platform" },
-          { name: "sorting-algorithms", url: "github.com/prathyvsh/sorting-algorithms", stars: "3.1k", desc: "Sorting algorithms visualized" },
-          { name: "dsa-python", url: "github.com/akashp1712/ds-and-algorithm-in-python", stars: "1.2k", desc: "Complete DSA in Python with explanation" },
-        ],
-      },
+    id:"w2", n:2, month:1, title:"Python Syntax & Variables", color:"#3b82f6",
+    topics:[
+      { text:"Variables: int, float, str, bool, None",  idea:"Build: Personal Bio Card with all data types" },
+      { text:"input() and print() with f-strings",      idea:"Build: Greeting Generator — 5 styles" },
+      { text:"Type casting: int(), str(), float()",     idea:"Build: Unit Converter — km to miles" },
+      { text:"String methods: .upper(),.lower(),.split()", idea:"Build: Name Formatter" },
+      { text:"Comments and PEP 8 style",                idea:"Build: Well-commented Receipt Calculator" },
+    ],
+    days:[
+      { n:1, label:"Variable Zoo",        plan:"Create all 5 data types, print with type()" },
+      { n:2, label:"Simple Calculator",   plan:"Take two inputs, show 6 operations" },
+      { n:3, label:"String Surgeon",      plan:"Input sentence, transform 6 ways" },
+      { n:4, label:"Receipt Generator",   plan:"3 items + prices + 18% GST = formatted receipt" },
+      { n:5, label:"ID Card Printer",     plan:"Ask 4 details, print bordered card with f-strings" },
+      { n:6, label:"Type Converter",      plan:"Input number, show 6 representations" },
+      { n:7, label:"Mad Libs Push",       plan:"2 story templates + random pick + push to GitHub" },
     ],
   },
   {
-    id: 3, emoji: "⚙️", title: "OOP & Advanced Python", color: "#a855f7",
-    sub: "Classes, decorators, generators & async",
-    weeks: [
-      {
-        n: 9, title: "Object-Oriented Programming",
-        topics: [
-          "Classes, __init__, instance vs class variables and methods",
-          "Inheritance, super(), method overriding, multiple inheritance",
-          "Dunder/magic methods: __str__, __repr__, __len__, __eq__, __lt__",
-          "Properties: @property, getter/setter pattern",
-          "Abstract classes with ABC, interfaces in Python",
-        ],
-        projects: [
-          { title: "Bank Account System", desc: "Account hierarchy: Savings/Current/FD. Transactions, interest, statements.", diff: "Medium" },
-          { title: "Shape Library", desc: "Shape base class → Circle/Rect/Triangle. Area/perimeter. Sort by area.", diff: "Easy" },
-          { title: "Mini ORM", desc: "Base Model class. Define fields as class vars. generate_sql() for SELECT/INSERT", diff: "Hard" },
-        ],
-        repos: [
-          { name: "python-oop-examples", url: "github.com/cs-MohamedAyman/Object-Oriented-Programming", stars: "4.8k", desc: "Comprehensive OOP examples in Python" },
-          { name: "design-patterns", url: "github.com/faif/python-patterns", stars: "40k", desc: "Design patterns in Python — Singleton, Factory, Observer etc" },
-          { name: "fluent-python", url: "github.com/fluentpython/example-code-2e", stars: "7.5k", desc: "Fluent Python 2e all code examples" },
-        ],
-      },
-      {
-        n: 10, title: "Decorators & Generators",
-        topics: [
-          "First-class functions: passing functions, closures, factory pattern",
-          "Decorators: @, functools.wraps, chaining decorators",
-          "Built-in decorators: @staticmethod, @classmethod, @property, @cache",
-          "Generators: yield, next(), generator expressions, infinite sequences",
-          "Iterators: __iter__, __next__, custom iterator classes",
-        ],
-        projects: [
-          { title: "Decorator Toolkit", desc: "@timer, @retry(n), @memoize, @rate_limit — stack them, show order matters", diff: "Medium" },
-          { title: "Infinite Sequence Generators", desc: "Fibonacci, primes, random walk — all as generators. Pipeline with filter/map.", diff: "Medium" },
-          { title: "Pipeline Framework", desc: "Data pipeline using generators: source → transform → filter → sink", diff: "Hard" },
-        ],
-        repos: [
-          { name: "python-decorators", url: "github.com/chiphuyen/python-is-cool", stars: "3.3k", desc: "Cool Python features with clear examples — decorators, generators" },
-          { name: "itertools-examples", url: "github.com/erikrose/more-itertools", stars: "3.6k", desc: "More routines for operating on iterables" },
-          { name: "functional-python", url: "github.com/pytoolz/toolz", stars: "4.6k", desc: "Functional programming tools for Python" },
-        ],
-      },
-      {
-        n: 11, title: "Error Handling & Testing",
-        topics: [
-          "Exception hierarchy, try/except/else/finally patterns",
-          "Custom exception classes with context and data",
-          "Unit testing with pytest: fixtures, parametrize, marks",
-          "Mocking with unittest.mock: MagicMock, patch, side_effect",
-          "TDD cycle: Red → Green → Refactor with real examples",
-        ],
-        projects: [
-          { title: "Robust CSV Parser", desc: "Parse malformed CSVs. Handle every possible error. 20 test cases with pytest.", diff: "Medium" },
-          { title: "API Client with Tests", desc: "Wrapper for any public API. Mock all HTTP calls. 95%+ test coverage.", diff: "Hard" },
-          { title: "Property-Based Testing", desc: "Use hypothesis library to find edge cases in 3 of your own functions", diff: "Hard" },
-        ],
-        repos: [
-          { name: "pytest-docs", url: "github.com/pytest-dev/pytest", stars: "12k", desc: "pytest — the de facto Python testing framework" },
-          { name: "hypothesis", url: "github.com/HypothesisWorks/hypothesis", stars: "7.5k", desc: "Property-based testing library for Python" },
-          { name: "python-testing-cookbook", url: "github.com/realpython/pytest-tutorial", stars: "1.1k", desc: "Real Python pytest tutorial repository" },
-        ],
-      },
-      {
-        n: 12, title: "Async Python & Concurrency",
-        topics: [
-          "Concurrency vs parallelism — Python's GIL and its implications",
-          "asyncio: async def, await, event loop, gather, create_task",
-          "aiohttp for async HTTP — concurrent web requests",
-          "threading module for I/O-bound tasks, thread safety",
-          "multiprocessing for CPU-bound tasks, ProcessPoolExecutor",
-        ],
-        projects: [
-          { title: "Async Web Scraper", desc: "Scrape 20 URLs concurrently with aiohttp. Rate limit. Retry on failure.", diff: "Hard" },
-          { title: "Concurrent File Processor", desc: "Process 100 files with ThreadPoolExecutor. Benchmark vs sequential.", diff: "Medium" },
-          { title: "Async Task Queue", desc: "Producer/consumer pattern with asyncio.Queue. Priority levels. Monitoring.", diff: "Hard" },
-        ],
-        repos: [
-          { name: "aiohttp", url: "github.com/aio-libs/aiohttp", stars: "15k", desc: "Async HTTP Client/Server for asyncio" },
-          { name: "asyncio-examples", url: "github.com/realpython/materials/asyncio-walkthrough", stars: "4.2k", desc: "Real Python asyncio walkthrough examples" },
-          { name: "trio", url: "github.com/python-trio/trio", stars: "5.8k", desc: "Friendly async library — learn async patterns" },
-        ],
-      },
+    id:"w3", n:3, month:1, title:"Control Flow & Logic", color:"#3b82f6",
+    topics:[
+      { text:"if / elif / else statements",     idea:"Build: Smart Discount Calculator" },
+      { text:"Logical operators: and, or, not", idea:"Build: Login Validator" },
+      { text:"Comparison operators",            idea:"Build: Number Comparator" },
+      { text:"Nested conditions",               idea:"Build: Ticket Price Calculator" },
+      { text:"Boolean logic & truth tables",    idea:"Build: Logic Gate Simulator" },
+    ],
+    days:[
+      { n:1, label:"Traffic Light",       plan:"Input color → correct instruction + 'broken' state" },
+      { n:2, label:"FizzBuzz+",           plan:"Odd/even + div by 3,5 + prime check" },
+      { n:3, label:"Grade Calculator",    plan:"5 subjects → average → grade letter (elif)" },
+      { n:4, label:"Leap Year Detector",  plan:"Implement real leap year rule with ÷400 case" },
+      { n:5, label:"Vending Machine",     plan:"5 items, handle exact/too little/too much money" },
+      { n:6, label:"Rock Paper Scissors", plan:"User vs computer, win/lose/draw" },
+      { n:7, label:"BMI Analyzer Push",   plan:"Add body-fat estimate formula + README + push" },
     ],
   },
   {
-    id: 4, emoji: "🌐", title: "Files, DBs & APIs", color: "#10b981",
-    sub: "SQLite, REST APIs, web scraping",
-    weeks: [
-      {
-        n: 13, title: "SQLite & Databases",
-        topics: [
-          "SQLite3: CREATE TABLE, INSERT, SELECT, UPDATE, DELETE",
-          "Parameterized queries to prevent SQL injection",
-          "Joins: INNER, LEFT, RIGHT — with Python examples",
-          "Transactions, context managers for DB connections",
-          "SQLAlchemy ORM basics: models, sessions, queries",
-        ],
-        projects: [
-          { title: "Task Manager CLI", desc: "Full CRUD with SQLite. Priority, due dates, tags. Filter/sort/export.", diff: "Medium" },
-          { title: "Inventory System", desc: "Products, categories, stock levels, low-stock alerts, sales reports", diff: "Medium" },
-          { title: "Blog Database", desc: "SQLAlchemy ORM: Users, Posts, Comments, Tags. Full CRUD + pagination.", diff: "Hard" },
-        ],
-        repos: [
-          { name: "sqlalchemy", url: "github.com/sqlalchemy/sqlalchemy", stars: "9.5k", desc: "SQLAlchemy — Python SQL toolkit and ORM" },
-          { name: "sqlite-tutorial", url: "github.com/CoreyMSchafer/code_snippets/SQLite", stars: "12k", desc: "Corey Schafer's SQLite tutorial code" },
-          { name: "peewee", url: "github.com/coleifer/peewee", stars: "11k", desc: "Simple, lightweight ORM — great for learning" },
-        ],
-      },
-      {
-        n: 14, title: "REST APIs & HTTP",
-        topics: [
-          "HTTP methods: GET, POST, PUT, PATCH, DELETE and status codes",
-          "requests library: headers, params, auth, sessions, timeouts",
-          "JSON parsing, response handling, error codes management",
-          "FastAPI basics: routes, Pydantic models, automatic docs",
-          "Authentication: API keys, Bearer tokens, OAuth 2.0 flow",
-        ],
-        projects: [
-          { title: "Weather Dashboard CLI", desc: "OpenWeatherMap API: current weather, 5-day forecast, formatted output", diff: "Easy" },
-          { title: "GitHub Stats Tool", desc: "GitHub API: show user's repos, stars, languages, contribution graph", diff: "Medium" },
-          { title: "FastAPI CRUD Service", desc: "Full REST API: Users + Items. Pydantic validation. SQLite. Swagger docs.", diff: "Hard" },
-        ],
-        repos: [
-          { name: "fastapi", url: "github.com/tiangolo/fastapi", stars: "78k", desc: "FastAPI framework — build APIs with Python 3.10+" },
-          { name: "requests", url: "github.com/psf/requests", stars: "52k", desc: "HTTP for Humans — most used Python HTTP library" },
-          { name: "httpx", url: "github.com/encode/httpx", stars: "13k", desc: "Next-gen HTTP client — async support built-in" },
-        ],
-      },
-      {
-        n: 15, title: "Web Scraping",
-        topics: [
-          "BeautifulSoup4: parse HTML, find, find_all, CSS selectors",
-          "Selenium for dynamic JavaScript-rendered pages",
-          "Scrapy framework for production-grade spiders",
-          "Handling pagination, infinite scroll, form submission",
-          "Rate limiting, robots.txt, ethical scraping practices",
-        ],
-        projects: [
-          { title: "Job Listings Scraper", desc: "Scrape job listings from a site. Store in CSV/SQLite. Alert on new jobs.", diff: "Medium" },
-          { title: "Price Tracker", desc: "Track price of any Amazon product. Alert when price drops below target.", diff: "Hard" },
-          { title: "News Aggregator", desc: "Scrape 5 news sites. Deduplicate. Categorize by topic. Daily email summary.", diff: "Hard" },
-        ],
-        repos: [
-          { name: "scrapy", url: "github.com/scrapy/scrapy", stars: "53k", desc: "Fast web crawling & scraping framework" },
-          { name: "beautifulsoup", url: "github.com/waylan/beautifulsoup", stars: "2.8k", desc: "Beautiful Soup — screen-scraping library" },
-          { name: "playwright-python", url: "github.com/microsoft/playwright-python", stars: "11k", desc: "Playwright for Python — modern browser automation" },
-        ],
-      },
-      {
-        n: 16, title: "CLI Tools & Automation",
-        topics: [
-          "argparse for command-line argument parsing",
-          "Rich library for beautiful terminal output",
-          "Click framework for building CLI applications",
-          "os, shutil, pathlib for file system automation",
-          "Scheduling: schedule library, cron, system tasks automation",
-        ],
-        projects: [
-          { title: "Dev Environment Setup Tool", desc: "CLI that installs all dev tools, checks versions, fixes PATH, generates SSH key", diff: "Medium" },
-          { title: "File Organizer", desc: "Watch folder, auto-sort by type/date, duplicate detection, dry-run mode", diff: "Medium" },
-          { title: "Git Workflow Automator", desc: "CLI: auto-branch naming, commit templates, PR creation via GitHub API", diff: "Hard" },
-        ],
-        repos: [
-          { name: "rich", url: "github.com/Textualize/rich", stars: "49k", desc: "Rich text and beautiful formatting in the terminal" },
-          { name: "click", url: "github.com/pallets/click", stars: "15k", desc: "Python composable command line interface toolkit" },
-          { name: "typer", url: "github.com/tiangolo/typer", stars: "15k", desc: "CLI apps with Python type hints — from FastAPI creator" },
-        ],
-      },
+    id:"w4", n:4, month:1, title:"Loops & Iteration", color:"#3b82f6",
+    topics:[
+      { text:"for loops with range(start, stop, step)", idea:"Build: Times Table App" },
+      { text:"while loops, break, continue, pass",      idea:"Build: ATM PIN system — 3 attempts lockout" },
+      { text:"Nested loops & patterns",                 idea:"Build: Star Pyramid Generator" },
+      { text:"enumerate() and zip()",                   idea:"Build: Numbered Inventory Printer" },
+      { text:"Loop patterns: sum, count, min, max",     idea:"Build: Number Stats CLI" },
     ],
-  },
-  {
-    id: 5, emoji: "📊", title: "NumPy, Pandas & EDA", color: "#f59e0b",
-    sub: "Data science foundations for AI/ML",
-    weeks: [
-      {
-        n: 17, title: "NumPy Deep Dive",
-        topics: [
-          "ndarray creation: zeros, ones, arange, linspace, random",
-          "Array operations: reshape, transpose, broadcasting rules",
-          "Indexing: fancy indexing, boolean masks, advanced slicing",
-          "Mathematical operations: dot, linalg, einsum, FFT",
-          "Performance: vectorization vs loops — why 100× faster",
-        ],
-        projects: [
-          { title: "Linear Algebra Library", desc: "Matrix mult, inverse, determinant, eigenvalues — without linalg", diff: "Hard" },
-          { title: "Image Processor", desc: "Load image as numpy array. Apply filters: blur, sharpen, greyscale, flip", diff: "Medium" },
-          { title: "Statistics Engine", desc: "Descriptive stats, correlation matrix, histogram, box plot — pure numpy", diff: "Medium" },
-        ],
-        repos: [
-          { name: "numpy", url: "github.com/numpy/numpy", stars: "28k", desc: "NumPy — the fundamental package for scientific computing" },
-          { name: "numpy-100", url: "github.com/rougier/numpy-100", stars: "12k", desc: "100 NumPy exercises with solutions — essential practice" },
-          { name: "numpy-tutorial", url: "github.com/ageron/handson-ml3", stars: "27k", desc: "Hands-On ML3e code — best practical numpy examples" },
-        ],
-      },
-      {
-        n: 18, title: "Pandas Mastery",
-        topics: [
-          "DataFrame and Series creation, indexing, loc vs iloc",
-          "Data cleaning: fillna, dropna, astype, duplicates, outliers",
-          "GroupBy, aggregation, pivot_table, merge, join, concat",
-          "apply(), map(), transform() for row/column operations",
-          "Time series: DatetimeIndex, resample, rolling, shift",
-        ],
-        projects: [
-          { title: "COVID Data Analyzer", desc: "Download public COVID data. Clean it. Compute death rate, recovery by country.", diff: "Medium" },
-          { title: "E-commerce Analytics", desc: "Analyze order dataset: revenue by month, top products, customer LTV", diff: "Medium" },
-          { title: "Stock Market EDA", desc: "yfinance data: moving averages, RSI, correlation between stocks, signals", diff: "Hard" },
-        ],
-        repos: [
-          { name: "pandas", url: "github.com/pandas-dev/pandas", stars: "43k", desc: "Pandas — powerful data analysis toolkit" },
-          { name: "pandas-exercises", url: "github.com/guipsamora/pandas_exercises", stars: "13k", desc: "Practice pandas with real datasets — 10 topic areas" },
-          { name: "effective-pandas", url: "github.com/TomAugspurger/effective-pandas", stars: "2.8k", desc: "Modern, idiomatic pandas — best practices guide" },
-        ],
-      },
-      {
-        n: 19, title: "Data Visualization",
-        topics: [
-          "Matplotlib: figures, axes, subplots, line/bar/scatter/hist",
-          "Seaborn: statistical plots, heatmaps, pairplots, themes",
-          "Plotly for interactive charts — hover, zoom, export",
-          "Chart selection: when to use each type of visualization",
-          "Storytelling with data: titles, annotations, color palettes",
-        ],
-        projects: [
-          { title: "Interactive Dashboard", desc: "Plotly: 6 interactive charts on one dataset. Filters. Export to HTML.", diff: "Medium" },
-          { title: "Census Data Story", desc: "Download census data, tell a visual story: 8 charts + narrative captions", diff: "Hard" },
-          { title: "Real-Time Plot", desc: "Matplotlib animation: live stock/crypto price updating every 5 seconds", diff: "Hard" },
-        ],
-        repos: [
-          { name: "matplotlib", url: "github.com/matplotlib/matplotlib", stars: "20k", desc: "Matplotlib — comprehensive Python plotting library" },
-          { name: "plotly-py", url: "github.com/plotly/plotly.py", stars: "16k", desc: "Interactive graphing library for Python" },
-          { name: "seaborn", url: "github.com/mwaskom/seaborn", stars: "12k", desc: "Statistical data visualization based on matplotlib" },
-        ],
-      },
-      {
-        n: 20, title: "Exploratory Data Analysis",
-        topics: [
-          "EDA workflow: shape, dtypes, describe, value_counts, info",
-          "Missing data patterns: MCAR, MAR, MNAR — detection strategies",
-          "Outlier detection: IQR, Z-score, isolation forest",
-          "Feature correlation and multicollinearity analysis",
-          "Creating reproducible EDA notebooks with Jupyter",
-        ],
-        projects: [
-          { title: "Titanic Full EDA", desc: "Classic dataset: survival analysis, feature correlations, prediction readiness", diff: "Easy" },
-          { title: "House Price EDA", desc: "Kaggle dataset: discover features that drive price, handle missing values", diff: "Medium" },
-          { title: "Automated EDA Tool", desc: "Function: given any CSV, auto-generate full EDA report as HTML", diff: "Hard" },
-        ],
-        repos: [
-          { name: "ydata-profiling", url: "github.com/ydataai/ydata-profiling", stars: "12k", desc: "Create HTML profiling reports from pandas DataFrames" },
-          { name: "sweetviz", url: "github.com/fbdesignpro/sweetviz", stars: "2.9k", desc: "High-density EDA visualizations in one line of code" },
-          { name: "kaggle-datasets", url: "github.com/awesomedata/awesome-public-datasets", stars: "60k", desc: "Awesome public datasets for EDA practice" },
-        ],
-      },
-    ],
-  },
-  {
-    id: 6, emoji: "🏆", title: "DSA & Interview Prep", color: "#ef4444",
-    sub: "Algorithms, system design & portfolio",
-    weeks: [
-      {
-        n: 21, title: "Stacks, Queues & Linked Lists",
-        topics: [
-          "Stack: LIFO, push/pop/peek, Python list as stack, deque",
-          "Queue: FIFO, enqueue/dequeue, circular queue, priority queue",
-          "Linked List: singly/doubly, insert/delete/reverse/detect cycle",
-          "Applications: valid parentheses, expression evaluation, LRU cache",
-          "heapq module: min-heap, max-heap, heap sort, k-th largest",
-        ],
-        projects: [
-          { title: "Expression Evaluator", desc: "Evaluate infix expressions: handle brackets, precedence, all operators", diff: "Hard" },
-          { title: "Browser History", desc: "Back/forward using two stacks. URL validation. History search.", diff: "Medium" },
-          { title: "Task Scheduler", desc: "Priority queue scheduler: run highest priority task, handle deadlines", diff: "Hard" },
-        ],
-        repos: [
-          { name: "python-dsa", url: "github.com/jwasham/coding-interview-university", stars: "302k", desc: "Coding interview university — most starred CS resource" },
-          { name: "leetcode-patterns", url: "github.com/seanprashad/leetcode-patterns", stars: "9.8k", desc: "75 essential LeetCode patterns curated list" },
-          { name: "neetcode", url: "github.com/neetcode-gh/leetcode", stars: "18k", desc: "All NeetCode solutions with video explanations" },
-        ],
-      },
-      {
-        n: 22, title: "Trees & Graphs",
-        topics: [
-          "Binary trees: in/pre/post-order traversal, height, diameter",
-          "Binary Search Trees: insert, delete, search, validate, balance",
-          "Heaps, tries, segment trees — when to use each",
-          "Graphs: adjacency list/matrix, BFS, DFS, topological sort",
-          "Shortest path: Dijkstra's, Bellman-Ford, A* algorithm",
-        ],
-        projects: [
-          { title: "File System Tree", desc: "Build a tree from directory. Show as ASCII tree. Search files by pattern.", diff: "Medium" },
-          { title: "Social Network Graph", desc: "Friend connections as graph. BFS for shortest connection. Find influencers.", diff: "Hard" },
-          { title: "Autocomplete with Trie", desc: "Insert words into Trie. Return all completions for a prefix in O(m+n)", diff: "Hard" },
-        ],
-        repos: [
-          { name: "graph-algorithms", url: "github.com/TheAlgorithms/Python/tree/master/graphs", stars: "190k", desc: "All graph algorithms in Python — The Algorithms repo" },
-          { name: "binarytree", url: "github.com/joowani/binarytree", stars: "1.9k", desc: "Python library for learning binary trees" },
-          { name: "networkx", url: "github.com/networkx/networkx", stars: "14k", desc: "NetworkX — graph library for complex networks" },
-        ],
-      },
-      {
-        n: 23, title: "Dynamic Programming",
-        topics: [
-          "Memoization (top-down) vs tabulation (bottom-up)",
-          "1D DP: climbing stairs, house robber, coin change",
-          "2D DP: unique paths, edit distance, longest common subsequence",
-          "Knapsack: 0/1 knapsack, unbounded, fractional",
-          "Advanced: matrix chain mult, longest palindrome, word break",
-        ],
-        projects: [
-          { title: "Spell Checker", desc: "Edit distance to find closest words. Suggest 3 corrections. Measure time.", diff: "Medium" },
-          { title: "Optimal Stock Trader", desc: "Best time to buy/sell: 1 tx, multiple tx, cooldown, at most k tx", diff: "Hard" },
-          { title: "Text Justification", desc: "Optimal text justification using DP to minimize raggedness", diff: "Very Hard" },
-        ],
-        repos: [
-          { name: "dp-problems", url: "github.com/zhiwehu/Python-programming-exercises", stars: "18k", desc: "Python DP exercises with full solutions" },
-          { name: "competitive-programming", url: "github.com/cp-algorithms/cp-algorithms", stars: "14k", desc: "E-Maxx competitive programming algorithms" },
-          { name: "blind75", url: "github.com/hxu296/leetcode-company-wise-problems-2022", stars: "6.2k", desc: "Company-wise LeetCode problems — Blind 75 and more" },
-        ],
-      },
-      {
-        n: 24, title: "Portfolio & Mock Interviews",
-        topics: [
-          "STAR format for behavioral interviews: Situation Task Action Result",
-          "System design basics: scalability, load balancers, databases, CDN",
-          "Python coding patterns: clean code, readability, docstrings",
-          "Building your GitHub portfolio: READMEs, demos, pinned repos",
-          "Resume for Python developer roles: keywords, projects, metrics",
-        ],
-        projects: [
-          { title: "Capstone AI App", desc: "Build one impressive app combining everything: Python + API + DB + CLI", diff: "Hard" },
-          { title: "Portfolio README", desc: "GitHub profile README with stats, projects, skills, contact links", diff: "Easy" },
-          { title: "Mock Interview Record", desc: "Record yourself solving 5 LeetCode mediums. Review and improve.", diff: "Medium" },
-        ],
-        repos: [
-          { name: "portfolio-ideas", url: "github.com/florinpop17/app-ideas", stars: "79k", desc: "App Ideas collection — beginner to advanced projects" },
-          { name: "resume-templates", url: "github.com/byebrid/resume-templates", stars: "2.1k", desc: "ATS-friendly resume templates for developers" },
-          { name: "coding-interview-handbook", url: "github.com/yangshun/tech-interview-handbook", stars: "116k", desc: "Curated coding interview preparation materials" },
-        ],
-      },
+    days:[
+      { n:1, label:"Multiplication Tables", plan:"Nested loops, formatted columns" },
+      { n:2, label:"Star Patterns",         plan:"5 ASCII art patterns from nested loops" },
+      { n:3, label:"Sum Calculator",        plan:"Sum 1-100 / evens / odds / squares / factorial" },
+      { n:4, label:"PIN Lock Simulator",    plan:"3 attempts, while loop, lockout, show remaining" },
+      { n:5, label:"Stats Tool",            plan:"Enter numbers until 'done', show min/max/sum/avg" },
+      { n:6, label:"Password Strength",     plan:"Check 5 criteria, score 1-5 with label" },
+      { n:7, label:"Guessing Game Push",    plan:"Add replay, session stats, difficulty — push!" },
     ],
   },
 ];
 
-/* ─────────────────────────── QUESTION GENERATOR (Claude API) ─────────────────────────── */
-async function generateQuestions(topicText, weekTitle) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
-      messages: [{
-        role: "user",
-        content: `Generate exactly 100 Python interview/practice questions for this specific topic:
-
-Topic: "${topicText}"
-Week context: "${weekTitle}"
-
-These should be real technical interview questions from Google, OpenAI, Anthropic, Meta, Microsoft style.
-
-Return ONLY valid JSON — no other text, no markdown fences:
-{
-  "easy": [
-    {"q": "question text", "co": "Google"},
-    ... (25 questions)
-  ],
-  "medium": [
-    {"q": "question text", "co": "OpenAI"},
-    ... (30 questions)  
-  ],
-  "hard": [
-    {"q": "question text", "co": "Anthropic"},
-    ... (30 questions)
-  ],
-  "vhard": [
-    {"q": "question text", "co": "Meta"},
-    ... (15 questions)
-  ]
+/* ===================================================================
+   STORAGE HOOK
+=================================================================== */
+function useStorage(key, defaultVal) {
+  const [val, setVal] = useState(defaultVal);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await window.storage.get(key);
+        if (r && r.value !== undefined) setVal(JSON.parse(r.value));
+      } catch {}
+      setLoaded(true);
+    })();
+  }, [key]);
+  const save = useCallback(async (newVal) => {
+    const v = typeof newVal === "function" ? newVal(val) : newVal;
+    setVal(v);
+    try { await window.storage.set(key, JSON.stringify(v)); } catch {}
+  }, [key, val]);
+  return [val, save, loaded];
 }
 
-Easy: conceptual, definitions, basic syntax. 
-Medium: write code, explain behavior, debug snippets.
-Hard: design problems, optimization, edge cases, real-world systems.
-Very Hard: open-ended system design, research-level, architecture decisions.
-Rotate companies: Google, OpenAI, Anthropic, Meta, Microsoft across all questions.`
-      }]
-    })
-  });
-  const data = await res.json();
-  const text = data.content.map(c => c.text || "").join("").trim();
-  return JSON.parse(text);
-}
+/* ===================================================================
+   SHARED COMPONENTS
+=================================================================== */
+const Spinner = ({ size = 18 }) => <span className="spin" style={{ fontSize: size }}>⟳</span>;
 
-/* ─────────────────────────── SHARED COMPONENTS ─────────────────────────── */
-const Spin = () => <span className="spin" style={{ fontSize: 16 }}>⟳</span>;
-
-const Ring = ({ pct, size = 72, stroke = 5, color = T.blue, label }) => {
+const ProgressRing = ({ pct, size = 80, stroke = 6, color = T.purple, label }) => {
   const r = (size - stroke * 2) / 2;
-  const c = 2 * Math.PI * r;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
   return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#07072a" strokeWidth={stroke} />
+    <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+      <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#0f0f2a" strokeWidth={stroke} />
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={c} strokeDashoffset={c - (pct/100)*c} strokeLinecap="round"
-          style={{ transition:"stroke-dashoffset .8s ease", filter:`drop-shadow(0 0 4px ${color}80)` }} />
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition:"stroke-dashoffset 0.9s ease", filter:`drop-shadow(0 0 4px ${color}80)` }} />
       </svg>
-      {label && <div style={{ fontSize: 11, color: T.t2, textAlign: "center" }}>{label}</div>}
+      {label && <div style={{ fontSize:11, color:T.t2, textAlign:"center" }}>{label}</div>}
     </div>
   );
 };
 
-const Header = ({ totalXP, solvedTopics, monthsDone }) => {
-  const LEVELS = [
-    { l:1, name:"Beginner",    min:0,    color:"#6b7280", emoji:"🌱" },
-    { l:2, name:"Learner",     min:150,  color:"#3b82f6", emoji:"📘" },
-    { l:3, name:"Practitioner",min:400,  color:"#10b981", emoji:"⚡" },
-    { l:4, name:"Developer",   min:800,  color:"#f59e0b", emoji:"🔥" },
-    { l:5, name:"Engineer",    min:1400, color:"#a855f7", emoji:"🚀" },
-    { l:6, name:"Python Pro",  min:2200, color:"#ef4444", emoji:"🏆" },
-    { l:7, name:"ML Ready!",   min:3200, color:"#06b6d4", emoji:"🌌" },
-  ];
-  const lvl = LEVELS.filter(l => totalXP >= l.min).pop() || LEVELS[0];
-  const next = LEVELS[lvl.l] || lvl;
-  const pct = lvl.l < 7 ? Math.round(((totalXP - lvl.min)/(next.min - lvl.min))*100) : 100;
+const SectionHeader = ({ title, sub, action }) => (
+  <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:22, flexWrap:"wrap" }}>
+    <div>
+      <h2 className="sec-h">{title}</h2>
+      {sub && <p className="sec-sub">{sub}</p>}
+    </div>
+    {action}
+  </div>
+);
+
+const XPBadge = ({ xp }) => (
+  <span style={{
+    background:"linear-gradient(135deg,#f59e0b,#f97316)", color:"#000",
+    fontWeight:800, fontSize:11, padding:"3px 10px", borderRadius:999,
+    fontFamily:"'JetBrains Mono',monospace"
+  }}>+{xp} XP</span>
+);
+
+const LevelBadge = ({ xp }) => {
+  const lvl = getLevel(xp);
+  return (
+    <div style={{
+      display:"inline-flex", alignItems:"center", gap:6, padding:"4px 12px",
+      background: lvl.color + "20", border:`1px solid ${lvl.color}40`,
+      borderRadius:999, fontSize:12, fontWeight:700, color: lvl.color
+    }}>
+      <span>{lvl.emoji}</span>
+      <span>Lv.{lvl.level} {lvl.title}</span>
+    </div>
+  );
+};
+
+const CO_CLS = { Google:"co-google", OpenAI:"co-openai", Anthropic:"co-anthropic", Meta:"co-meta", Microsoft:"co-google" };
+
+/* ===================================================================
+   APP HEADER (Live XP / Streak)
+=================================================================== */
+const AppHeader = ({ totalXP, streak, solvedCount }) => {
+  const lvl = getLevel(totalXP);
+  const nextLvl = XP_LEVELS[lvl.level] || lvl;
+  const pct = lvl.level < 7 ? Math.round(((totalXP - lvl.min) / (nextLvl.min - lvl.min)) * 100) : 100;
 
   return (
     <div style={{
-      background:"linear-gradient(180deg,#07071e,#04040f)",
+      background:"linear-gradient(180deg,#08081e 0%,#050510 100%)",
       borderBottom:`1px solid ${T.border}`,
-      padding:"12px clamp(12px,4vw,28px)",
+      padding:"12px clamp(14px,4vw,28px)",
       display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap"
     }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
         <div style={{
-          width:44, height:44, borderRadius:12, flexShrink:0,
-          background:"linear-gradient(135deg,#3b82f6,#06b6d4)",
+          width:46, height:46, borderRadius:"50%",
+          background:"linear-gradient(135deg,#7c3aed,#00d4ff)",
           display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:22, fontWeight:900, color:"#fff",
-          boxShadow:"0 0 18px #3b82f640"
+          fontSize:20, fontWeight:800, color:"#fff", flexShrink:0,
+          boxShadow:"0 0 20px #8b5cf650"
         }}>S</div>
         <div>
-          <div className="syne" style={{ fontSize:"clamp(14px,2.5vw,20px)", fontWeight:800, color:T.t1, lineHeight:1.1 }}>
-            Shyam Baghel
-          </div>
+          <div style={{ fontSize:"clamp(15px,2.5vw,20px)", fontWeight:800, color:T.t1, lineHeight:1.1 }}>Shyam Baghel</div>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4, flexWrap:"wrap" }}>
-            <span style={{
-              fontSize:11, fontWeight:700, padding:"2px 10px", borderRadius:999,
-              background:lvl.color+"20", color:lvl.color, border:`1px solid ${lvl.color}40`
-            }}>{lvl.emoji} Lv.{lvl.l} {lvl.name}</span>
-            <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-              <div style={{ width:"clamp(60px,10vw,120px)", height:4, background:"#0a0a28", borderRadius:999, overflow:"hidden" }}>
-                <div style={{ width:`${pct}%`, height:"100%", background:lvl.color, borderRadius:999, transition:"width .8s ease" }} />
+            <LevelBadge xp={totalXP} />
+            <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+              <div style={{ width: "clamp(80px,12vw,140px)", height:4, background:"#0f0f2a", borderRadius:999, overflow:"hidden" }}>
+                <div style={{ width:`${pct}%`, height:"100%", background:`linear-gradient(90deg,${lvl.color},${nextLvl.color})`, borderRadius:999, transition:"width .8s ease" }} />
               </div>
-              <span style={{ fontSize:9, color:T.t2 }}>{pct}%</span>
+              <span style={{ fontSize:10, color:T.t2 }}>{pct}%</span>
             </div>
           </div>
         </div>
       </div>
-
       <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
         {[
-          { icon:"⭐", val:totalXP, label:"XP", glow:"#f59e0b" },
-          { icon:"✅", val:`${solvedTopics}`, label:"Topics", glow:"#10b981" },
-          { icon:"📅", val:`${monthsDone}/6`, label:"Months", glow:"#3b82f6" },
+          { icon:"⭐", val: totalXP.toLocaleString(), label:"Total XP", glow:"#f59e0b" },
+          { icon:"🔥", val: `${streak}d`, label:"Streak", glow:"#ef4444" },
+          { icon:"⚡", val: solvedCount, label:"Solved", glow:"#8b5cf6" },
         ].map(s => (
           <div key={s.label} style={{
             background:T.card, border:`1px solid ${T.border}`, borderRadius:10,
             padding:"6px 12px", display:"flex", alignItems:"center", gap:7,
-            boxShadow:`0 0 10px ${s.glow}18`
+            boxShadow:`0 0 12px ${s.glow}20`
           }}>
             <span style={{ fontSize:16 }}>{s.icon}</span>
             <div>
@@ -813,309 +747,509 @@ const Header = ({ totalXP, solvedTopics, monthsDone }) => {
   );
 };
 
-/* ─────────────────────────── SIDEBAR ─────────────────────────── */
-const NAV = [
-  { id:"roadmap",  icon:"🗺️", label:"Python Roadmap" },
-  { id:"tracker",  icon:"📅", label:"Progress Tracker" },
-  { id:"projects", icon:"🔨", label:"Project Ideas" },
-  { id:"practice", icon:"⚡", label:"Practice Questions" },
-  { id:"ml",       icon:"🌌", label:"ML Path", badge:"After Python" },
+/* ===================================================================
+   SIDEBAR
+=================================================================== */
+const NAV_ITEMS = [
+  { id:"dashboard",  icon:"📊", label:"Dashboard" },
+  { id:"roadmap",    icon:"🗺️", label:"Roadmap",     badge:"7 Months" },
+  { id:"tracker",    icon:"📅", label:"Daily Tracker" },
+  { id:"challenges", icon:"⚡", label:"Challenges",   badge:"NEW" },
+  { id:"weekend",    icon:"🗓️", label:"Weekend" },
+  { id:"mentor",     icon:"🤖", label:"AI Mentor",    badge:"AI" },
+  { id:"mlpath",     icon:"🌌", label:"ML Path",      badge:"NEW" },
 ];
 
-const Sidebar = ({ tab, setTab, topicsDone, totalTopics }) => (
-  <div className="sidebar">
-    <div style={{ padding:"20px 16px 10px" }}>
-      <div className="syne" style={{ fontSize:14, fontWeight:800, color:T.blue, letterSpacing:.5 }}>🐍 Python Mastery</div>
-      <div style={{ fontSize:11, color:T.t2, marginTop:3 }}>6-Month Roadmap</div>
-    </div>
-    <div style={{ padding:"0 8px" }}>
-      {NAV.map(n => (
-        <div key={n.id} className={`nav-it ${tab === n.id ? "on" : ""}`}
-          onClick={() => setTab(n.id)}>
-          <span style={{ fontSize:16 }}>{n.icon}</span>
-          <span style={{ flex:1 }}>{n.label}</span>
-          {n.badge && (
-            <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:4,
-              background:"#10b98120", color:T.green, border:"1px solid #10b98140" }}>
-              {n.badge}
-            </span>
+const Sidebar = ({ active, onNav, totalXP, solvedCount }) => {
+  const lvl = getLevel(totalXP);
+  return (
+    <div className="sidebar">
+      <div style={{ padding:"16px 16px 8px" }}>
+        <div style={{ fontSize:10, fontWeight:700, color:T.t3, textTransform:"uppercase", letterSpacing:1.5, marginBottom:8 }}>
+          Navigation
+        </div>
+      </div>
+      {NAV_ITEMS.map(item => (
+        <div key={item.id} className={`nav-item ${active === item.id ? "active" : ""}`}
+          onClick={() => onNav(item.id)}>
+          <span style={{ fontSize:16 }}>{item.icon}</span>
+          <span style={{ flex:1 }}>{item.label}</span>
+          {item.badge && (
+            <span style={{
+              fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:4,
+              background: item.badge === "NEW" ? "#7c3aed30" : item.badge === "AI" ? "#00d4ff20" : "#f59e0b20",
+              color: item.badge === "NEW" ? T.purple : item.badge === "AI" ? T.cyan : T.amber,
+              border: `1px solid ${item.badge === "NEW" ? T.purple+"40" : item.badge === "AI" ? T.cyan+"30" : T.amber+"40"}`
+            }}>{item.badge}</span>
           )}
         </div>
       ))}
-    </div>
-    <div style={{ flex:1 }} />
-    <div style={{ padding:"14px 16px", borderTop:`1px solid ${T.border}` }}>
-      <div className="sec-label">Overall Progress</div>
-      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-        <span style={{ fontSize:12, color:T.t2 }}>Topics Completed</span>
-        <span style={{ fontSize:12, fontWeight:700, color:T.blue }}>{topicsDone}/{totalTopics}</span>
+      <div style={{ flex:1 }} />
+      <div style={{ padding:"14px 16px", borderTop:`1px solid ${T.border}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+          <span style={{ fontSize:12, color:T.t2 }}>{lvl.emoji} {lvl.title}</span>
+          <span style={{ fontSize:12, color: lvl.color, fontWeight:700 }}>{totalXP} XP</span>
+        </div>
+        <div className="prog-track">
+          <div className="prog-fill xp-shimmer" style={{ width:`${Math.min(100, Math.round(((totalXP - lvl.min)/(XP_LEVELS[lvl.level]?.min - lvl.min || 1))*100))}%` }} />
+        </div>
+        <div style={{ fontSize:11, color:T.t3, marginTop:8, textAlign:"center" }}>
+          ⚡ {solvedCount} challenges solved
+        </div>
       </div>
-      <div className="pbar">
-        <div className="pfill xp-bar" style={{ width:`${Math.round(topicsDone/totalTopics*100)}%` }} />
-      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const MobileNav = ({ tab, setTab }) => (
-  <div className="mob">
-    {NAV.map(n => (
-      <div key={n.id} onClick={() => setTab(n.id)}
+const MobileNav = ({ active, onNav }) => (
+  <div className="mob-nav">
+    {NAV_ITEMS.map(item => (
+      <div key={item.id} onClick={() => onNav(item.id)}
         style={{
-          flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:2,
-          padding:"4px 8px", cursor:"pointer",
-          color: tab === n.id ? T.blue : T.t2,
-          background: tab === n.id ? "#0a0a2a" : "transparent",
-          borderRadius:8
+          display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+          padding:"4px 6px", borderRadius:8, cursor:"pointer", flex:1,
+          color: active === item.id ? T.purple : T.t3,
+          background: active === item.id ? "#10103a" : "transparent",
         }}>
-        <span style={{ fontSize:18 }}>{n.icon}</span>
-        <span style={{ fontSize:9, fontWeight:600 }}>{n.label.split(" ")[0]}</span>
+        <span style={{ fontSize:17 }}>{item.icon}</span>
+        <span style={{ fontSize:8, fontWeight:600 }}>{item.label.split(" ")[0]}</span>
       </div>
     ))}
   </div>
 );
 
-/* ─────────────────────────── TOPIC ROW WITH QUESTIONS ─────────────────────────── */
-const TopicPanel = ({ topic, topicIdx, weekN, monthColor, done, onToggle, weekTitle }) => {
-  const storKey = `q-${weekN}-${topicIdx}`;
-  const [questions, saveQuestions] = useStorage(storKey, null);
-  const [loading, setLoading] = useState(false);
-  const [qDiff, setQDiff] = useState("easy");
-  const [open, setOpen] = useState(false);
+/* ===================================================================
+   DASHBOARD VIEW
+=================================================================== */
+const DashboardView = ({ trackerData, solvedChallenges, totalXP }) => {
+  const totalDays = WEEKS_DATA.reduce((a, w) => a + w.days.length, 0);
+  const completedDays = Object.values(trackerData).filter(d => d.completed?.trim()).length;
+  const pct = Math.round((completedDays / totalDays) * 100) || 0;
+  const lvl = getLevel(totalXP);
+  const solvedCount = Object.values(solvedChallenges).filter(Boolean).length;
+  const [topicProgress] = useStorage("topic-progress-v1", {});
 
-  const generate = async () => {
-    setLoading(true);
-    try {
-      const q = await generateQuestions(topic, weekTitle);
-      await saveQuestions(q);
-    } catch (e) {
-      alert("Generation failed. Check your connection.");
-    }
-    setLoading(false);
-  };
+  const getWeekTopicDone = (w) => w.topics.filter((_, j) => topicProgress[`m${w.n}-t${j}`]).length;
+  const isWeekDone = (w) => getWeekTopicDone(w) >= MIN_TOPICS_PER_WEEK;
 
-  const diffConfig = [
-    { k:"easy",  label:"🟢 Easy",     cls:"b-easy",  count:25 },
-    { k:"medium",label:"🟡 Medium",   cls:"b-med",   count:30 },
-    { k:"hard",  label:"🔴 Hard",     cls:"b-hard",  count:30 },
-    { k:"vhard", label:"🟣 Very Hard",cls:"b-vhard", count:15 },
-  ];
-
-  const displayed = questions?.[qDiff] || [];
+  const monthStats = CURRICULUM.map(m => {
+    const total = m.weeks.reduce((a, w) => a + w.topics.length, 0);
+    const done  = m.weeks.reduce((a, w) => a + getWeekTopicDone(w), 0);
+    const weeksComplete = m.weeks.filter(w => isWeekDone(w)).length;
+    const complete = m.weeks.every(w => isWeekDone(w));
+    return { ...m, total, done, weeksComplete, pct: total ? Math.round(done/total*100) : 0, complete };
+  });
 
   return (
-    <div className={`topic-row ${done ? "done" : ""}`} style={{ flexDirection:"column", cursor:"default" }}>
-      {/* Top row: checkbox + topic text + expand */}
-      <div style={{ display:"flex", gap:12, alignItems:"flex-start", width:"100%" }}>
-        <div onClick={() => onToggle(`m${weekN}-t${topicIdx}`)}
-          style={{
-            width:22, height:22, borderRadius:6, flexShrink:0, marginTop:1, cursor:"pointer",
-            background: done ? T.green : "transparent",
-            border:`2px solid ${done ? T.green : T.t2}`,
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:12, color:"#000", fontWeight:900, transition:"all .2s"
-          }}>{done ? "✓" : ""}</div>
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader title="📊 Dashboard" sub="Your complete 7-month AI engineering journey" />
 
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:13, fontWeight:600, color: done ? T.t1 : T.t2, lineHeight:1.5 }}>
-            {topic}
+      {/* Level card */}
+      <div className="card card-glow" style={{ padding:"20px 24px", marginBottom:16, background:`linear-gradient(135deg, #0c0c28, #0a0a20)` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
+          <div style={{ textAlign:"center", flexShrink:0 }}>
+            <ProgressRing pct={pct} size={88} color={lvl.color} />
+            <div style={{ fontSize:13, fontWeight:700, color:T.t1, marginTop:4 }}>{pct}% Journey</div>
           </div>
-          {done && <span style={{ fontSize:10, color:T.green }}>✅ Completed</span>}
+          <div style={{ flex:1, minWidth:200 }}>
+            <div style={{ fontSize:22, fontWeight:900, color:T.t1, marginBottom:4 }}>
+              {lvl.emoji} Level {lvl.level} — <span style={{ color:lvl.color }}>{lvl.title}</span>
+            </div>
+            <div style={{ fontSize:13, color:T.t2, marginBottom:14 }}>
+              {completedDays}/{totalDays} days tracked · {solvedCount} challenges solved
+            </div>
+            <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+              <div style={{ flex:1, height:6, background:"#0a0a28", borderRadius:999, overflow:"hidden" }}>
+                <div style={{
+                  height:"100%", borderRadius:999, transition:"width .8s ease",
+                  width:`${Math.min(100,Math.round(((totalXP-lvl.min)/((XP_LEVELS[lvl.level]?.min||lvl.max)-lvl.min))*100))}%`,
+                  background:`linear-gradient(90deg,${lvl.color},${T.cyan})`
+                }} />
+              </div>
+              <span style={{ fontSize:12, color:T.t2, whiteSpace:"nowrap" }}>{totalXP} / {XP_LEVELS[lvl.level]?.min || "∞"} XP</span>
+            </div>
+          </div>
+          <div className="g4" style={{ minWidth:"min(100%,260px)" }}>
+            {[
+              { icon:"📅", val:7, label:"Months" },
+              { icon:"📆", val:26, label:"Weeks" },
+              { icon:"⚡", val:ALL_CHALLENGES.length, label:"Challenges" },
+              { icon:"✅", val:solvedCount, label:"Solved" },
+            ].map(s => (
+              <div key={s.label} style={{ background:T.surface, borderRadius:10, padding:"10px 8px", textAlign:"center", border:`1px solid ${T.border}` }}>
+                <div style={{ fontSize:18 }}>{s.icon}</div>
+                <div style={{ fontSize:20, fontWeight:800, color:T.t1 }}>{s.val}</div>
+                <div style={{ fontSize:10, color:T.t2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
-
-        <button className="btn btn-ghost btn-sm" onClick={() => setOpen(!open)}
-          style={{ flexShrink:0, fontSize:11 }}>
-          {open ? "▲ Hide" : "📚 100 Questions"}
-        </button>
       </div>
 
-      {/* Expanded: 100 questions panel */}
-      {open && (
-        <div className="fade-in" style={{ marginTop:14, paddingTop:14, borderTop:`1px solid ${T.border}`, width:"100%" }}>
-          {/* Generate button */}
-          <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
-            <span style={{ fontSize:12, color:T.t2, flex:1 }}>
-              {questions ? `✅ ${Object.values(questions).flat().length} questions loaded` : "No questions yet — generate them!"}
-            </span>
-            <button className={`btn ${questions ? "btn-ghost" : "btn-py"} btn-sm`}
-              onClick={generate} disabled={loading}>
-              {loading ? <><Spin /> Generating 100 Qs...</> : questions ? "🔄 Regenerate" : "✨ Generate 100 Questions"}
-            </button>
-          </div>
-
-          {questions && (
-            <>
-              {/* Difficulty tabs */}
-              <div style={{ display:"flex", gap:4, marginBottom:12, flexWrap:"wrap" }}>
-                {diffConfig.map(d => (
-                  <button key={d.k}
-                    onClick={() => setQDiff(d.k)}
-                    className="btn btn-sm"
-                    style={{
-                      background: qDiff === d.k ? monthColor+"30" : "transparent",
-                      border:`1px solid ${qDiff === d.k ? monthColor : T.border}`,
-                      color: qDiff === d.k ? monthColor : T.t2,
-                      fontFamily:"'DM Sans',sans-serif"
-                    }}>
-                    {d.label} ({questions[d.k]?.length || 0})
-                  </button>
-                ))}
-              </div>
-
-              {/* Questions list */}
-              <div style={{ maxHeight:360, overflowY:"auto", paddingRight:4 }}>
-                {displayed.map((q, i) => (
-                  <div key={i} className="q-row">
-                    <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-                      <span className="mono" style={{
-                        fontSize:10, fontWeight:700, padding:"2px 6px", borderRadius:5, flexShrink:0,
-                        background: qDiff==="easy"?"#021a09":qDiff==="medium"?"#180d00":qDiff==="hard"?"#1a0404":"#120525",
-                        color: qDiff==="easy"?T.green:qDiff==="medium"?T.amber:qDiff==="hard"?"#f87171":"#c084fc",
-                        border:`1px solid ${qDiff==="easy"?"#14532d":qDiff==="medium"?"#7c3800":qDiff==="hard"?"#7f1d1d":"#6b21a8"}`
-                      }}>Q{i+1}</span>
-                      <p style={{ fontSize:13, color:T.t1, lineHeight:1.6, flex:1 }}>{q.q}</p>
-                      <span className={`badge ${qDiff==="easy"?"b-easy":qDiff==="medium"?"b-med":qDiff==="hard"?"b-hard":"b-vhard"}`}
-                        style={{ flexShrink:0, fontSize:10 }}>{q.co}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+      {/* 7-Month grid */}
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize:12, fontWeight:700, color:T.t3, textTransform:"uppercase", letterSpacing:1.2, marginBottom:10 }}>
+          7-Month Roadmap Progress
         </div>
-      )}
+        <div className="g3" style={{ gap:10 }}>
+          {monthStats.map(m => (
+            <div key={m.id} className="card" style={{ padding:"14px 16px", borderColor: m.complete ? T.emerald+"50" : T.border, boxShadow: m.complete ? `0 0 14px ${T.emerald}18` : "none" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                <span style={{ fontSize:24 }}>{m.complete ? "✅" : m.emoji}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color: m.complete ? T.emerald : T.t1, lineHeight:1.2 }}>{m.title}</div>
+                  <div style={{ fontSize:11, color:T.t2 }}>{m.sub}</div>
+                </div>
+                <div style={{ fontSize:16, fontWeight:800, color: m.complete ? T.emerald : m.color }}>{m.pct}%</div>
+              </div>
+              <div className="prog-track">
+                <div className="prog-fill" style={{ width:`${m.pct}%`, background: m.complete ? T.emerald : m.color, boxShadow:`0 0 8px ${m.complete ? T.emerald : m.color}60` }} />
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, flexWrap:"wrap", gap:4 }}>
+                <span style={{ fontSize:11, color:T.t3 }}>
+                  {m.complete ? "🎉 Month Complete!" : `${m.weeksComplete}/${m.weeks.length} weeks done · ${m.done}/${m.total} topics`}
+                </span>
+                <span style={{ fontSize:11, fontWeight:700, color:m.color }}>{m.totalXP} XP</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Today's Mission */}
+      <div className="card card-glow-cyan" style={{ padding:"18px 20px", marginBottom:16 }}>
+        <div style={{ fontSize:13, fontWeight:700, color:T.cyan, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>
+          🎯 Today's Mission
+        </div>
+        <div className="g2">
+          {[
+            { icon:"📚", title:"Study", desc:"Complete Week 1, Day 3 — First .py File", color:T.blue },
+            { icon:"⚡", title:"Challenge", desc:"Solve 1 challenge from Month 1", color:T.purple },
+            { icon:"📤", title:"Git Push", desc:"Commit today's work to GitHub", color:T.emerald },
+          ].map(t => (
+            <div key={t.title} style={{ display:"flex", gap:12, padding:"10px 14px", background:T.surface, borderRadius:10, border:`1px solid ${t.color}25` }}>
+              <span style={{ fontSize:22 }}>{t.icon}</span>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:t.color }}>{t.title}</div>
+                <div style={{ fontSize:12, color:T.t2 }}>{t.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent challenges solved */}
+      <div className="card" style={{ padding:"18px 20px" }}>
+        <div style={{ fontSize:13, fontWeight:700, color:T.t2, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>
+          ⚡ Recent Challenges Solved
+        </div>
+        {solvedCount === 0 ? (
+          <div style={{ textAlign:"center", padding:"16px", color:T.t3, fontSize:13 }}>
+            No challenges solved yet — head to <strong style={{ color:T.purple }}>Challenges</strong> to earn XP!
+          </div>
+        ) : (
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            {ALL_CHALLENGES.filter(c => solvedChallenges[c.id]).slice(-4).reverse().map(c => {
+              const ds = DIFF_STYLE[c.diff] || DIFF_STYLE.Easy;
+              return (
+                <div key={c.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px", background:T.surface, borderRadius:8 }}>
+                  <span style={{ fontSize:16 }}>✅</span>
+                  <div style={{ flex:1 }}>
+                    <span style={{ fontSize:13, fontWeight:600, color:T.t1 }}>{c.title}</span>
+                    <span style={{ fontSize:11, color:T.t2, marginLeft:8 }}>{c.monthEmoji} {c.monthTitle}</span>
+                  </div>
+                  <span className={`badge ${ds.cls}`}>{c.diff}</span>
+                  <XPBadge xp={c.xp} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-/* ─────────────────────────── WEEK CARD ─────────────────────────── */
-const MIN_PER_WEEK = 3;
+/* ===================================================================
+   NEXT MONTH PREVIEW PANEL — shown when current month is complete
+=================================================================== */
+const MIN_TOPICS_PER_WEEK = 3; // student must tick at least 3 of 5 topics
 
-const WeekCard = ({ week, monthColor, topicProgress, onToggle, expanded, onExpand, idx }) => {
-  const done = week.topics.filter((_, j) => topicProgress[`m${week.n}-t${j}`]).length;
-  const pct = Math.round((done / week.topics.length) * 100);
-  const complete = done >= MIN_PER_WEEK;
-  const [projOpen, setProjOpen] = useState(false);
-  const [repoOpen, setRepoOpen] = useState(false);
+const NextMonthPreview = ({ currentMonth, nextMonth, onGo }) => {
+  if (!nextMonth) {
+    return (
+      <div style={{
+        margin:"24px 0", padding:"28px 24px",
+        background:"linear-gradient(135deg,#06062a,#0a0a24)",
+        border:"1px solid #00d4ff40", borderRadius:16,
+        boxShadow:"0 0 40px #00d4ff18", textAlign:"center"
+      }}>
+        <div style={{ fontSize:52, marginBottom:12 }} className="float">🎓</div>
+        <div style={{ fontSize:22, fontWeight:900, color:"#00d4ff", marginBottom:8 }}>
+          You've Completed the Full 7-Month Journey!
+        </div>
+        <p style={{ fontSize:14, color:T.t2, lineHeight:1.7, maxWidth:480, margin:"0 auto 16px" }}>
+          Congratulations, Shyam! You've mastered Python, LLMs, AI Engineering, ML, Production Systems, and beyond.
+          Head to the <strong style={{ color:T.purple }}>ML Path</strong> section to continue your research journey. 🚀
+        </p>
+        <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
+          {["🐍 Python","🤖 LLMs","🧠 AI Engineering","🔬 ML & DL","🚀 Production","🌌 Capstone"].map(t => (
+            <span key={t} style={{ fontSize:12, color:"#00d4ff", background:"#00d4ff18", padding:"4px 12px", borderRadius:999, border:"1px solid #00d4ff40", fontWeight:600 }}>{t}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // what to focus on next month
+  const NEXT_MONTH_GUIDE = {
+    2: { focus:"Advanced Python & Real Projects", actions:["Practice OOP by rebuilding your Month 1 projects as classes","Learn async with asyncio — build a concurrent web scraper","Explore NumPy for numerical computing","Start using pandas for any dataset you can find"], watchOut:"Don't skip decorators — they appear constantly in AI codebases" },
+    3: { focus:"LLM Fundamentals & Prompt Engineering", actions:["Get your OpenAI or Anthropic API key set up","Read 'Attention Is All You Need' paper summary (not full paper yet)","Build a simple chatbot with message history","Experiment with different temperature values — log results"], watchOut:"Tokenization is confusing at first — spend extra time here" },
+    4: { focus:"Building Real AI Systems (RAG + Agents)", actions:["Set up a local vector DB (Chroma) and embed 50+ documents","Build a basic ReAct agent from scratch — no frameworks first","Read LangChain docs, but understand what it abstracts","Evaluate your RAG — don't skip this step"], watchOut:"Agents can loop infinitely — always add a max iterations guard" },
+    5: { focus:"Machine Learning & Deep Learning", actions:["Install PyTorch and run a MNIST classifier in the first week","Implement linear regression from scratch before using sklearn","Read fast.ai's Practical Deep Learning (free, great quality)","Build intuition on gradient descent visually — watch 3Blue1Brown"], watchOut:"Math will feel hard — understand the intuition, don't memorize formulas" },
+    6: { focus:"Production AI & Career Prep", actions:["Containerize one of your Month 4/5 projects with Docker","Build a FastAPI endpoint for your best ML model","Start your portfolio: pick your 3 best projects, write READMEs","Begin interview prep: solve 2 LeetCode mediums per day"], watchOut:"Prompt injection is a real security issue — learn it seriously" },
+    7: { focus:"Capstone & Real-World Impact", actions:["Define your capstone scope in week 1 — be specific","Choose a real problem (your community, your interests)","Open source it from day 1 — commit every day","Share progress on LinkedIn/X — build your audience"], watchOut:"Scope creep kills capstone projects — MVP first, features later" },
+  };
+
+  const guide = NEXT_MONTH_GUIDE[nextMonth.id] || {};
 
   return (
     <div style={{
-      borderRadius:13, border:`1px solid ${complete ? T.green+"60" : expanded ? monthColor+"50" : T.border}`,
-      background: complete ? "#021208" : T.card,
-      marginBottom:10, overflow:"hidden",
-      boxShadow: complete ? `0 0 18px ${T.green}18` : "none",
-      transition:"all .25s"
+      margin:"24px 0", borderRadius:16, overflow:"hidden",
+      border:`1px solid ${nextMonth.color}50`,
+      boxShadow:`0 0 32px ${nextMonth.color}18`
     }}>
-      {/* Week header */}
-      <div style={{ padding:"14px 16px", cursor:"pointer", display:"flex", gap:10, alignItems:"center" }}
-        onClick={() => onExpand(expanded ? null : idx)}>
+      {/* Header bar */}
+      <div style={{
+        padding:"18px 22px",
+        background:`linear-gradient(135deg, ${nextMonth.color}22, ${nextMonth.color}10)`,
+        borderBottom:`1px solid ${nextMonth.color}30`,
+        display:"flex", alignItems:"center", gap:14, flexWrap:"wrap"
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
+          <span style={{ fontSize:36 }} className="float">{nextMonth.emoji}</span>
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:nextMonth.color, textTransform:"uppercase", letterSpacing:1, marginBottom:3 }}>
+              🎉 Month {currentMonth.id} Complete! Up Next →
+            </div>
+            <div style={{ fontSize:18, fontWeight:800, color:T.t1 }}>Month {nextMonth.id}: {nextMonth.title}</div>
+            <div style={{ fontSize:13, color:T.t2 }}>{nextMonth.sub}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:22, fontWeight:900, color:nextMonth.color }}>{nextMonth.totalXP}</div>
+            <div style={{ fontSize:10, color:T.t2 }}>XP Available</div>
+          </div>
+          <button className="btn btn-primary" onClick={onGo}
+            style={{ background:`linear-gradient(135deg,${nextMonth.color},${nextMonth.color}bb)` }}>
+            Start Month {nextMonth.id} →
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{ padding:"18px 22px", background:"#07071e" }}>
+        <div className="g2" style={{ gap:14 }}>
+          {/* What to focus on */}
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:10, textTransform:"uppercase", letterSpacing:.8 }}>
+              🎯 Main Focus
+            </div>
+            <div style={{ fontSize:14, fontWeight:700, color:nextMonth.color, marginBottom:12 }}>
+              {guide.focus}
+            </div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:8, textTransform:"uppercase", letterSpacing:.8 }}>
+              ✅ Your First-Week Action Plan
+            </div>
+            {guide.actions?.map((a, i) => (
+              <div key={i} style={{ display:"flex", gap:10, marginBottom:8, padding:"8px 12px", background:T.surface, borderRadius:8, border:`1px solid ${T.border}` }}>
+                <span style={{ color:nextMonth.color, fontWeight:800, flexShrink:0, fontSize:12 }}>{i+1}.</span>
+                <span style={{ fontSize:13, color:T.t1, lineHeight:1.5 }}>{a}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Weeks preview + Watch out */}
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:10, textTransform:"uppercase", letterSpacing:.8 }}>
+              📆 What You'll Learn ({nextMonth.weeks.length} Weeks)
+            </div>
+            {nextMonth.weeks.map((w, i) => (
+              <div key={i} style={{
+                display:"flex", gap:10, marginBottom:8, padding:"10px 14px",
+                background:T.surface, borderRadius:10, border:`1px solid ${T.border}`,
+                alignItems:"flex-start"
+              }}>
+                <div style={{
+                  width:28, height:28, borderRadius:6, background:nextMonth.color+"20",
+                  border:`1px solid ${nextMonth.color}40`, display:"flex", alignItems:"center",
+                  justifyContent:"center", fontSize:11, fontWeight:800, color:nextMonth.color, flexShrink:0
+                }}>W{w.n}</div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.t1, marginBottom:3 }}>{w.title}</div>
+                  <div style={{ fontSize:11, color:T.t2, lineHeight:1.5 }}>
+                    {w.topics.slice(0, 3).join(" · ")}{w.topics.length > 3 ? " …" : ""}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {guide.watchOut && (
+              <div style={{ marginTop:10, padding:"12px 14px", background:"#1a0a0a", border:"1px solid #7f1d1d", borderRadius:10 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:T.red, marginBottom:4 }}>⚠️ Watch Out</div>
+                <div style={{ fontSize:13, color:"#fca5a5", lineHeight:1.5 }}>{guide.watchOut}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Capstone preview */}
+        <div style={{ marginTop:14, padding:"14px 16px", background:`${nextMonth.color}10`, border:`1px solid ${nextMonth.color}30`, borderRadius:10 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:nextMonth.color, marginBottom:4, textTransform:"uppercase", letterSpacing:.8 }}>
+            🏆 Month {nextMonth.id} Capstone
+          </div>
+          <div style={{ fontSize:13, color:T.t1, lineHeight:1.5 }}>{nextMonth.capstone}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ===================================================================
+   WEEK CARD with topic checkboxes + min-target system
+=================================================================== */
+const WeekTopicCard = ({ week, monthColor, topicProgress, onToggle, weekIndex, expanded, onExpand }) => {
+  const TOTAL = week.topics.length;
+  const doneTopic = week.topics.filter((_, j) => topicProgress[`m${week.n}-t${j}`]).length;
+  const goalMet = doneTopic >= MIN_TOPICS_PER_WEEK;
+  const pct = Math.round((doneTopic / TOTAL) * 100);
+
+  return (
+    <div style={{
+      marginBottom:10,
+      borderRadius:12,
+      border:`1px solid ${goalMet ? T.emerald+"60" : expanded ? monthColor+"50" : T.border}`,
+      background: goalMet ? "#021208" : T.card,
+      overflow:"hidden",
+      transition:"border-color .3s, background .3s",
+      boxShadow: goalMet ? `0 0 16px ${T.emerald}20` : "none"
+    }}>
+      {/* Header */}
+      <div style={{ padding:"14px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:10 }}
+        onClick={() => onExpand(expanded ? null : weekIndex)}>
         <div style={{
-          width:36, height:36, borderRadius:9, flexShrink:0,
-          background: complete ? T.green+"25" : monthColor+"20",
-          border:`1px solid ${complete ? T.green+"50" : monthColor+"40"}`,
+          width:34, height:34, borderRadius:8, flexShrink:0,
+          background: goalMet ? T.emerald+"25" : monthColor+"20",
+          border:`1px solid ${goalMet ? T.emerald+"50" : monthColor+"40"}`,
           display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:13, fontWeight:800, color: complete ? T.green : monthColor
-        }}>{complete ? "✓" : `W${week.n}`}</div>
+          fontSize:12, fontWeight:800, color: goalMet ? T.emerald : monthColor
+        }}>{goalMet ? "✓" : `W${week.n}`}</div>
 
         <div style={{ flex:1, minWidth:0 }}>
-          <div className="syne" style={{ fontSize:14, fontWeight:700, color: complete ? T.green : T.t1, marginBottom:4 }}>
+          <div style={{ fontSize:14, fontWeight:700, color: goalMet ? T.emerald : T.t1, marginBottom:4 }}>
             {week.title}
           </div>
+          {/* mini progress bar */}
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ flex:1, height:4, background:"#07072a", borderRadius:999, overflow:"hidden" }}>
-              <div style={{ width:`${pct}%`, height:"100%", borderRadius:999, transition:"width .5s",
-                background: complete ? T.green : `linear-gradient(90deg,${monthColor},${monthColor}88)`,
-                boxShadow: complete ? `0 0 6px ${T.green}80` : "none"
+            <div style={{ flex:1, height:4, background:"#0a0a20", borderRadius:999, overflow:"hidden" }}>
+              <div style={{ width:`${pct}%`, height:"100%", borderRadius:999, transition:"width .5s ease",
+                background: goalMet ? T.emerald : `linear-gradient(90deg,${monthColor},${monthColor}99)`,
+                boxShadow: goalMet ? `0 0 6px ${T.emerald}80` : "none"
               }} />
             </div>
-            <span style={{ fontSize:11, fontWeight:700, color: complete ? T.green : T.t2, whiteSpace:"nowrap" }}>
-              {done}/{week.topics.length} topics
+            <span style={{ fontSize:11, fontWeight:700, color: goalMet ? T.emerald : T.t2, whiteSpace:"nowrap" }}>
+              {doneTopic}/{TOTAL} topics
             </span>
           </div>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
-          {complete
-            ? <span style={{ fontSize:10, fontWeight:700, background:T.green+"20", color:T.green, padding:"2px 8px", borderRadius:999, border:`1px solid ${T.green}40` }}>✅ Week Done</span>
-            : done > 0
-            ? <span style={{ fontSize:10, fontWeight:700, background:monthColor+"18", color:monthColor, padding:"2px 8px", borderRadius:999, border:`1px solid ${monthColor}40` }}>Need {MIN_PER_WEEK-done} more</span>
-            : <span style={{ fontSize:10, color:T.t2 }}>Goal: {MIN_PER_WEEK}/{week.topics.length}</span>
-          }
-          <span style={{ fontSize:11, color:T.t2 }}>{expanded ? "▲" : "▼"}</span>
+          {goalMet ? (
+            <span style={{ fontSize:10, fontWeight:700, background:T.emerald+"20", color:T.emerald,
+              padding:"2px 8px", borderRadius:999, border:`1px solid ${T.emerald}40` }}>
+              ✅ Week Done!
+            </span>
+          ) : doneTopic > 0 ? (
+            <span style={{ fontSize:10, fontWeight:700, background:monthColor+"18", color:monthColor,
+              padding:"2px 8px", borderRadius:999, border:`1px solid ${monthColor}40` }}>
+              Need {MIN_TOPICS_PER_WEEK - doneTopic} more
+            </span>
+          ) : (
+            <span style={{ fontSize:10, color:T.t3 }}>Target: {MIN_TOPICS_PER_WEEK}/{TOTAL}</span>
+          )}
+          <span style={{ fontSize:11, color:T.t3 }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </div>
 
-      {/* Expanded content */}
+      {/* Expanded: topic checkboxes */}
       {expanded && (
-        <div className="fade-in" style={{ padding:"0 16px 16px", borderTop:`1px solid ${T.border}` }}>
-          <div style={{ padding:"12px 0 8px", fontSize:11, color:T.t2 }}>
-            ✅ Tick topics you've studied · Need at least {MIN_PER_WEEK} of {week.topics.length}
+        <div style={{ padding:"0 16px 16px", borderTop:`1px solid ${T.border}` }}>
+          <div style={{ fontSize:11, fontWeight:700, color:T.t3, textTransform:"uppercase", letterSpacing:1, padding:"12px 0 8px" }}>
+            Tick topics as you complete them — need at least {MIN_TOPICS_PER_WEEK} of {TOTAL}
           </div>
 
-          {/* Topics with individual question panels */}
-          {week.topics.map((topic, j) => (
-            <TopicPanel
-              key={j}
-              topic={topic}
-              topicIdx={j}
-              weekN={week.n}
-              monthColor={monthColor}
-              done={!!topicProgress[`m${week.n}-t${j}`]}
-              onToggle={onToggle}
-              weekTitle={week.title}
-            />
-          ))}
+          {/* Target meter */}
+          <div style={{
+            display:"flex", gap:6, marginBottom:12, padding:"8px 12px",
+            background: goalMet ? T.emerald+"12" : "#0a0a20",
+            borderRadius:10, border:`1px solid ${goalMet ? T.emerald+"40" : T.border}`,
+            alignItems:"center", flexWrap:"wrap"
+          }}>
+            <div style={{ display:"flex", gap:4 }}>
+              {Array.from({ length: TOTAL }).map((_, j) => (
+                <div key={j} style={{
+                  width:18, height:18, borderRadius:4,
+                  background: j < doneTopic
+                    ? (j < MIN_TOPICS_PER_WEEK ? T.emerald : monthColor)
+                    : (j < MIN_TOPICS_PER_WEEK ? "#0a2010" : "#0a0a20"),
+                  border:`1px solid ${j < doneTopic ? (j < MIN_TOPICS_PER_WEEK ? T.emerald : monthColor) : T.border}`,
+                  transition:"all .2s"
+                }} />
+              ))}
+            </div>
+            <span style={{ fontSize:12, fontWeight:700, color: goalMet ? T.emerald : T.t2, marginLeft:6 }}>
+              {goalMet ? "🎉 Week goal met!" : `${doneTopic}/${MIN_TOPICS_PER_WEEK} minimum target`}
+            </span>
+          </div>
 
-          {/* Projects section */}
-          <div style={{ marginTop:14 }}>
-            <button className="btn btn-ghost btn-sm" style={{ marginBottom:8 }}
-              onClick={() => setProjOpen(!projOpen)}>
-              {projOpen ? "▲ Hide" : "🔨 Projects"} ({week.projects.length})
-            </button>
-            {projOpen && (
-              <div className="g2 fade-in" style={{ gap:8 }}>
-                {week.projects.map((p, i) => (
-                  <div key={i} style={{ background:"#05051a", border:`1px solid ${T.border}`, borderRadius:10, padding:"12px 14px" }}>
-                    <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
-                      <div style={{ flex:1, fontSize:13, fontWeight:700, color:T.t1 }}>{p.title}</div>
-                      <span className={`badge ${p.diff==="Easy"?"b-easy":p.diff==="Medium"?"b-med":p.diff==="Hard"?"b-hard":"b-vhard"}`}>
-                        {p.diff}
+          {/* Topic checkboxes */}
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {week.topics.map((topic, j) => {
+              const key = `m${week.n}-t${j}`;
+              const done = !!topicProgress[key];
+              return (
+                <div key={j}
+                  onClick={() => onToggle(key)}
+                  style={{
+                    display:"flex", gap:12, padding:"10px 14px", borderRadius:10, cursor:"pointer",
+                    background: done ? (j < MIN_TOPICS_PER_WEEK ? T.emerald+"14" : monthColor+"14") : T.surface,
+                    border:`1px solid ${done ? (j < MIN_TOPICS_PER_WEEK ? T.emerald+"50" : monthColor+"50") : T.border}`,
+                    transition:"all .2s", alignItems:"flex-start"
+                  }}>
+                  {/* Custom checkbox */}
+                  <div style={{
+                    width:20, height:20, borderRadius:6, flexShrink:0, marginTop:1,
+                    background: done ? (j < MIN_TOPICS_PER_WEEK ? T.emerald : monthColor) : "transparent",
+                    border:`2px solid ${done ? "transparent" : T.t3}`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontSize:11, color:"#000", fontWeight:900, transition:"all .2s"
+                  }}>{done ? "✓" : ""}</div>
+
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color: done ? T.t1 : T.t2, lineHeight:1.4, textDecoration: done ? "none" : "none" }}>
+                      {topic}
+                    </div>
+                    {j < MIN_TOPICS_PER_WEEK && (
+                      <span style={{ fontSize:10, color: done ? T.emerald : T.t3 }}>
+                        {done ? "✅ Counts toward target" : "Required for week goal"}
                       </span>
-                    </div>
-                    <p style={{ fontSize:12, color:T.t2, lineHeight:1.6 }}>{p.desc}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Repos section */}
-          <div style={{ marginTop:10 }}>
-            <button className="btn btn-ghost btn-sm" style={{ marginBottom:8 }}
-              onClick={() => setRepoOpen(!repoOpen)}>
-              {repoOpen ? "▲ Hide" : "📦 GitHub Repos"} ({week.repos.length})
-            </button>
-            {repoOpen && (
-              <div className="fade-in" style={{ display:"flex", flexDirection:"column", gap:7 }}>
-                {week.repos.map((r, i) => (
-                  <div key={i} className="repo-card" onClick={() => window.open(`https://${r.url}`, "_blank")}>
-                    <div style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:5 }}>
-                      <span style={{ fontSize:16 }}>📦</span>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.blue, marginBottom:2 }}>
-                          {r.name}
-                        </div>
-                        <div className="mono" style={{ fontSize:10, color:T.t2, marginBottom:4 }}>
-                          ⭐ {r.stars} · {r.url}
-                        </div>
-                        <div style={{ fontSize:12, color:T.t2, lineHeight:1.5 }}>{r.desc}</div>
-                      </div>
-                      <span style={{ fontSize:11, color:T.blue }}>↗</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  <span style={{ fontSize:10, fontWeight:700, color:T.t3, flexShrink:0 }}>Topic {j+1}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1123,130 +1257,54 @@ const WeekCard = ({ week, monthColor, topicProgress, onToggle, expanded, onExpan
   );
 };
 
-/* ─────────────────────────── NEXT MONTH PANEL ─────────────────────────── */
-const NextMonthPanel = ({ currentM, nextM, onGo }) => {
-  if (!nextM) return (
-    <div className="ml-banner" style={{ marginTop:20, textAlign:"center" }}>
-      <div style={{ fontSize:52, marginBottom:10 }} className="float">🎓</div>
-      <div className="syne" style={{ fontSize:22, fontWeight:800, color:T.green, marginBottom:8 }}>
-        Python Mastery Complete!
-      </div>
-      <p style={{ fontSize:14, color:T.t2, lineHeight:1.7, maxWidth:480, margin:"0 auto 16px" }}>
-        You've completed all 6 months of Python! Head to <strong style={{ color:T.blue }}>🌌 ML Path</strong> to see your next steps into Machine Learning and AI.
-      </p>
-      <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
-        {["🐍 Syntax","📦 Data Structures","⚙️ OOP","🌐 APIs","📊 Pandas","🏆 DSA"].map(t => (
-          <span key={t} style={{ fontSize:12, color:T.green, background:T.green+"15", padding:"4px 12px", borderRadius:999, border:`1px solid ${T.green}40`, fontWeight:600 }}>{t}</span>
-        ))}
-      </div>
-    </div>
-  );
-
-  const GUIDE = {
-    2: { focus:"Master data structures — they're the foundation of every algorithm question", actions:["Implement all list operations manually first","Solve 10 LeetCode Easys using only lists","Build your Contact Book project this week","Read time complexities of dict operations"] },
-    3: { focus:"OOP is what separates scripting from real software engineering", actions:["Rewrite your Month 1 projects using classes","Understand __dunder__ methods deeply — they appear in frameworks","Learn one design pattern per week","Write tests for every class you build"] },
-    4: { focus:"Everything connects to APIs and databases in real Python jobs", actions:["Get an OpenWeatherMap API key — first real API project","Set up SQLite and build a CRUD app from scratch","Learn to read API documentation independently","Start your portfolio project using an API + DB"] },
-    5: { focus:"NumPy and Pandas are mandatory for AI/ML — every ML framework uses them", actions:["Complete numpy-100 exercises (github.com/rougier/numpy-100)","Download one real dataset from Kaggle and EDA it","Learn broadcasting — it's confusing but critical","Practice with pandas-exercises repo"] },
-    6: { focus:"DSA and portfolio will get you hired — nothing else will", actions:["Solve 2 LeetCode problems every day — consistency beats intensity","Polish your 3 best projects with great READMEs and live demos","Practice explaining your code out loud (mock interviews)","Apply to junior roles even before you feel ready"] },
-  };
-  const g = GUIDE[nextM.id] || {};
-
-  return (
-    <div style={{ marginTop:20, borderRadius:14, overflow:"hidden", border:`1px solid ${nextM.color}50`, boxShadow:`0 0 28px ${nextM.color}15` }}>
-      <div style={{ padding:"16px 20px", background:`linear-gradient(135deg,${nextM.color}20,${nextM.color}08)`, borderBottom:`1px solid ${nextM.color}30` }}>
-        <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
-          <span style={{ fontSize:36 }} className="float">{nextM.emoji}</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:10, fontWeight:700, color:nextM.color, textTransform:"uppercase", letterSpacing:1, marginBottom:3 }}>
-              🎉 Month {currentM.id} Complete! Up Next →
-            </div>
-            <div className="syne" style={{ fontSize:17, fontWeight:800, color:T.t1 }}>Month {nextM.id}: {nextM.title}</div>
-            <div style={{ fontSize:12, color:T.t2 }}>{nextM.sub}</div>
-          </div>
-          <button className="btn btn-py" onClick={onGo}>Start Month {nextM.id} →</button>
-        </div>
-      </div>
-      <div style={{ padding:"16px 20px", background:"#06061a" }}>
-        <div className="g2">
-          <div>
-            <div className="sec-label">🎯 Main Focus</div>
-            <p style={{ fontSize:13, fontWeight:600, color:nextM.color, marginBottom:12, lineHeight:1.5 }}>{g.focus}</p>
-            <div className="sec-label">✅ First Week Action Plan</div>
-            {g.actions?.map((a, i) => (
-              <div key={i} style={{ display:"flex", gap:9, marginBottom:7, padding:"7px 11px", background:T.surf, borderRadius:8, border:`1px solid ${T.border}` }}>
-                <span style={{ color:nextM.color, fontWeight:800, flexShrink:0, fontSize:12 }}>{i+1}.</span>
-                <span style={{ fontSize:12, color:T.t1, lineHeight:1.5 }}>{a}</span>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div className="sec-label">📆 Weeks Preview</div>
-            {nextM.weeks.map((w, i) => (
-              <div key={i} style={{ display:"flex", gap:9, marginBottom:7, padding:"9px 12px", background:T.surf, borderRadius:9, border:`1px solid ${T.border}` }}>
-                <div style={{ width:26, height:26, borderRadius:6, background:nextM.color+"20", border:`1px solid ${nextM.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:800, color:nextM.color, flexShrink:0 }}>W{w.n}</div>
-                <div>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.t1 }}>{w.title}</div>
-                  <div style={{ fontSize:11, color:T.t2 }}>{w.topics.slice(0,2).join(" · ")}…</div>
-                </div>
-              </div>
-            ))}
-            <div style={{ marginTop:10, padding:"10px 14px", background:`${nextM.color}12`, border:`1px solid ${nextM.color}30`, borderRadius:10 }}>
-              <div style={{ fontSize:10, fontWeight:700, color:nextM.color, marginBottom:4 }}>🏆 Month Capstone</div>
-              <div style={{ fontSize:12, color:T.t1, lineHeight:1.5 }}>{nextM.weeks[nextM.weeks.length-1]?.projects[0]?.title} — {nextM.weeks[nextM.weeks.length-1]?.projects[0]?.desc}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ─────────────────────────── PYTHON ROADMAP VIEW ─────────────────────────── */
-const RoadmapView = ({ topicProgress, saveTopicProgress }) => {
+/* ===================================================================
+   ROADMAP VIEW (7 months, topic tracking, monthly unlock)
+=================================================================== */
+const RoadmapView = () => {
   const [selMonth, setSelMonth] = useState(1);
+  const [tab, setTab] = useState("weeks");
   const [expandedWeek, setExpandedWeek] = useState(0);
+  const [topicProgress, saveTopicProgress] = useStorage("topic-progress-v1", {});
+  const month = CURRICULUM.find(m => m.id === selMonth);
+  const nextMonth = CURRICULUM.find(m => m.id === selMonth + 1) || null;
 
-  const toggle = (key) => saveTopicProgress(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleTopic = (key) => {
+    saveTopicProgress(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
-  const getWeekDone = (w) => w.topics.filter((_, j) => topicProgress[`m${w.n}-t${j}`]).length;
-  const weekComplete = (w) => getWeekDone(w) >= MIN_PER_WEEK;
-  const monthComplete = (m) => m.weeks.every(w => weekComplete(w));
+  // Calculate per-month and per-week stats
+  const getWeekDone = (w) =>
+    w.topics.filter((_, j) => topicProgress[`m${w.n}-t${j}`]).length;
+  const isWeekComplete = (w) => getWeekDone(w) >= MIN_TOPICS_PER_WEEK;
+  const isMonthComplete = (m) => m.weeks.every(w => isWeekComplete(w));
 
-  const month = PYTHON_MONTHS.find(m => m.id === selMonth);
-  const nextMonth = PYTHON_MONTHS.find(m => m.id === selMonth + 1) || null;
-  const mComplete = monthComplete(month);
-
-  const totalTopics = month.weeks.reduce((a, w) => a + w.topics.length, 0);
-  const doneTopic  = month.weeks.reduce((a, w) => a + getWeekDone(w), 0);
-  const mPct = Math.round((doneTopic / totalTopics) * 100);
+  const monthComplete = isMonthComplete(month);
+  const totalTopicsThisMonth = month.weeks.reduce((a, w) => a + w.topics.length, 0);
+  const doneTopicsThisMonth = month.weeks.reduce((a, w) => a + getWeekDone(w), 0);
+  const monthPct = Math.round((doneTopicsThisMonth / totalTopicsThisMonth) * 100);
 
   return (
-    <div className="fade-up" style={{ padding:"clamp(12px,4vw,28px)" }}>
-      {/* Header */}
-      <div style={{ marginBottom:20 }}>
-        <div className="syne" style={{ fontSize:"clamp(18px,4vw,26px)", fontWeight:800, color:T.t1, marginBottom:4 }}>
-          🐍 Python Mastery Roadmap
-        </div>
-        <p style={{ fontSize:13, color:T.t2 }}>
-          6 months · 24 weeks · Complete {MIN_PER_WEEK}+ topics per week · 100 interview questions per topic
-        </p>
-      </div>
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader
+        title="🗺️ Learning Roadmap"
+        sub={`Complete at least ${MIN_TOPICS_PER_WEEK} topics per week to unlock next month`}
+      />
 
-      {/* Month selector */}
-      <div className="srow" style={{ marginBottom:14 }}>
-        {PYTHON_MONTHS.map(m => {
-          const mc = monthComplete(m);
+      {/* Month selector with completion dots */}
+      <div className="scroll-row" style={{ marginBottom:16 }}>
+        {CURRICULUM.map(m => {
+          const mc = isMonthComplete(m);
           return (
             <button key={m.id}
-              onClick={() => { setSelMonth(m.id); setExpandedWeek(0); }}
+              onClick={() => { setSelMonth(m.id); setTab("weeks"); setExpandedWeek(0); }}
               style={{
                 flex:"0 0 auto", padding:"8px 16px", borderRadius:10, border:"1px solid",
-                borderColor: mc ? T.green+"80" : selMonth === m.id ? m.color : T.border,
-                background: mc ? T.green+"15" : selMonth === m.id ? m.color+"20" : T.card,
-                color: mc ? T.green : selMonth === m.id ? m.color : T.t2,
-                cursor:"pointer", fontFamily:"'DM Sans',sans-serif", fontWeight:700, fontSize:13,
+                borderColor: mc ? T.emerald+"80" : selMonth === m.id ? m.color : T.border,
+                background: mc ? T.emerald+"15" : selMonth === m.id ? m.color+"22" : T.card,
+                color: mc ? T.emerald : selMonth === m.id ? m.color : T.t2,
+                cursor:"pointer", fontFamily:"'Outfit',sans-serif", fontWeight:700, fontSize:13,
                 display:"flex", alignItems:"center", gap:7, transition:"all .2s",
-                boxShadow: selMonth === m.id ? `0 0 14px ${mc?T.green:m.color}30` : "none"
+                boxShadow: selMonth === m.id ? `0 0 16px ${mc ? T.emerald : m.color}30` : "none"
               }}>
               <span>{mc ? "✅" : m.emoji}</span>
               <span>M{m.id}: {m.title.split(" ")[0]}</span>
@@ -1255,82 +1313,184 @@ const RoadmapView = ({ topicProgress, saveTopicProgress }) => {
         })}
       </div>
 
-      {/* Month header card */}
-      <div className="card" style={{ padding:"16px 20px", marginBottom:14, borderColor: mComplete ? T.green+"60" : month.color+"40", boxShadow:`0 0 20px ${mComplete?T.green:month.color}14` }}>
+      {/* Month header with live progress */}
+      <div className="card" style={{
+        padding:"18px 22px", marginBottom:16,
+        borderColor: monthComplete ? T.emerald+"60" : month.color+"40",
+        boxShadow:`0 0 20px ${monthComplete ? T.emerald : month.color}15`
+      }}>
         <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
-          <Ring pct={mPct} size={68} color={mComplete ? T.green : month.color} label={`${mPct}%`} />
-          <div style={{ flex:1, minWidth:200 }}>
-            <div className="syne" style={{ fontSize:18, fontWeight:800, color: mComplete ? T.green : T.t1, marginBottom:4 }}>
-              {mComplete ? "✅ " : ""}{month.title}
+          <span style={{ fontSize:40 }} className="float">{monthComplete ? "🏆" : month.emoji}</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:20, fontWeight:800, color:T.t1 }}>
+              Month {month.id}: {month.title}
+              {monthComplete && <span style={{ color:T.emerald, fontSize:16, marginLeft:10 }}>— Complete! ✅</span>}
             </div>
-            <div style={{ fontSize:12, color:T.t2, marginBottom:10 }}>{month.sub}</div>
+            <div style={{ fontSize:13, color:T.t2, marginBottom:10 }}>{month.sub}</div>
+            {/* Month-level progress bar */}
+            <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:6 }}>
+              <div style={{ flex:1, height:6, background:"#0a0a28", borderRadius:999, overflow:"hidden" }}>
+                <div style={{
+                  height:"100%", borderRadius:999, transition:"width .7s ease",
+                  width:`${monthPct}%`,
+                  background: monthComplete
+                    ? `linear-gradient(90deg,${T.emerald},#4ade80)`
+                    : `linear-gradient(90deg,${month.color},${month.color}99)`,
+                  boxShadow: monthComplete ? `0 0 8px ${T.emerald}80` : `0 0 8px ${month.color}60`
+                }} />
+              </div>
+              <span style={{ fontSize:12, fontWeight:700, color: monthComplete ? T.emerald : month.color, whiteSpace:"nowrap" }}>
+                {doneTopicsThisMonth}/{totalTopicsThisMonth} topics
+              </span>
+            </div>
             {/* Week completion dots */}
-            <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            <div style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap" }}>
               {month.weeks.map(w => {
-                const d = getWeekDone(w);
-                const wc = weekComplete(w);
+                const done = getWeekDone(w);
+                const wc = isWeekComplete(w);
                 return (
-                  <div key={w.n} style={{ fontSize:11, fontWeight:700, padding:"2px 10px", borderRadius:999,
-                    background: wc ? T.green+"18" : "#07072a",
-                    border:`1px solid ${wc ? T.green+"50" : T.border}`,
-                    color: wc ? T.green : T.t2 }}>
-                    {wc ? "✅" : `${d}/${w.topics.length}`} W{w.n}
+                  <div key={w.n} style={{
+                    display:"flex", alignItems:"center", gap:4, padding:"3px 10px", borderRadius:999,
+                    background: wc ? T.emerald+"18" : "#0a0a20",
+                    border:`1px solid ${wc ? T.emerald+"50" : T.border}`,
+                    fontSize:11, fontWeight:700, color: wc ? T.emerald : T.t2
+                  }}>
+                    {wc ? "✅" : `${done}/${w.topics.length}`} W{w.n}
                   </div>
                 );
               })}
             </div>
           </div>
           <div style={{ textAlign:"center", flexShrink:0 }}>
-            <div style={{ fontSize:22, fontWeight:900, color: mComplete ? T.green : month.color }}>{doneTopic}/{totalTopics}</div>
-            <div style={{ fontSize:11, color:T.t2 }}>topics done</div>
-            <div style={{ fontSize:11, color:T.t2 }}>{month.weeks.length} weeks</div>
+            <ProgressRing pct={monthPct} size={72} color={monthComplete ? T.emerald : month.color}
+              label={`${monthPct}%`} />
+            <div style={{ fontSize:11, color:T.t2, marginTop:4 }}>{month.totalXP} XP</div>
           </div>
         </div>
       </div>
 
-      {/* Info bar */}
-      <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14, padding:"9px 14px", background:T.surf, borderRadius:9, border:`1px solid ${T.border}` }}>
-        <span style={{ fontSize:12, color:T.t2 }}>📚 Click any week → Expand topics</span>
-        <span style={{ fontSize:12, color:T.t2 }}>✅ Tick topics you've studied</span>
-        <span style={{ fontSize:12, color:month.color }}>📚 100 Questions per topic (AI-generated)</span>
-        <span style={{ fontSize:12, color:T.t2 }}>🔨 Projects &amp; GitHub repos per week</span>
+      {/* Content tabs */}
+      <div style={{ display:"flex", gap:4, marginBottom:18, borderBottom:`1px solid ${T.border}`, paddingBottom:4 }}>
+        {[
+          { id:"weeks",     label:"📆 Weekly Topics" },
+          { id:"interview", label:"🎯 Interview Qs" },
+          { id:"capstone",  label:"🏆 Capstone" },
+        ].map(t => (
+          <button key={t.id} className={`tab-btn ${tab === t.id ? "active" : ""}`}
+            style={tab === t.id ? { color:month.color, background:month.color+"18" } : {}}
+            onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Week cards */}
-      {month.weeks.map((w, i) => (
-        <WeekCard
-          key={w.n}
-          week={w}
-          monthColor={month.color}
-          topicProgress={topicProgress}
-          onToggle={toggle}
-          expanded={expandedWeek === i}
-          onExpand={setExpandedWeek}
-          idx={i}
-        />
-      ))}
+      {/* ── WEEKLY TOPICS (main tab) ── */}
+      {tab === "weeks" && (
+        <div>
+          {/* Legend */}
+          <div style={{ display:"flex", gap:12, marginBottom:14, flexWrap:"wrap", padding:"8px 12px", background:T.surface, borderRadius:8, border:`1px solid ${T.border}` }}>
+            <span style={{ fontSize:12, color:T.t2, fontWeight:600 }}>How it works:</span>
+            <span style={{ fontSize:12, color:T.emerald }}>✅ Check a topic when you've studied it</span>
+            <span style={{ fontSize:12, color:month.color }}>🎯 Complete {MIN_TOPICS_PER_WEEK}+ topics to finish the week</span>
+            <span style={{ fontSize:12, color:T.cyan }}>🔓 Finish all weeks to unlock next month</span>
+          </div>
 
-      {/* Month complete → next month preview */}
-      {mComplete && (
-        <NextMonthPanel
-          currentM={month}
-          nextM={nextMonth}
-          onGo={() => nextMonth && (setSelMonth(nextMonth.id), setExpandedWeek(0))}
-        />
+          {month.weeks.map((w, i) => (
+            <WeekTopicCard
+              key={w.n}
+              week={w}
+              monthColor={month.color}
+              topicProgress={topicProgress}
+              onToggle={toggleTopic}
+              weekIndex={i}
+              expanded={expandedWeek === i}
+              onExpand={setExpandedWeek}
+            />
+          ))}
+
+          {/* Month Complete → Next Month Preview */}
+          {monthComplete && (
+            <NextMonthPreview
+              currentMonth={month}
+              nextMonth={nextMonth}
+              onGo={() => { if (nextMonth) { setSelMonth(nextMonth.id); setExpandedWeek(0); } }}
+            />
+          )}
+
+          {/* Not yet complete hint */}
+          {!monthComplete && doneTopicsThisMonth > 0 && (
+            <div style={{
+              marginTop:16, padding:"14px 18px",
+              background:"#06060e", border:`1px solid ${month.color}30`,
+              borderRadius:12, display:"flex", gap:12, alignItems:"flex-start"
+            }}>
+              <span style={{ fontSize:24 }}>💡</span>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:month.color, marginBottom:4 }}>
+                  Keep going — {month.weeks.filter(w => !isWeekComplete(w)).length} week(s) left to complete Month {month.id}
+                </div>
+                <p style={{ fontSize:12, color:T.t2, lineHeight:1.6 }}>
+                  Complete at least <strong style={{ color:T.t1 }}>{MIN_TOPICS_PER_WEEK} topics</strong> in each week.
+                  {" "}Weeks completed: <strong style={{ color:T.emerald }}>{month.weeks.filter(w => isWeekComplete(w)).length}/{month.weeks.length}</strong>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Not complete hint */}
-      {!mComplete && doneTopic > 0 && (
-        <div style={{ marginTop:14, padding:"13px 16px", background:month.color+"0a", border:`1px solid ${month.color}28`, borderRadius:11, display:"flex", gap:10, alignItems:"flex-start" }}>
-          <span style={{ fontSize:20 }}>💡</span>
-          <div>
-            <div style={{ fontSize:13, fontWeight:700, color:month.color, marginBottom:3 }}>
-              {month.weeks.filter(w => !weekComplete(w)).length} week(s) remaining in Month {month.id}
-            </div>
-            <p style={{ fontSize:12, color:T.t2, lineHeight:1.6 }}>
-              Complete <strong style={{ color:T.t1 }}>{MIN_PER_WEEK} topics</strong> in each week.
-              Weeks done: <strong style={{ color:T.green }}>{month.weeks.filter(w => weekComplete(w)).length}/{month.weeks.length}</strong>
+      {/* ── INTERVIEW QS ── */}
+      {tab === "interview" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {month.interviewQ?.map((q, i) => {
+            const ds = DIFF_STYLE[q.diff] || DIFF_STYLE.Easy;
+            return (
+              <div key={i} className="q-card">
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"flex-start" }}>
+                  <span className={`badge ${ds.cls}`}>{q.diff}</span>
+                  <span className={`badge ${CO_CLS[q.co] || "co-google"}`}>{q.co}</span>
+                  <p style={{ flex:1, minWidth:200, fontSize:14, color:T.t1, lineHeight:1.6 }}>{q.q}</p>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ padding:"14px 18px", background:month.color+"12", border:`1px solid ${month.color}30`, borderRadius:12, marginTop:8 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:month.color, marginBottom:6 }}>💡 Interview Tip for {month.title}</div>
+            <p style={{ fontSize:13, color:T.t2, lineHeight:1.6 }}>
+              Always explain your thinking out loud. Companies want to see how you reason — not just the answer.
+              Link every answer to a real project you've built this month.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAPSTONE ── */}
+      {tab === "capstone" && (
+        <div>
+          <div className="card" style={{ padding:"24px", borderColor:month.color+"50", boxShadow:`0 0 28px ${month.color}20` }}>
+            <div style={{ display:"flex", gap:16, alignItems:"flex-start", flexWrap:"wrap" }}>
+              <div style={{ fontSize:48 }} className="float">🏆</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:month.color, textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>
+                  Month {month.id} Capstone Project
+                </div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.t1, marginBottom:12, lineHeight:1.4 }}>
+                  {month.capstone}
+                </div>
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  <span style={{ fontSize:12, color:T.t2, background:T.surface, padding:"4px 10px", borderRadius:6, border:`1px solid ${T.border}` }}>📦 GitHub repo</span>
+                  <span style={{ fontSize:12, color:T.t2, background:T.surface, padding:"4px 10px", borderRadius:6, border:`1px solid ${T.border}` }}>📝 README + demo</span>
+                  <span style={{ fontSize:12, color:T.amber, background:T.amber+"15", padding:"4px 10px", borderRadius:6, border:`1px solid ${T.amber}40` }}>
+                    ⭐ {Math.round(month.totalXP * 0.4)} XP Reward
+                  </span>
+                </div>
+                {!monthComplete && (
+                  <div style={{ marginTop:12, fontSize:12, color:T.amber, background:T.amber+"12", padding:"8px 12px", borderRadius:8, border:`1px solid ${T.amber}30` }}>
+                    ⚠️ Complete all weekly topics first before starting the capstone project.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1338,1023 +1498,1005 @@ const RoadmapView = ({ topicProgress, saveTopicProgress }) => {
   );
 };
 
-/* ─────────────────────────── ML PATH VIEW ─────────────────────────── */
-const MLPathView = ({ allPythonDone }) => {
-  const [selStage, setSelStage] = useState(0);
+/* ===================================================================
+   DAILY TRACKER VIEW
+=================================================================== */
+const DailyTrackerView = ({ trackerData, saveTracker }) => {
+  const [selWeek, setSelWeek] = useState(WEEKS_DATA[0]);
+  const [selDay, setSelDay] = useState(1);
+  const day = selWeek.days.find(d => d.n === selDay) || selWeek.days[0];
+  const key = `${selWeek.id}-d${selDay}`;
+  const entry = trackerData[key] || {};
+  const update = (field, val) => saveTracker(prev => ({ ...prev, [key]: { ...prev[key], [field]: val } }));
 
-  const ML_STAGES = [
-    {
-      n: 1, emoji: "📐", title: "ML Foundations", color: "#3b82f6", duration: "4-6 weeks",
-      desc: "The math and theory that powers every ML algorithm",
-      topics: [
-        "Linear algebra: vectors, matrices, dot products, eigenvalues",
-        "Calculus: gradients, partial derivatives, chain rule for backprop",
-        "Probability & statistics: Bayes theorem, distributions, MLE",
-        "Scikit-learn: train/test split, pipelines, cross-validation",
-        "Bias-variance tradeoff, overfitting, regularization (L1/L2)",
-      ],
-      resources: [
-        { name:"fast.ai ML Course", url:"course.fast.ai", type:"Free Course", desc:"Best practical ML course — learn by coding first" },
-        { name:"Scikit-learn Docs", url:"scikit-learn.org/stable/user_guide", type:"Documentation", desc:"Read the user guide — best ML reference" },
-        { name:"StatQuest YouTube", url:"youtube.com/@statquest", type:"YouTube", desc:"Josh Starmer explains ML with incredible clarity" },
-        { name:"ML from Scratch", url:"github.com/eriklindernoren/ML-From-Scratch", stars:"23k", type:"GitHub", desc:"Implement ML algorithms from scratch — essential practice" },
-      ],
-      project: { title:"Iris Classifier from Scratch", desc:"Implement KNN, Logistic Regression, and Decision Tree on Iris dataset without using sklearn's model classes. Compare accuracy." },
-      interview: [
-        "What is the bias-variance tradeoff? How do you diagnose underfitting vs overfitting?",
-        "Explain gradient descent. Why mini-batch over full batch?",
-        "When would you use L1 regularization over L2?",
-        "What does cross-validation actually measure? Why is it better than a single split?",
-      ],
-    },
-    {
-      n: 2, emoji: "🌳", title: "Classical ML Algorithms", color: "#f97316", duration: "4-6 weeks",
-      desc: "The algorithms that power most production ML today",
-      topics: [
-        "Linear and Logistic Regression — math + implementation",
-        "Decision Trees, Random Forests, Gradient Boosting (XGBoost)",
-        "SVM: hyperplane, kernel trick, C and gamma tuning",
-        "Clustering: K-Means, DBSCAN, hierarchical clustering",
-        "Feature engineering: encoding, scaling, selection, creation",
-      ],
-      resources: [
-        { name:"Hands-On ML (Aurélien Géron)", url:"github.com/ageron/handson-ml3", stars:"27k", type:"Book + GitHub", desc:"Best ML book — read ch3-7, follow all notebooks" },
-        { name:"XGBoost Docs + Examples", url:"xgboost.readthedocs.io/en/stable/tutorials", type:"Docs", desc:"XGBoost powers 60% of Kaggle competition wins" },
-        { name:"Kaggle Learn — ML Intro", url:"kaggle.com/learn/intro-to-machine-learning", type:"Free Course", desc:"Kaggle's free ML intro — 6 micro-courses" },
-        { name:"mlcourse.ai", url:"mlcourse.ai", type:"Free Course", desc:"Open ML course by ODS.ai — most rigorous free course" },
-      ],
-      project: { title:"Titanic Prediction Pipeline", desc:"Full ML pipeline: EDA → feature engineering → train 5 models → ensemble → submit to Kaggle. Document everything in a notebook." },
-      interview: [
-        "How does a Random Forest reduce variance compared to a single Decision Tree?",
-        "Explain the kernel trick in SVM. When would you use RBF vs linear kernel?",
-        "What is gradient boosting? How does XGBoost differ from vanilla GBM?",
-        "How do you handle severe class imbalance in a classification problem?",
-      ],
-    },
-    {
-      n: 3, emoji: "🔥", title: "Neural Networks & PyTorch", color: "#a855f7", duration: "6-8 weeks",
-      desc: "Deep learning fundamentals and modern frameworks",
-      topics: [
-        "Perceptron, MLP architecture, activation functions (ReLU, sigmoid, tanh)",
-        "Backpropagation: chain rule, computational graphs, vanishing gradients",
-        "PyTorch: tensors, autograd, custom Dataset, DataLoader",
-        "CNNs: convolutions, pooling, feature maps — image classification",
-        "Batch normalization, dropout, learning rate schedules, optimizers",
-      ],
-      resources: [
-        { name:"fast.ai Deep Learning (Part 1)", url:"course.fast.ai", type:"Free Course", desc:"The best deep learning course for practitioners — free" },
-        { name:"Andrej Karpathy YouTube", url:"youtube.com/@AndrejKarpathy", type:"YouTube", desc:"Neural Networks: Zero to Hero — build GPT from scratch" },
-        { name:"PyTorch Tutorials", url:"pytorch.org/tutorials", type:"Official Docs", desc:"Start with 60 Minute Blitz, then go deeper" },
-        { name:"d2l.ai", url:"d2l.ai", type:"Free Book", desc:"Dive into Deep Learning — interactive textbook with code" },
-      ],
-      project: { title:"MNIST CNN from Scratch", desc:"Build a CNN in PyTorch that achieves >99% on MNIST. Then transfer to CIFAR-10. Write a blog post explaining every layer." },
-      interview: [
-        "Walk me through backpropagation mathematically for a 2-layer network.",
-        "Why does batch normalization help training? Where should you place it?",
-        "What is the vanishing gradient problem? How do ResNets solve it?",
-        "When would you use Adam vs SGD with momentum?",
-      ],
-    },
-    {
-      n: 4, emoji: "🤖", title: "NLP & Transformers", color: "#10b981", duration: "6-8 weeks",
-      desc: "Language models, BERT, GPT and the attention mechanism",
-      topics: [
-        "Text preprocessing: tokenization, stemming, TF-IDF, word2vec",
-        "Attention mechanism: query/key/value, self-attention, multi-head",
-        "Transformer architecture from scratch (following 'Attention Is All You Need')",
-        "BERT: pre-training objectives, fine-tuning with HuggingFace",
-        "GPT: autoregressive generation, prompt engineering at the model level",
-      ],
-      resources: [
-        { name:"HuggingFace NLP Course", url:"huggingface.co/learn/nlp-course", type:"Free Course", desc:"The definitive free NLP course — start here" },
-        { name:"Annotated Transformer", url:"nlp.seas.harvard.edu/annotated-transformer", type:"Paper+Code", desc:"Attention Is All You Need — annotated and implemented" },
-        { name:"Karpathy's makemore/nanoGPT", url:"github.com/karpathy/nanoGPT", stars:"36k", type:"GitHub", desc:"Build GPT from scratch — best learning exercise" },
-        { name:"NLTK + spaCy", url:"github.com/explosion/spaCy", stars:"29k", type:"Libraries", desc:"spaCy for production NLP, NLTK for learning" },
-      ],
-      project: { title:"Fine-tune DistilBERT Classifier", desc:"Fine-tune DistilBERT on a sentiment/classification dataset of your choice. Achieve >90% accuracy. Deploy as a HuggingFace Space." },
-      interview: [
-        "Explain the attention mechanism. Why is self-attention O(n²)?",
-        "What is the difference between BERT and GPT architecturally? When do you use each?",
-        "How does tokenization work in modern LLMs? Why does 'tokenization' split into multiple tokens?",
-        "What is RLHF and why does it matter for alignment?",
-      ],
-    },
-    {
-      n: 5, emoji: "🚀", title: "MLOps & Production", color: "#f59e0b", duration: "4-6 weeks",
-      desc: "Deploy, monitor and maintain ML models in production",
-      topics: [
-        "Model serving with FastAPI, containerization with Docker",
-        "MLflow for experiment tracking, model registry, versioning",
-        "Data versioning with DVC, reproducible ML pipelines",
-        "Monitoring: data drift, model drift, alerting strategies",
-        "CI/CD for ML: GitHub Actions, automated testing, deployment gates",
-      ],
-      resources: [
-        { name:"Full Stack Deep Learning", url:"fullstackdeeplearning.com", type:"Free Course", desc:"Best course on deploying ML in production" },
-        { name:"Made With ML", url:"madewithml.com", type:"Free Course", desc:"MLOps fundamentals — comprehensive and free" },
-        { name:"MLflow Docs", url:"mlflow.org/docs/latest/index.html", type:"Docs", desc:"Start here for experiment tracking and model registry" },
-        { name:"Evidently AI", url:"github.com/evidentlyai/evidently", stars:"5.4k", type:"GitHub", desc:"ML model monitoring — detect drift in production" },
-      ],
-      project: { title:"End-to-End ML Pipeline", desc:"Train model → MLflow tracking → Docker container → FastAPI endpoint → CI/CD with GitHub Actions → production monitoring with Evidently." },
-      interview: [
-        "How do you detect model drift in production? What do you do when you detect it?",
-        "Walk me through the ML deployment process from notebook to production.",
-        "What is A/B testing for ML models? How do you measure success?",
-        "Why is reproducibility important in ML? How do you achieve it?",
-      ],
-    },
-    {
-      n: 6, emoji: "🌌", title: "Specialization & Career", color: "#ef4444", duration: "Ongoing",
-      desc: "Choose your path and land your first ML/AI role",
-      topics: [
-        "Choose specialization: Computer Vision, NLP, Reinforcement Learning, or Generative AI",
-        "Read and implement papers from arXiv — build research intuition",
-        "Contribute to open-source ML projects (HuggingFace, scikit-learn)",
-        "Build a Kaggle competition portfolio — aim for top 10-20%",
-        "Interview preparation: ML system design, coding, behavioral STAR",
-      ],
-      resources: [
-        { name:"Papers With Code", url:"paperswithcode.com", type:"Research", desc:"Latest ML papers with code — read 1 paper per week" },
-        { name:"arXiv CS.LG", url:"arxiv.org/list/cs.LG/recent", type:"Research", desc:"Latest ML research — subscribe to weekly digest" },
-        { name:"Kaggle Competitions", url:"kaggle.com/competitions", type:"Practice", desc:"Compete and learn from other kernels — essential for ML careers" },
-        { name:"ML Interview Prep", url:"github.com/khangich/machine-learning-interview", stars:"9.2k", type:"GitHub", desc:"ML interview questions from FAANG companies" },
-      ],
-      project: { title:"ML Portfolio + Job Applications", desc:"3 polished ML projects with live demos. 1 Kaggle competition top 20%. 1 open-source contribution. Start applying to ML Engineer / Data Scientist roles." },
-      interview: [
-        "Design a recommendation system for YouTube at scale (ML System Design).",
-        "How would you build a fraud detection system? Walk me through end-to-end.",
-        "What ML research paper has excited you most recently and why?",
-        "Tell me about a time you improved a model's performance significantly.",
-      ],
-    },
+  const weekDays = selWeek.days.map(d => ({
+    ...d, done: !!trackerData[`${selWeek.id}-d${d.n}`]?.completed?.trim()
+  }));
+  const doneCnt = weekDays.filter(d => d.done).length;
+  const weekPct = Math.round(doneCnt / weekDays.length * 100);
+
+  const fields = [
+    { key:"planned",   label:"📋 What I planned to study",      placeholder:"e.g., " + day.plan },
+    { key:"completed", label:"✅ What I actually completed",      placeholder:"What did you build/learn today?" },
+    { key:"notes",     label:"📝 Notes, struggles & learnings",  placeholder:"What was confusing? What do you need to revisit?" },
   ];
 
-  const stage = ML_STAGES[selStage];
-  const LOCK = !allPythonDone;
-
   return (
-    <div className="fade-up" style={{ padding:"clamp(12px,4vw,28px)" }}>
-      <div className="syne" style={{ fontSize:"clamp(18px,4vw,26px)", fontWeight:800, color:T.t1, marginBottom:4 }}>
-        🌌 ML Learning Path
-      </div>
-      <p style={{ fontSize:13, color:T.t2, marginBottom:20 }}>
-        Your roadmap after Python mastery — from ML foundations to production AI systems
-      </p>
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader title="📅 Daily Tracker" sub="Track what you planned vs what you actually completed every day" />
 
-      {/* Lock message */}
-      {LOCK && (
-        <div style={{ padding:"16px 20px", background:"#0a0a04", border:"1px solid #92400e80", borderRadius:12, marginBottom:18, display:"flex", gap:12, alignItems:"flex-start" }}>
-          <span style={{ fontSize:24 }}>🔒</span>
-          <div>
-            <div style={{ fontSize:14, fontWeight:700, color:T.amber, marginBottom:4 }}>Complete Python Mastery first</div>
-            <p style={{ fontSize:12, color:T.t2, lineHeight:1.6 }}>
-              Finish all 6 months of the Python Roadmap (complete 3+ topics per week in all 24 weeks) to unlock the full ML Path. You can preview it here, but don't skip Python — it's your foundation.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ML Journey path */}
-      <div style={{ overflowX:"auto", marginBottom:18 }}>
-        <div style={{ display:"flex", gap:0, alignItems:"center", minWidth:"max-content", padding:"4px 2px" }}>
-          {ML_STAGES.map((s, i) => (
-            <div key={s.n} style={{ display:"flex", alignItems:"center" }}>
-              <div onClick={() => setSelStage(i)} style={{ textAlign:"center", cursor:"pointer", padding:"4px 0" }}>
-                <div style={{
-                  width:48, height:48, borderRadius:"50%", margin:"0 auto 6px",
-                  background: selStage === i ? s.color+"30" : "#08082a",
-                  border:`2px solid ${selStage === i ? s.color : T.border}`,
-                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:22,
-                  boxShadow: selStage === i ? `0 0 16px ${s.color}50` : "none",
-                  transition:"all .2s"
-                }}>{s.emoji}</div>
-                <div style={{ fontSize:10, fontWeight:700, color: selStage === i ? s.color : T.t2, whiteSpace:"nowrap", maxWidth:64, textAlign:"center", lineHeight:1.3 }}>
-                  {s.title.split(" ")[0]}
-                </div>
-                <div style={{ fontSize:9, color:T.t2, marginTop:2 }}>{s.duration}</div>
-              </div>
-              {i < ML_STAGES.length - 1 && (
-                <div style={{ width:32, height:2, background:`linear-gradient(90deg,${s.color}40,${ML_STAGES[i+1].color}40)`, margin:"0 2px", flexShrink:0 }} />
-              )}
-            </div>
+      {/* Week selector */}
+      <div style={{ marginBottom:12 }}>
+        <div className="tab-bar">
+          {WEEKS_DATA.map(w => (
+            <button key={w.id} className={`tab-btn ${selWeek.id === w.id ? "active" : ""}`}
+              onClick={() => { setSelWeek(w); setSelDay(1); }}>
+              W{w.n}: {w.title.split(" ").slice(0,2).join(" ")}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Stage detail */}
-      <div className="card" style={{ padding:"18px 22px", marginBottom:14, borderColor:stage.color+"40", boxShadow:`0 0 20px ${stage.color}14` }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start", flexWrap:"wrap" }}>
-          <span style={{ fontSize:42 }} className="float">{stage.emoji}</span>
-          <div style={{ flex:1 }}>
-            <div className="syne" style={{ fontSize:20, fontWeight:800, color:T.t1, marginBottom:3 }}>
-              Stage {stage.n}: {stage.title}
-            </div>
-            <p style={{ fontSize:13, color:T.t2, marginBottom:8 }}>{stage.desc}</p>
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              <span style={{ fontSize:12, color:stage.color, background:stage.color+"15", padding:"3px 10px", borderRadius:999, border:`1px solid ${stage.color}40`, fontWeight:600 }}>
-                ⏱ {stage.duration}
-              </span>
-              <span style={{ fontSize:12, color:T.t2, background:T.surf, padding:"3px 10px", borderRadius:999, border:`1px solid ${T.border}` }}>
-                {stage.topics.length} core topics
-              </span>
-            </div>
-          </div>
+      {/* Week progress bar */}
+      <div className="card" style={{ padding:"12px 16px", marginBottom:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+          <span style={{ fontSize:13, fontWeight:600, color:T.t1 }}>Week {selWeek.n} — {selWeek.title}</span>
+          <span style={{ fontSize:13, fontWeight:700, color:selWeek.color }}>{weekPct}% ({doneCnt}/7 days)</span>
+        </div>
+        <div className="prog-track">
+          <div className="prog-fill" style={{ width:`${weekPct}%`, background:selWeek.color, boxShadow:`0 0 8px ${selWeek.color}60` }} />
         </div>
       </div>
 
-      {/* Stage tabs */}
-      <div className="tab-row">
-        {[{id:"topics",label:"📋 Topics"},{id:"resources",label:"📚 Resources"},{id:"project",label:"🏆 Project"},{id:"interview",label:"🎯 Interview Qs"}].map(t => {
-          const [activeTab, setActiveTab] = useState("topics"); // eslint bug workaround — use parent state
-          return null;
-        })}
+      {/* Day selector */}
+      <div style={{ display:"flex", gap:8, marginBottom:18, flexWrap:"wrap" }}>
+        {weekDays.map(d => (
+          <button key={d.n} onClick={() => setSelDay(d.n)}
+            style={{
+              padding:"8px 14px", borderRadius:10, border:"1px solid",
+              borderColor: selDay === d.n ? selWeek.color : T.border,
+              background: selDay === d.n ? selWeek.color+"22" : T.card,
+              color: d.done ? T.emerald : selDay === d.n ? T.t1 : T.t2,
+              cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"'Outfit',sans-serif",
+              display:"flex", alignItems:"center", gap:6,
+              boxShadow: selDay === d.n ? `0 0 12px ${selWeek.color}30` : "none"
+            }}>
+            <span>{d.done ? "✅" : "○"}</span>
+            <span>Day {d.n}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Render all stage content directly (no tab state inside map) */}
-      <MLStageContent stage={stage} LOCK={LOCK} />
+      <div className="g2">
+        {/* Left: entry fields */}
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <div className="card" style={{ padding:18, borderColor: selWeek.color+"30" }}>
+            <div style={{ background:selWeek.color+"12", border:`1px solid ${selWeek.color}35`, borderRadius:10, padding:12, marginBottom:14 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:selWeek.color, marginBottom:3 }}>
+                Day {selDay}: {day.label}
+              </div>
+              <div style={{ fontSize:13, color:T.t1 }}>{day.plan}</div>
+            </div>
+            {fields.map(f => (
+              <div key={f.key} style={{ marginBottom:12 }}>
+                <label style={{ display:"block", fontSize:11, fontWeight:700, color:T.t2, marginBottom:6, textTransform:"uppercase", letterSpacing:.8 }}>
+                  {f.label}
+                </label>
+                <textarea className="inp" rows={3}
+                  placeholder={f.placeholder}
+                  value={entry[f.key] || ""}
+                  onChange={e => update(f.key, e.target.value)} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: progress sheet */}
+        <div>
+          <div className="card" style={{ padding:18, marginBottom:12 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:12, textTransform:"uppercase", letterSpacing:.8 }}>
+              📊 Day Completion Sheet
+            </div>
+            {[
+              { label:"Planned", done:!!entry.planned?.trim() },
+              { label:"Completed", done:!!entry.completed?.trim() },
+              { label:"Notes", done:!!entry.notes?.trim(), optional:true },
+              { label:"Git Push", done:!!entry.pushed },
+            ].map(item => (
+              <div key={item.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:`1px solid ${T.border}` }}>
+                <span style={{ fontSize:13, color:T.t2 }}>{item.label}</span>
+                <span style={{ fontSize:12, fontWeight:700, color: item.done ? T.emerald : item.optional ? T.t3 : T.red }}>
+                  {item.done ? "✅ Done" : item.optional ? "⚪ Optional" : "❌ Missing"}
+                </span>
+              </div>
+            ))}
+            <div style={{ marginTop:12 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                <span style={{ fontSize:13, fontWeight:600, color:T.t1 }}>Day Score</span>
+                <span style={{ fontSize:13, fontWeight:800, color:T.emerald }}>
+                  {Math.round(([entry.planned,entry.completed,entry.notes,entry.pushed?"x":""].filter(Boolean).length/4)*100)}%
+                </span>
+              </div>
+              <div className="prog-track">
+                <div className="prog-fill" style={{ width:`${Math.round(([entry.planned,entry.completed,entry.notes,entry.pushed?"x":""].filter(Boolean).length/4)*100)}%`, background:T.emerald }} />
+              </div>
+            </div>
+            <button className="btn btn-success" style={{ marginTop:14, width:"100%", justifyContent:"center" }}
+              onClick={() => update("pushed", !entry.pushed)}>
+              {entry.pushed ? "✅ Pushed to GitHub!" : "📤 Mark Git Push Done"}
+            </button>
+          </div>
+
+          <div className="card" style={{ padding:18 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:10, textTransform:"uppercase", letterSpacing:.8 }}>
+              ⏱ Hours Studied
+            </div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {[0.5,1,1.5,2,3,4].map(h => (
+                <button key={h} onClick={() => update("hours", h)}
+                  style={{
+                    padding:"6px 14px", borderRadius:8, border:"1px solid",
+                    borderColor: entry.hours === h ? T.purple : T.border,
+                    background: entry.hours === h ? T.purple+"25" : T.surface,
+                    color: entry.hours === h ? T.purple : T.t2,
+                    cursor:"pointer", fontSize:13, fontWeight:700, fontFamily:"'Outfit',sans-serif"
+                  }}>{h}h</button>
+              ))}
+            </div>
+            {entry.hours && (
+              <div style={{ marginTop:8, fontSize:12, color:T.emerald }}>
+                ✅ {entry.hours} hours logged today
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-/* Sub-component to avoid hooks-in-loop */
-const MLStageContent = ({ stage, LOCK }) => {
-  const [tab, setTab] = useState("topics");
+/* ===================================================================
+   CHALLENGES VIEW (with XP system + AI solutions)
+=================================================================== */
+const ChallengesView = ({ solvedChallenges, saveSolved, totalXP, saveXP }) => {
+  const [diffFilter, setDiffFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+  const [aiLoading, setAiLoading] = useState(null);
+  const [aiSolutions, setAiSolutions] = useState({});
+
+  const filtered = ALL_CHALLENGES.filter(c => {
+    if (diffFilter !== "all" && c.diff !== diffFilter) return false;
+    if (monthFilter !== "all" && c.month !== parseInt(monthFilter)) return false;
+    if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.desc.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const solvedCount = Object.values(solvedChallenges).filter(Boolean).length;
+  const earnedXP = ALL_CHALLENGES.filter(c => solvedChallenges[c.id]).reduce((a, c) => a + c.xp, 0);
+
+  const markSolved = (c) => {
+    const wasSolved = solvedChallenges[c.id];
+    saveSolved(prev => ({ ...prev, [c.id]: !prev[c.id] }));
+    saveXP(prev => prev + (wasSolved ? -c.xp : c.xp));
+  };
+
+  const getAISolution = async (c) => {
+    if (aiSolutions[c.id]) return;
+    setAiLoading(c.id);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          messages:[{ role:"user", content:`Solve this Python coding challenge cleanly:
+
+Challenge: ${c.title}
+Description: ${c.desc}
+
+Provide:
+1. Clean Python solution (well-commented)
+2. Time complexity: O(?)
+3. Space complexity: O(?)
+4. Key insight in 1 sentence
+
+Format as JSON:
+{"code": "...", "time": "O(?)", "space": "O(?)", "insight": "..."}` }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content.map(x=>x.text||"").join("").replace(/```json|```/g,"").trim();
+      setAiSolutions(prev => ({ ...prev, [c.id]: JSON.parse(text) }));
+    } catch { setAiSolutions(prev => ({ ...prev, [c.id]: { code:"# Error fetching solution", time:"N/A", space:"N/A", insight:"Try again." } })); }
+    setAiLoading(null);
+  };
+
+  const diffCounts = { Easy:0, Medium:0, Hard:0 };
+  ALL_CHALLENGES.forEach(c => diffCounts[c.diff]++);
+  const solvedByDiff = { Easy:0, Medium:0, Hard:0 };
+  ALL_CHALLENGES.filter(c => solvedChallenges[c.id]).forEach(c => solvedByDiff[c.diff]++);
+
   return (
-    <>
-      <div className="tab-row">
-        {[{id:"topics",label:"📋 Topics"},{id:"resources",label:"📚 Resources"},{id:"project",label:"🏆 Project"},{id:"interview",label:"🎯 Interview Qs"}].map(t => (
-          <button key={t.id} className={`tab-b ${tab===t.id?"on":""}`}
-            style={tab===t.id?{color:stage.color,background:stage.color+"18"}:{}}
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader title="⚡ Coding Challenges" sub={`${solvedCount}/${ALL_CHALLENGES.length} solved · ${earnedXP} XP earned`}
+        action={<XPBadge xp={earnedXP} />} />
+
+      {/* Stats row */}
+      <div className="g4" style={{ marginBottom:16 }}>
+        {[
+          { label:"🟢 Easy", total:diffCounts.Easy, solved:solvedByDiff.Easy, color:T.emerald },
+          { label:"🟡 Medium", total:diffCounts.Medium, solved:solvedByDiff.Medium, color:T.amber },
+          { label:"🔴 Hard", total:diffCounts.Hard, solved:solvedByDiff.Hard, color:T.red },
+          { label:"⭐ Total XP", total:ALL_CHALLENGES.reduce((a,c)=>a+c.xp,0), solved:earnedXP, color:T.purple },
+        ].map(s => (
+          <div key={s.label} className="card" style={{ padding:"12px 14px" }}>
+            <div style={{ fontSize:12, color:T.t2, marginBottom:4 }}>{s.label}</div>
+            <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.solved}<span style={{ fontSize:12, color:T.t2, fontWeight:400 }}>/{s.total}</span></div>
+            <div className="prog-track" style={{ marginTop:6 }}>
+              <div className="prog-fill" style={{ width:`${Math.round(s.solved/s.total*100)}%`, background:s.color }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" }}>
+        <input className="inp" placeholder="🔍 Search challenges..." value={search}
+          onChange={e=>setSearch(e.target.value)} style={{ flex:1, minWidth:180 }} />
+        <div className="scroll-row">
+          {["all","Easy","Medium","Hard"].map(d => (
+            <button key={d} className={`btn ${diffFilter===d?"btn-primary":"btn-ghost"}`}
+              style={{ padding:"8px 12px" }} onClick={()=>setDiffFilter(d)}>
+              {d==="all"?"All":d==="Easy"?"🟢 Easy":d==="Medium"?"🟡 Medium":"🔴 Hard"}
+            </button>
+          ))}
+        </div>
+        <select value={monthFilter} onChange={e=>setMonthFilter(e.target.value)}
+          style={{ background:T.card, border:`1px solid ${T.border}`, color:T.t1, borderRadius:8, padding:"8px 12px", fontFamily:"'Outfit',sans-serif", fontSize:13 }}>
+          <option value="all">All Months</option>
+          {CURRICULUM.map(m => <option key={m.id} value={m.id}>{m.emoji} M{m.id}: {m.title}</option>)}
+        </select>
+      </div>
+
+      <div style={{ fontSize:12, color:T.t2, marginBottom:10 }}>Showing {filtered.length} challenges</div>
+
+      {/* Challenge cards */}
+      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        {filtered.map(c => {
+          const solved = solvedChallenges[c.id];
+          const ds = DIFF_STYLE[c.diff] || DIFF_STYLE.Easy;
+          const expanded = expandedId === c.id;
+          const sol = aiSolutions[c.id];
+          return (
+            <div key={c.id} className={`ch-card ${solved?"solved":""}`}>
+              {/* Card header */}
+              <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                <div style={{ flex:1, cursor:"pointer" }} onClick={()=>setExpandedId(expanded?null:c.id)}>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginBottom:6 }}>
+                    <span className={`badge ${ds.cls}`}>{c.diff}</span>
+                    <span style={{ fontSize:11, background:c.monthColor+"18", color:c.monthColor, padding:"2px 8px", borderRadius:999, border:`1px solid ${c.monthColor}40`, fontWeight:600 }}>
+                      {c.monthEmoji} M{c.month}
+                    </span>
+                    <span style={{ fontSize:14, fontWeight:700, color: solved ? T.emerald : T.t1 }}>
+                      {solved && "✅ "}{c.title}
+                    </span>
+                    <XPBadge xp={c.xp} />
+                  </div>
+                  <p style={{ fontSize:13, color:T.t2, lineHeight:1.5 }}>{c.desc}</p>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6, flexShrink:0 }}>
+                  <button className={`btn ${solved?"btn-success":"btn-ghost"}`}
+                    style={{ padding:"6px 14px", fontSize:12 }}
+                    onClick={()=>markSolved(c)}>
+                    {solved ? "✅ Solved" : "○ Mark Solved"}
+                  </button>
+                  <button className="btn btn-ghost" style={{ padding:"6px 14px", fontSize:12 }}
+                    onClick={()=>{ setExpandedId(c.id); getAISolution(c); }}
+                    disabled={aiLoading === c.id}>
+                    {aiLoading===c.id ? <><Spinner size={12}/> Solving...</> : "🤖 AI Solution"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded: hint */}
+              {expanded && (
+                <div style={{ marginTop:12, padding:"10px 14px", background:T.surface, borderRadius:8, border:`1px solid ${T.border}` }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:T.t3, marginBottom:4, textTransform:"uppercase" }}>💡 Hint</div>
+                  <p style={{ fontSize:13, color:T.t1, lineHeight:1.6 }}>{c.hint}</p>
+                </div>
+              )}
+
+              {/* AI Solution */}
+              {sol && (
+                <div style={{ marginTop:12 }}>
+                  <div style={{ display:"flex", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+                    <span style={{ fontSize:11, background:"#0f1e0f", color:T.emerald, padding:"2px 8px", borderRadius:6, border:`1px solid #14532d`, fontWeight:700 }}>
+                      ⏱ {sol.time}
+                    </span>
+                    <span style={{ fontSize:11, background:"#0a0a1e", color:T.blue, padding:"2px 8px", borderRadius:6, border:`1px solid #1e3a8a`, fontWeight:700 }}>
+                      💾 {sol.space}
+                    </span>
+                    <span style={{ fontSize:12, color:T.amber }}>💡 {sol.insight}</span>
+                  </div>
+                  <pre className="code-block" style={{ fontSize:12 }}>{sol.code}</pre>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* ===================================================================
+   WEEKEND VIEW
+=================================================================== */
+const WeekendView = () => {
+  const [selMod, setSelMod] = useState(null);
+  const [selTopic, setSelTopic] = useState(0);
+
+  if (selMod) {
+    const m = WEEKEND_MODULES.find(x => x.id === selMod);
+    const t = m.topics[selTopic];
+    return (
+      <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+        <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:20, flexWrap:"wrap" }}>
+          <button className="btn btn-ghost" onClick={()=>setSelMod(null)}>← Back</button>
+          <h2 className="sec-h" style={{ color:m.color }}>{m.emoji} {m.title}</h2>
+          <span style={{ fontSize:11, color:T.t2, background:T.card, padding:"3px 10px", borderRadius:999, border:`1px solid ${T.border}` }}>📅 {m.day}</span>
+        </div>
+        <div style={{ display:"flex", gap:4, marginBottom:18, flexWrap:"wrap" }}>
+          {m.topics.map((tp, i) => (
+            <button key={i} className={`tab-btn ${selTopic===i?"active":""}`}
+              style={selTopic===i?{color:m.color,background:m.color+"18"}:{}}
+              onClick={()=>setSelTopic(i)}>{tp.title}</button>
+          ))}
+        </div>
+        <div className="g2">
+          <div className="card" style={{ padding:20 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:m.color, marginBottom:8 }}>{t.title}</div>
+            <p style={{ fontSize:13, color:T.t2, lineHeight:1.7, marginBottom:16 }}>{t.content}</p>
+            <div style={{ fontSize:11, fontWeight:700, color:T.t3, textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>Hands-on Exercises</div>
+            {t.exercises.map((ex, i) => (
+              <div key={i} style={{ display:"flex", gap:10, marginBottom:8, padding:"8px 12px", background:T.surface, borderRadius:8 }}>
+                <span style={{ color:m.color, fontWeight:700 }}>{i+1}.</span>
+                <span style={{ fontSize:13, color:T.t1 }}>{ex}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div className="card" style={{ padding:18, marginBottom:12, borderColor:m.color+"40" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:8, textTransform:"uppercase", letterSpacing:1 }}>🏆 Weekend Challenge</div>
+              <p style={{ fontSize:14, color:T.t1, lineHeight:1.6 }}>{m.challenge}</p>
+            </div>
+            <div className="card" style={{ padding:18 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:10, textTransform:"uppercase", letterSpacing:1 }}>All Topics</div>
+              {m.topics.map((tp, i) => (
+                <div key={i} onClick={()=>setSelTopic(i)}
+                  style={{ padding:"10px 12px", marginBottom:4, borderRadius:8, cursor:"pointer",
+                    background: selTopic===i ? m.color+"18" : T.surface,
+                    border: `1px solid ${selTopic===i ? m.color+"40" : "transparent"}` }}>
+                  <div style={{ fontSize:13, fontWeight:600, color: selTopic===i ? m.color : T.t1 }}>{tp.title}</div>
+                  <div style={{ fontSize:11, color:T.t2 }}>{tp.content.slice(0,50)}...</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader title="🗓️ Weekend Learning"
+        sub="Git, DSA, LLM Architecture, Prompt Engineering, Open Source & System Design" />
+      <div className="g2">
+        {WEEKEND_MODULES.map(m => (
+          <div key={m.id} onClick={()=>{ setSelMod(m.id); setSelTopic(0); }}
+            style={{ background:"linear-gradient(135deg,#0b0b26,#0e0e30)", border:`1px solid ${T.border}`,
+              borderRadius:14, padding:20, cursor:"pointer", transition:"all .25s" }}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.borderColor=m.color+"60";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.borderColor=T.border;}}>
+            <div style={{ display:"flex", gap:12, marginBottom:10 }}>
+              <span style={{ fontSize:34 }} className="float">{m.emoji}</span>
+              <div>
+                <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:4 }}>
+                  <span style={{ fontSize:15, fontWeight:700, color:T.t1 }}>{m.title}</span>
+                  <span style={{ fontSize:11, background:m.color+"20", color:m.color, padding:"2px 8px", borderRadius:999, fontWeight:700 }}>{m.day}</span>
+                </div>
+                <p style={{ fontSize:13, color:T.t2, lineHeight:1.5 }}>{m.description}</p>
+              </div>
+            </div>
+            <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+              {m.topics.map((t, i) => (
+                <span key={i} style={{ fontSize:11, color:T.t2, background:"#06061a", padding:"2px 8px", borderRadius:6, border:`1px solid ${T.border}` }}>{t.title}</span>
+              ))}
+            </div>
+            <div style={{ marginTop:12, display:"flex", justifyContent:"flex-end" }}>
+              <span style={{ fontSize:12, color:m.color, fontWeight:700 }}>Start Module →</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ===================================================================
+   AI MENTOR VIEW (Code Review + Progress Analysis)
+=================================================================== */
+const AIMentorView = ({ totalXP, solvedChallenges, trackerData }) => {
+  const [tab, setTab] = useState("review");
+  const [code, setCode] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [lang, setLang] = useState("Python");
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const fileRef = useRef();
+
+  const handleFile = f => {
+    if (!f) return;
+    setFileName(f.name);
+    const r = new FileReader();
+    r.onload = e => setCode(e.target.result);
+    r.readAsText(f);
+  };
+
+  const analyzeCode = async () => {
+    if (!code.trim()) { alert("Paste or upload code first!"); return; }
+    setLoading(true); setResult(null);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514", max_tokens:1800,
+          messages:[{ role:"user", content:`You are an expert code reviewer. Analyze this ${lang} code:
+
+\`\`\`${lang.toLowerCase()}
+${code}
+\`\`\`
+
+Respond ONLY with valid JSON:
+{
+  "overall_score": 0-100,
+  "correctness_score": 0-100,
+  "quality_score": 0-100,
+  "originality_score": 0-100,
+  "is_correct": true/false,
+  "correctness_explanation": "brief",
+  "is_human_written": true/false,
+  "writing_analysis": "brief analysis",
+  "strengths": ["3 strengths"],
+  "improvements": ["3 improvements"],
+  "bugs": ["bugs if any, else empty array"],
+  "next_steps": ["2 learning recommendations"],
+  "summary": "2-3 sentence assessment"
+}` }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content.map(x=>x.text||"").join("").replace(/```json|```/g,"").trim();
+      setResult(JSON.parse(text));
+    } catch { alert("Review failed. Please try again."); }
+    setLoading(false);
+  };
+
+  const analyzeProgress = async () => {
+    setAnalysisLoading(true); setAnalysis(null);
+    const solvedCount = Object.values(solvedChallenges).filter(Boolean).length;
+    const trackedDays = Object.values(trackerData).filter(d=>d.completed?.trim()).length;
+    const lvl = getLevel(totalXP);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514", max_tokens:1200,
+          messages:[{ role:"user", content:`You are a personalized AI learning coach for a Python/AI engineering student.
+
+Student stats:
+- Total XP: ${totalXP}
+- Level: ${lvl.level} (${lvl.title})
+- Challenges solved: ${solvedCount}/${ALL_CHALLENGES.length}
+- Days tracked: ${trackedDays}
+
+Based on these stats, respond ONLY with valid JSON:
+{
+  "headline": "one compelling sentence assessment",
+  "overall_assessment": "2-3 sentences on overall progress",
+  "momentum": "Excellent|Good|Building|Needs Boost",
+  "strong_areas": ["2-3 things going well"],
+  "weak_areas": ["2-3 areas to improve"],
+  "action_items": ["3 specific things to do this week"],
+  "next_focus": "what to focus on next",
+  "job_ready_estimate": "X months",
+  "motivational_message": "personal, encouraging closing message"
+}` }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content.map(x=>x.text||"").join("").replace(/```json|```/g,"").trim();
+      setAnalysis(JSON.parse(text));
+    } catch { alert("Analysis failed. Please try again."); }
+    setAnalysisLoading(false);
+  };
+
+  const ScoreBar = ({ label, val, color }) => (
+    <div style={{ marginBottom:10 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+        <span style={{ fontSize:13, color:T.t2 }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:700, color }}>{val}/100</span>
+      </div>
+      <div className="prog-track">
+        <div className="prog-fill" style={{ width:`${val}%`, background:color, boxShadow:`0 0 6px ${color}60` }} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader title="🤖 AI Mentor" sub="Code review, progress analysis & personalized learning guidance" />
+
+      <div style={{ display:"flex", gap:4, marginBottom:20, borderBottom:`1px solid ${T.border}`, paddingBottom:4 }}>
+        {[
+          { id:"review", label:"💻 Code Review" },
+          { id:"progress", label:"📈 Progress Analysis" },
+        ].map(t => (
+          <button key={t.id} className={`tab-btn ${tab===t.id?"active":""}`}
+            style={tab===t.id?{color:T.cyan,background:T.cyan+"15"}:{}}
             onClick={()=>setTab(t.id)}>{t.label}</button>
         ))}
       </div>
 
-      {tab === "topics" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {stage.topics.map((t, i) => (
-            <div key={i} style={{ display:"flex", gap:10, padding:"11px 14px", background:T.surf, borderRadius:10, border:`1px solid ${T.border}` }}>
-              <div style={{ width:24, height:24, borderRadius:6, background:stage.color+"20", border:`1px solid ${stage.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:stage.color, flexShrink:0 }}>{i+1}</div>
-              <span style={{ fontSize:13, color:T.t1, lineHeight:1.5 }}>{t}</span>
+      {/* ── CODE REVIEW TAB ── */}
+      {tab === "review" && (
+        <div className="g2" style={{ alignItems:"start" }}>
+          <div>
+            <div className="upload-zone" style={{ marginBottom:12 }}
+              onClick={()=>fileRef.current?.click()}
+              onDragOver={e=>{e.preventDefault();setDragging(true)}}
+              onDragLeave={()=>setDragging(false)}
+              onDrop={e=>{e.preventDefault();setDragging(false);handleFile(e.dataTransfer.files[0])}}
+            >
+              <div style={{ fontSize:32, marginBottom:8 }}>📂</div>
+              <div style={{ fontSize:14, fontWeight:700, color:T.t1, marginBottom:4 }}>{fileName||"Drop your code file here"}</div>
+              <div style={{ fontSize:12, color:T.t2 }}>or click to browse · .py .js .ts .cpp .java</div>
+              <input ref={fileRef} type="file" style={{ display:"none" }} accept=".py,.js,.ts,.cpp,.java,.txt" onChange={e=>handleFile(e.target.files[0])} />
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ display:"flex", gap:8, marginBottom:8, alignItems:"center" }}>
+              <span style={{ fontSize:13, color:T.t2 }}>Language:</span>
+              <select value={lang} onChange={e=>setLang(e.target.value)}
+                style={{ background:T.card, border:`1px solid ${T.border}`, color:T.t1, borderRadius:8, padding:"6px 10px", fontFamily:"'Outfit',sans-serif", fontSize:13 }}>
+                {["Python","JavaScript","TypeScript","Java","C++","C"].map(l=><option key={l}>{l}</option>)}
+              </select>
+            </div>
+            <textarea className="inp mono" rows={14}
+              placeholder={`# Paste your ${lang} code here...\n\ndef solution():\n    pass`}
+              value={code} onChange={e=>setCode(e.target.value)}
+              style={{ fontSize:12, lineHeight:1.7, marginBottom:12 }} />
+            <button className="btn btn-primary" style={{ width:"100%", justifyContent:"center", padding:12 }}
+              onClick={analyzeCode} disabled={loading||!code.trim()}>
+              {loading ? <><Spinner /> Analyzing...</> : "🤖 Review My Code"}
+            </button>
+          </div>
 
-      {tab === "resources" && (
-        <div className="g2" style={{ gap:10 }}>
-          {stage.resources.map((r, i) => (
-            <div key={i} className="repo-card" onClick={() => window.open(`https://${r.url}`, "_blank")}>
-              <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:6 }}>
-                <span style={{ fontSize:18 }}>
-                  {r.type.includes("GitHub") ? "📦" : r.type.includes("Course") ? "🎓" : r.type.includes("YouTube") ? "▶️" : r.type.includes("Book") ? "📖" : "🔗"}
-                </span>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.blue, marginBottom:2 }}>{r.name}</div>
-                  <span style={{ fontSize:10, color:stage.color, background:stage.color+"15", padding:"1px 7px", borderRadius:999, border:`1px solid ${stage.color}40`, fontWeight:600 }}>{r.type}</span>
-                  {r.stars && <span className="mono" style={{ fontSize:10, color:T.t2, marginLeft:8 }}>⭐ {r.stars}</span>}
-                </div>
-                <span style={{ fontSize:11, color:T.blue }}>↗</span>
+          <div>
+            {!result && !loading && (
+              <div style={{ textAlign:"center", padding:"60px 20px", color:T.t3 }}>
+                <div style={{ fontSize:56, marginBottom:12 }}>🤖</div>
+                <div style={{ fontSize:14, fontWeight:600, color:T.t2 }}>Ready to Review</div>
+                <div style={{ fontSize:13, color:T.t3, marginTop:4 }}>Paste code or upload a file</div>
               </div>
-              <p style={{ fontSize:12, color:T.t2, lineHeight:1.5 }}>{r.desc}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {tab === "project" && (
-        <div className="card card-gold" style={{ padding:"24px" }}>
-          <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
-            <div style={{ fontSize:44 }} className="float">🏆</div>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:1, marginBottom:8 }}>Stage {stage.n} Project</div>
-              <div className="syne" style={{ fontSize:18, fontWeight:800, color:T.t1, marginBottom:10 }}>{stage.project.title}</div>
-              <p style={{ fontSize:14, color:T.t2, lineHeight:1.7 }}>{stage.project.desc}</p>
-              {LOCK && (
-                <div style={{ marginTop:12, fontSize:12, color:T.amber, background:T.amber+"12", padding:"7px 12px", borderRadius:8, border:`1px solid ${T.amber}30` }}>
-                  🔒 Complete Python Mastery to unlock this project
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tab === "interview" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {stage.interview.map((q, i) => (
-            <div key={i} className="q-row">
-              <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <span className="mono" style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:6, flexShrink:0, background:stage.color+"15", color:stage.color, border:`1px solid ${stage.color}40` }}>Q{i+1}</span>
-                <p style={{ fontSize:14, color:T.t1, lineHeight:1.6 }}>{q}</p>
+            )}
+            {loading && (
+              <div style={{ textAlign:"center", padding:"60px 20px" }}>
+                <div style={{ fontSize:40, marginBottom:12 }} className="float">🔍</div>
+                <div style={{ fontSize:14, color:T.t2 }}>Analyzing your code...</div>
               </div>
-            </div>
-          ))}
-          <div style={{ marginTop:8, padding:"13px 16px", background:stage.color+"0e", border:`1px solid ${stage.color}28`, borderRadius:11 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:stage.color, marginBottom:5 }}>💡 Interview Tips for {stage.title}</div>
-            <p style={{ fontSize:13, color:T.t2, lineHeight:1.6 }}>
-              Always explain your reasoning out loud. Link every answer to a project you've built. For ML questions, mention the dataset size, model chosen, and metric you optimized.
-            </p>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
-/* ═══════════════════════════════════════════════════════════════════
-   PROGRESS TRACKER VIEW
-═══════════════════════════════════════════════════════════════════ */
-const DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-function getWeekKey(offset=0){ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+offset*7); return d.toISOString().slice(0,10); }
-function getDateKey(weekStart,dayIdx){ const d=new Date(weekStart); d.setDate(d.getDate()+dayIdx); return d.toISOString().slice(0,10); }
-function todayKey(){ return new Date().toISOString().slice(0,10); }
-function formatDate(key){ const d=new Date(key); return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"}); }
-const MOOD_EMOJIS = ["😴","😕","😐","😊","🔥"];
-
-const TrackerView = ({ topicProgress }) => {
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [logs, saveLogs] = useStorage("tracker-logs-v1", {});
-  const [editDay, setEditDay] = useState(null);
-  const [form, setForm] = useState({ hours:"1", topics:"", notes:"", git:false, mood:3 });
-  const [view, setView] = useState("week");
-
-  const weekStart = getWeekKey(weekOffset);
-  const days = DAYS_OF_WEEK.map((_,i)=>getDateKey(weekStart,i));
-  const today = todayKey();
-
-  const saveDay = () => { saveLogs(prev=>({...prev,[editDay]:{...form,date:editDay}})); setEditDay(null); };
-  const openEdit = (key) => { setEditDay(key); setForm(logs[key]||{hours:"1",topics:"",notes:"",git:false,mood:3}); };
-
-  const totalDaysLogged = Object.keys(logs).length;
-  const totalHours = Object.values(logs).reduce((a,l)=>a+parseFloat(l.hours||0),0);
-  const gitPushes = Object.values(logs).filter(l=>l.git).length;
-  const streak = (()=>{ let s=0,d=new Date(); while(true){const k=d.toISOString().slice(0,10); if(!logs[k])break; s++;d.setDate(d.getDate()-1);} return s; })();
-
-  const heatDays = Array.from({length:84},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-83+i); return d.toISOString().slice(0,10); });
-
-  return (
-    <div className="fade-up" style={{padding:"clamp(12px,4vw,28px)"}}>
-      <div className="syne" style={{fontSize:"clamp(18px,4vw,24px)",fontWeight:800,color:T.t1,marginBottom:4}}>📅 Progress Tracker</div>
-      <p style={{fontSize:13,color:T.t2,marginBottom:18}}>Log daily study sessions, track streaks, and review monthly progress</p>
-
-      <div className="g4" style={{marginBottom:18,gap:10}}>
-        {[
-          {icon:"🔥",val:streak,label:"Day Streak",c:"#f97316"},
-          {icon:"⏱️",val:totalHours.toFixed(1)+"h",label:"Total Hours",c:T.blue},
-          {icon:"📅",val:totalDaysLogged,label:"Days Logged",c:T.green},
-          {icon:"📤",val:gitPushes,label:"Git Pushes",c:"#a855f7"},
-        ].map(s=>(
-          <div key={s.label} style={{background:T.card,border:`1px solid ${s.c}30`,borderRadius:12,padding:"12px 14px",textAlign:"center",boxShadow:`0 0 12px ${s.c}12`}}>
-            <div style={{fontSize:20}}>{s.icon}</div>
-            <div className="syne" style={{fontSize:22,fontWeight:800,color:s.c,lineHeight:1.1}}>{s.val}</div>
-            <div style={{fontSize:11,color:T.t2}}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="tab-row" style={{marginBottom:16}}>
-        {[{id:"week",l:"📆 This Week"},{id:"month",l:"🔥 Heatmap"},{id:"stats",l:"📊 Monthly Report"}].map(t=>(
-          <button key={t.id} className={`tab-b ${view===t.id?"on":""}`} onClick={()=>setView(t.id)}
-            style={view===t.id?{color:T.blue,background:T.blue+"18"}:{}}>{t.l}</button>
-        ))}
-      </div>
-
-      {view==="week" && (
-        <div>
-          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setWeekOffset(w=>w-1)}>← Prev</button>
-            <div style={{flex:1,textAlign:"center",fontSize:13,fontWeight:700,color:T.t1}}>
-              Week of {formatDate(days[0])} — {formatDate(days[6])}
-              {weekOffset===0&&<span style={{fontSize:11,color:T.green,marginLeft:8}}>● Current</span>}
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setWeekOffset(w=>Math.min(0,w+1))} disabled={weekOffset===0}>Next →</button>
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,160px),1fr))",gap:10}}>
-            {days.map((dk,i)=>{
-              const log=logs[dk]; const isToday=dk===today; const dayDone=!!log?.topics?.trim();
-              return (
-                <div key={dk} onClick={()=>openEdit(dk)} style={{
-                  background:dayDone?"#021508":isToday?"#07071e":T.card,
-                  border:`1px solid ${dayDone?T.green+"60":isToday?T.blue+"60":T.border}`,
-                  borderRadius:12,padding:"13px 13px",cursor:"pointer",transition:"all .2s",
-                  boxShadow:isToday?`0 0 14px ${T.blue}20`:dayDone?`0 0 12px ${T.green}18`:"none"
-                }}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <div>
-                      <div style={{fontSize:11,fontWeight:700,color:isToday?T.blue:T.t2}}>{DAYS_OF_WEEK[i]}</div>
-                      <div style={{fontSize:13,fontWeight:800,color:T.t1}}>{formatDate(dk)}</div>
-                    </div>
-                    <div style={{fontSize:18}}>{dayDone?(MOOD_EMOJIS[parseInt(log.mood||3)-1]||"😊"):isToday?"📝":"○"}</div>
+            )}
+            {result && (
+              <div>
+                <div className="card" style={{ padding:20, marginBottom:12, textAlign:"center" }}>
+                  <div style={{ fontSize:52, fontWeight:900, background:
+                    result.overall_score>=80?"linear-gradient(135deg,#10b981,#4ade80)":
+                    result.overall_score>=60?"linear-gradient(135deg,#f59e0b,#fbbf24)":
+                    "linear-gradient(135deg,#ef4444,#f87171)",
+                    WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+                    {result.overall_score}
                   </div>
-                  {log?(
-                    <div>
-                      <div style={{fontSize:12,fontWeight:600,color:T.green}}>⏱ {log.hours}h</div>
-                      {log.topics&&<div style={{fontSize:11,color:T.t2,marginTop:3,lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{log.topics}</div>}
-                      {log.git&&<div style={{fontSize:10,color:"#a855f7",marginTop:4}}>📤 Git pushed</div>}
-                    </div>
-                  ):(
-                    <div style={{fontSize:11,color:T.t3,marginTop:4}}>{isToday?"Tap to log today":"Click to log"}</div>
-                  )}
-                  {isToday&&!log&&<div style={{marginTop:6,fontSize:10,fontWeight:700,color:T.blue,background:T.blue+"15",padding:"3px 8px",borderRadius:999,display:"inline-block",border:`1px solid ${T.blue}40`}}>Today</div>}
+                  <div style={{ fontSize:12, color:T.t2 }}>Overall Score / 100</div>
+                  <p style={{ fontSize:13, color:T.t1, lineHeight:1.5, marginTop:8 }}>{result.summary}</p>
                 </div>
-              );
-            })}
+                <div className="rev-sec">
+                  <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:10, textTransform:"uppercase", letterSpacing:1 }}>Score Breakdown</div>
+                  <ScoreBar label="✅ Correctness" val={result.correctness_score} color={T.emerald} />
+                  <ScoreBar label="✍️ Originality" val={result.originality_score} color={T.blue} />
+                  <ScoreBar label="⭐ Code Quality" val={result.quality_score} color={T.purple} />
+                </div>
+                <div className="g2" style={{ marginBottom:10 }}>
+                  <div className="rev-sec" style={{ margin:0 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color: result.is_correct ? T.emerald : T.red, marginBottom:5 }}>
+                      {result.is_correct ? "✅ Code is Correct" : "❌ Has Issues"}
+                    </div>
+                    <p style={{ fontSize:12, color:T.t2, lineHeight:1.5 }}>{result.correctness_explanation}</p>
+                  </div>
+                  <div className="rev-sec" style={{ margin:0 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color: result.is_human_written ? T.emerald : T.amber, marginBottom:5 }}>
+                      {result.is_human_written ? "👤 Looks Human-Written" : "⚠️ May Not Be Original"}
+                    </div>
+                    <p style={{ fontSize:12, color:T.t2, lineHeight:1.5 }}>{result.writing_analysis}</p>
+                  </div>
+                </div>
+                {result.strengths?.length>0 && (
+                  <div className="rev-sec">
+                    <div style={{ fontSize:11, fontWeight:700, color:T.emerald, marginBottom:8 }}>💪 Strengths</div>
+                    {result.strengths.map((s,i)=>(
+                      <div key={i} style={{ display:"flex", gap:8, marginBottom:5 }}>
+                        <span style={{ color:T.emerald }}>✓</span>
+                        <span style={{ fontSize:13, color:T.t1 }}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {result.improvements?.length>0 && (
+                  <div className="rev-sec">
+                    <div style={{ fontSize:11, fontWeight:700, color:T.amber, marginBottom:8 }}>🔧 Improvements</div>
+                    {result.improvements.map((s,i)=>(
+                      <div key={i} style={{ display:"flex", gap:8, marginBottom:5 }}>
+                        <span style={{ color:T.amber }}>→</span>
+                        <span style={{ fontSize:13, color:T.t1 }}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {result.bugs?.filter(Boolean).length>0 && (
+                  <div className="rev-sec">
+                    <div style={{ fontSize:11, fontWeight:700, color:T.red, marginBottom:8 }}>🐛 Bugs</div>
+                    {result.bugs.filter(Boolean).map((s,i)=>(
+                      <div key={i} style={{ display:"flex", gap:8, marginBottom:5 }}>
+                        <span style={{ color:T.red }}>!</span>
+                        <span style={{ fontSize:13, color:T.t1 }}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {result.next_steps?.length>0 && (
+                  <div className="rev-sec">
+                    <div style={{ fontSize:11, fontWeight:700, color:T.purple, marginBottom:8 }}>📚 Next Steps</div>
+                    {result.next_steps.map((s,i)=>(
+                      <div key={i} style={{ display:"flex", gap:8, marginBottom:5 }}>
+                        <span style={{ color:T.purple }}>→</span>
+                        <span style={{ fontSize:13, color:T.t2 }}>{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── PROGRESS ANALYSIS TAB ── */}
+      {tab === "progress" && (
+        <div>
+          <div className="card" style={{ padding:"24px", marginBottom:16, textAlign:"center" }}>
+            <div style={{ fontSize:40, marginBottom:12 }} className="float">📈</div>
+            <div style={{ fontSize:18, fontWeight:800, color:T.t1, marginBottom:6 }}>AI Progress Analysis</div>
+            <p style={{ fontSize:13, color:T.t2, lineHeight:1.6, maxWidth:500, margin:"0 auto 20px" }}>
+              Get personalized feedback on your learning journey based on your XP, challenges solved, and daily tracking data.
+            </p>
+            <button className="btn btn-primary" style={{ padding:"12px 28px" }}
+              onClick={analyzeProgress} disabled={analysisLoading}>
+              {analysisLoading ? <><Spinner /> Analyzing your journey...</> : "✨ Analyze My Progress"}
+            </button>
           </div>
 
-          {days.some(d=>logs[d])&&(
-            <div style={{marginTop:14,padding:"14px 18px",background:T.surf,border:`1px solid ${T.border}`,borderRadius:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:8}}>Week Summary</div>
-              <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
-                <span style={{fontSize:13,color:T.t1}}>⏱ {days.reduce((a,d)=>a+parseFloat(logs[d]?.hours||0),0).toFixed(1)}h studied</span>
-                <span style={{fontSize:13,color:T.t1}}>📅 {days.filter(d=>logs[d]?.topics?.trim()).length}/7 active days</span>
-                <span style={{fontSize:13,color:"#a855f7"}}>📤 {days.filter(d=>logs[d]?.git).length} git pushes</span>
+          {analysis && (
+            <div className="fade-in">
+              {/* Headline */}
+              <div className="card card-glow-cyan" style={{ padding:"20px 24px", marginBottom:14, textAlign:"center" }}>
+                <div style={{ fontSize:16, fontWeight:700, color:T.cyan, marginBottom:4 }}>{analysis.headline}</div>
+                <p style={{ fontSize:13, color:T.t2, lineHeight:1.6 }}>{analysis.overall_assessment}</p>
+                <div style={{ marginTop:10, display:"flex", justifyContent:"center", gap:12, flexWrap:"wrap" }}>
+                  <div style={{ textAlign:"center" }}>
+                    <div style={{ fontSize:11, color:T.t2 }}>Momentum</div>
+                    <div style={{ fontSize:14, fontWeight:800, color:
+                      analysis.momentum==="Excellent"?T.emerald:
+                      analysis.momentum==="Good"?T.blue:
+                      analysis.momentum==="Building"?T.amber:T.red }}>
+                      {analysis.momentum}
+                    </div>
+                  </div>
+                  <div style={{ textAlign:"center" }}>
+                    <div style={{ fontSize:11, color:T.t2 }}>Job-Ready In</div>
+                    <div style={{ fontSize:14, fontWeight:800, color:T.purple }}>{analysis.job_ready_estimate}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="g2" style={{ marginBottom:14 }}>
+                <div className="card" style={{ padding:18 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.emerald, marginBottom:10, textTransform:"uppercase", letterSpacing:.8 }}>
+                    💪 Strong Areas
+                  </div>
+                  {analysis.strong_areas?.map((s,i)=>(
+                    <div key={i} style={{ display:"flex", gap:8, marginBottom:6 }}>
+                      <span style={{ color:T.emerald }}>✓</span>
+                      <span style={{ fontSize:13, color:T.t1 }}>{s}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="card" style={{ padding:18 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.amber, marginBottom:10, textTransform:"uppercase", letterSpacing:.8 }}>
+                    🎯 Focus Areas
+                  </div>
+                  {analysis.weak_areas?.map((s,i)=>(
+                    <div key={i} style={{ display:"flex", gap:8, marginBottom:6 }}>
+                      <span style={{ color:T.amber }}>→</span>
+                      <span style={{ fontSize:13, color:T.t1 }}>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="card" style={{ padding:18, marginBottom:14 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.purple, marginBottom:10, textTransform:"uppercase", letterSpacing:.8 }}>
+                  ⚡ This Week's Action Items
+                </div>
+                {analysis.action_items?.map((s,i)=>(
+                  <div key={i} style={{ display:"flex", gap:10, marginBottom:8, padding:"8px 12px", background:T.surface, borderRadius:8 }}>
+                    <span style={{ fontWeight:800, color:T.purple }}>{i+1}.</span>
+                    <span style={{ fontSize:13, color:T.t1 }}>{s}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="card" style={{ padding:18, borderColor:T.cyan+"40", background:`linear-gradient(135deg,#06061a,#080828)` }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.cyan, marginBottom:6, textTransform:"uppercase", letterSpacing:.8 }}>
+                  💬 Next Focus: {analysis.next_focus}
+                </div>
+                <p style={{ fontSize:14, color:T.t1, lineHeight:1.6, fontStyle:"italic" }}>"{analysis.motivational_message}"</p>
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {view==="month" && (
-        <div>
-          <div style={{fontSize:12,color:T.t2,marginBottom:12}}>Last 84 days — darker green = more study hours</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(14,1fr)",gap:4,marginBottom:12}}>
-            {heatDays.map(dk=>{
-              const log=logs[dk]; const h=parseFloat(log?.hours||0); const isToday=dk===today;
-              const intensity=h===0?0:h<1?1:h<2?2:h<3?3:4;
-              const colors=["#070720","#0d2a18","#0d4a2a","#0d7040","#10b981"];
-              return <div key={dk} onClick={()=>openEdit(dk)} title={`${formatDate(dk)}: ${h}h`} style={{width:"100%",paddingBottom:"100%",borderRadius:3,cursor:"pointer",background:colors[intensity],border:isToday?`1px solid ${T.blue}`:"1px solid transparent"}}/>;
-            })}
-          </div>
-          <div style={{display:"flex",gap:8,alignItems:"center",fontSize:11,color:T.t2}}>
-            <span>Less</span>
-            {["#070720","#0d2a18","#0d4a2a","#0d7040","#10b981"].map(c=><div key={c} style={{width:14,height:14,borderRadius:3,background:c,border:`1px solid ${T.border}`}}/>)}
-            <span>More</span>
-          </div>
-        </div>
-      )}
-
-      {view==="stats" && (
-        <div className="g2" style={{gap:12}}>
-          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 18px"}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.t1,marginBottom:14}}>📊 Hours per Week (last 8 weeks)</div>
-            {Array.from({length:8},(_,i)=>{
-              const ws=getWeekKey(-7+i);
-              const wdays=DAYS_OF_WEEK.map((_,j)=>getDateKey(ws,j));
-              const hrs=wdays.reduce((a,d)=>a+parseFloat(logs[d]?.hours||0),0);
-              return (
-                <div key={i} style={{display:"flex",gap:10,alignItems:"center",marginBottom:8}}>
-                  <div style={{fontSize:10,color:T.t2,width:46,flexShrink:0}}>{formatDate(ws)}</div>
-                  <div style={{flex:1,height:14,background:"#06062a",borderRadius:999,overflow:"hidden"}}>
-                    <div style={{width:`${Math.min(100,(hrs/40)*100)}%`,height:"100%",background:`linear-gradient(90deg,${T.blue},${T.green})`,borderRadius:999,transition:"width .7s ease"}}/>
-                  </div>
-                  <div style={{fontSize:11,fontWeight:700,color:T.blue,width:32,textAlign:"right"}}>{hrs.toFixed(1)}h</div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 18px"}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.t1,marginBottom:14}}>📝 Recent Sessions</div>
-            <div style={{maxHeight:300,overflowY:"auto",display:"flex",flexDirection:"column",gap:7}}>
-              {Object.entries(logs).sort(([a],[b])=>b.localeCompare(a)).slice(0,12).map(([dk,log])=>(
-                <div key={dk} style={{padding:"9px 12px",background:T.surf,borderRadius:9,border:`1px solid ${T.border}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                    <span style={{fontSize:12,fontWeight:700,color:T.t1}}>{formatDate(dk)}</span>
-                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                      <span style={{fontSize:14}}>{MOOD_EMOJIS[parseInt(log.mood||3)-1]||"😊"}</span>
-                      <span style={{fontSize:11,fontWeight:700,color:T.green}}>{log.hours}h</span>
-                      {log.git&&<span style={{fontSize:10,color:"#a855f7"}}>📤</span>}
-                    </div>
-                  </div>
-                  {log.topics&&<div style={{fontSize:11,color:T.t2,lineHeight:1.4}}>{log.topics}</div>}
-                  {log.notes&&<div style={{fontSize:11,color:T.t3,marginTop:3,fontStyle:"italic"}}>{log.notes}</div>}
-                </div>
-              ))}
-              {Object.keys(logs).length===0&&<div style={{textAlign:"center",padding:20,color:T.t3,fontSize:13}}>No sessions yet. Start by logging today!</div>}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editDay&&(
-        <div style={{position:"fixed",inset:0,background:"#000000cc",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>{if(e.target===e.currentTarget)setEditDay(null);}}>
-          <div style={{background:"#08082a",border:`1px solid ${T.blue}60`,borderRadius:16,padding:24,width:"min(100%,460px)",maxHeight:"90vh",overflowY:"auto",boxShadow:`0 0 40px ${T.blue}20`}}>
-            <div className="syne" style={{fontSize:17,fontWeight:800,color:T.t1,marginBottom:4}}>Log Study Session</div>
-            <div style={{fontSize:12,color:T.t2,marginBottom:18}}>{formatDate(editDay)}{editDay===today?" · Today":""}</div>
-
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>⏱ Hours Studied</div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {["0.5","1","1.5","2","3","4","5","6+"].map(h=>(
-                  <button key={h} onClick={()=>setForm(f=>({...f,hours:h}))} className="btn btn-sm"
-                    style={{background:form.hours===h?T.blue+"40":T.surf,border:`1px solid ${form.hours===h?T.blue:T.border}`,color:form.hours===h?T.blue:T.t2,fontFamily:"'DM Sans',sans-serif"}}>{h}h</button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>😊 Energy Level</div>
-              <div style={{display:"flex",gap:8}}>
-                {[1,2,3,4,5].map(m=>(
-                  <button key={m} onClick={()=>setForm(f=>({...f,mood:m}))} style={{fontSize:24,background:"none",border:`2px solid ${form.mood===m?T.amber:"transparent"}`,borderRadius:8,cursor:"pointer",padding:4}}>{MOOD_EMOJIS[m-1]}</button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>📚 Topics Covered</div>
-              <textarea className="inp" rows={2} placeholder="e.g. Decorators, list comprehensions, wrote 2 functions..." value={form.topics} onChange={e=>setForm(f=>({...f,topics:e.target.value}))} />
-            </div>
-
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>📝 Notes / Blockers</div>
-              <textarea className="inp" rows={2} placeholder="What was hard? What clicked?" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} />
-            </div>
-
-            <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:18}}>
-              <div onClick={()=>setForm(f=>({...f,git:!f.git}))} style={{width:36,height:20,borderRadius:999,background:form.git?"#a855f7":"#1a1a48",cursor:"pointer",position:"relative",transition:"background .2s"}}>
-                <div style={{width:16,height:16,borderRadius:999,background:"#fff",position:"absolute",top:2,left:form.git?18:2,transition:"left .2s"}}/>
-              </div>
-              <span style={{fontSize:13,color:form.git?"#a855f7":T.t2,fontWeight:600}}>📤 Pushed to GitHub today</span>
-            </div>
-
-            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-              <button className="btn btn-py" style={{flex:1}} onClick={saveDay}>💾 Save Session</button>
-              <button className="btn btn-ghost" onClick={()=>setEditDay(null)}>Cancel</button>
-              {logs[editDay]&&<button className="btn" style={{background:"#1a0404",border:"1px solid #7f1d1d",color:"#fca5a5"}} onClick={()=>{saveLogs(p=>{const n={...p};delete n[editDay];return n});setEditDay(null);}}>Delete</button>}
-            </div>
-          </div>
         </div>
       )}
     </div>
   );
 };
 
-/* ═══════════════════════════════════════════════════════════════════
-   PROJECT IDEAS VIEW
-═══════════════════════════════════════════════════════════════════ */
-const ALL_PROJECTS = [
-  { id:"p1",  month:1, diff:"Easy",     tags:["CLI","Data"],    title:"Personal Finance Tracker",    desc:"Log income and expenses by category. Monthly summary with % breakdown per category. Store in JSON file. No libraries needed — pure Python.", skills:["functions","dicts","json","file I/O"],             time:"1-2 days", repo:"github.com/florinpop17/app-ideas" },
-  { id:"p2",  month:1, diff:"Easy",     tags:["Game","Logic"],  title:"Hangman Game",               desc:"Classic word game with categories (animals, programming terms, cities). ASCII gallows. Track wins/losses across sessions in a JSON file.", skills:["strings","loops","random","lists"],               time:"1 day",    repo:"github.com/karan/Projects" },
-  { id:"p3",  month:1, diff:"Medium",   tags:["CLI","Report"],  title:"Student Report Card System", desc:"CRUD students with marks for 5 subjects. Compute GPA, rank students, auto-assign grades, generate formatted report card, export to CSV.", skills:["OOP","sorting","file I/O","format strings"],       time:"2-3 days", repo:"github.com/realpython/python-basics-exercises" },
-  { id:"p4",  month:1, diff:"Medium",   tags:["Game","Timer"],  title:"Quiz App with Timer",        desc:"Load questions from JSON. 30s timer per question using time module. Score + explanation after each. Leaderboard saved to file.", skills:["json","time","dicts","loops"],                    time:"2 days",   repo:"github.com/florinpop17/app-ideas" },
-  { id:"p5",  month:1, diff:"Hard",     tags:["Tracker","CLI"], title:"Personal Habit Tracker",     desc:"Track daily habits (code, exercise, read). Streak counter. Weekly heatmap in terminal using # characters. JSON persistence.", skills:["datetime","json","file I/O","f-strings"],           time:"3-4 days", repo:"github.com/nicedoc/awesome-python-projects" },
-  { id:"p6",  month:2, diff:"Easy",     tags:["Data","OOP"],    title:"Library Book Manager",       desc:"Add/remove/search books. Borrow/return with due dates. Late fee calculator. Using dicts and lists — no DB.", skills:["dicts","lists","datetime","OOP"],                  time:"2 days",   repo:"github.com/karan/Projects" },
-  { id:"p7",  month:2, diff:"Medium",   tags:["Algorithm"],     title:"Text Compression Tool",      desc:"Implement Run-Length Encoding and Huffman coding. Compare compression ratios on text files. Show bytes saved percentage.", skills:["algorithms","heapq","file I/O","Counter"],         time:"3-4 days", repo:"github.com/TheAlgorithms/Python" },
-  { id:"p8",  month:2, diff:"Medium",   tags:["Game","DSA"],    title:"Sudoku Solver",              desc:"Backtracking solver for any 9×9 Sudoku. Show solution steps count. Generate random valid puzzles. Terminal display with grid.", skills:["2D lists","recursion","backtracking"],             time:"3 days",   repo:"github.com/nicedoc/awesome-python-projects" },
-  { id:"p9",  month:2, diff:"Hard",     tags:["DSA","Cache"],   title:"In-Memory Cache with TTL",   desc:"LRU cache with time-to-live expiry. Thread-safe with locks. Stats endpoint: hit rate, miss rate, evictions, memory usage.", skills:["OrderedDict","threading","time","typing"],         time:"4-5 days", repo:"github.com/TheAlgorithms/Python" },
-  { id:"p10", month:2, diff:"Hard",     tags:["Algorithm"],     title:"Pathfinding Visualizer",     desc:"A*, Dijkstra, BFS, DFS on a grid. Obstacle placement. Terminal animation showing exploration and final path using curses.", skills:["graphs","heapq","2D lists","curses"],              time:"5 days",   repo:"github.com/TheAlgorithms/Python" },
-  { id:"p11", month:3, diff:"Easy",     tags:["OOP","Design"],  title:"Inventory Management",       desc:"Products, categories, stock alerts using full OOP. Supplier tracking. Low-stock detection. Decorator-based logging.", skills:["OOP","ABC","decorators","json"],                    time:"2-3 days", repo:"github.com/faif/python-patterns" },
-  { id:"p12", month:3, diff:"Medium",   tags:["OOP","Patterns"],"title":"Event System Framework",   desc:"Observer pattern: subscribers, events, async dispatch. Build a mini event bus used across decoupled components like a real framework.", skills:["decorators","OOP","asyncio","typing"],             time:"3-4 days", repo:"github.com/faif/python-patterns" },
-  { id:"p13", month:3, diff:"Hard",     tags:["Async","CLI"],   title:"Async Task Runner",          desc:"asyncio-based job runner: parallel execution, rate limiting, retry with exponential backoff, progress bar, structured logging.", skills:["asyncio","decorators","logging","typing"],          time:"5-6 days", repo:"github.com/python-trio/trio" },
-  { id:"p14", month:3, diff:"Hard",     tags:["Generator"],     title:"Streaming Data Pipeline",    desc:"Generator-based ETL: Source (CSV/API) → Transform (clean, validate) → Sink (DB/file). Backpressure + memory-efficient chunking.", skills:["generators","async","contextlib","typing"],         time:"6-7 days", repo:"github.com/pytoolz/toolz" },
-  { id:"p15", month:3, diff:"Medium",   tags:["Testing"],       title:"Test Framework Lite",        desc:"Build your own pytest-mini: discover test files, run test functions, collect results, generate colored terminal report.", skills:["OOP","decorators","importlib","exceptions"],        time:"4 days",   repo:"github.com/pytest-dev/pytest" },
-  { id:"p16", month:4, diff:"Easy",     tags:["API","CLI"],     title:"GitHub Dashboard CLI",       desc:"GitHub API: show repos, stars, watchers, open issues, top contributors. Rich-formatted output. Cache results in SQLite.", skills:["requests","json","sqlite3","argparse"],             time:"2-3 days", repo:"github.com/PyGithub/PyGithub" },
-  { id:"p17", month:4, diff:"Medium",   tags:["API","FastAPI"],  title:"URL Shortener Service",     desc:"FastAPI: POST URL → short code. GET code → redirect. Click analytics dashboard. Rate limiting. SQLite backend. Swagger docs.", skills:["FastAPI","SQLite","pydantic","sqlalchemy"],         time:"3-4 days", repo:"github.com/tiangolo/fastapi" },
-  { id:"p18", month:4, diff:"Medium",   tags:["Scraping"],      title:"Job Board Aggregator",       desc:"Scrape 3 job sites. Deduplicate by title+company. Filter by skill/location. Store in SQLite. Daily digest to terminal.", skills:["BeautifulSoup","requests","sqlite3","schedule"],    time:"5 days",   repo:"github.com/scrapy/scrapy" },
-  { id:"p19", month:4, diff:"Hard",     tags:["FastAPI","Auth"], title:"REST Blog API + JWT Auth",  desc:"Full JWT auth (register/login/refresh). Posts, comments, tags. Pagination. Image upload. 100% test coverage with pytest.", skills:["FastAPI","SQLAlchemy","JWT","pytest"],              time:"8-10 days",repo:"github.com/tiangolo/full-stack-fastapi-template" },
-  { id:"p20", month:4, diff:"Hard",     tags:["Automation"],    title:"Dev Setup Automation Suite", desc:"CLI: create project structure, init git, create venv, install deps, add pre-commit hooks, push to GitHub via API.", skills:["subprocess","pathlib","requests","click"],           time:"5-7 days", repo:"github.com/tiangolo/typer" },
-  { id:"p21", month:5, diff:"Easy",     tags:["Pandas","EDA"],  title:"IPL Cricket Analysis",      desc:"Analyze IPL dataset: top batsmen, bowling economy, team win rates by season, toss impact analysis. 8 visualizations.", skills:["pandas","matplotlib","seaborn","numpy"],             time:"2-3 days", repo:"github.com/awesomedata/awesome-public-datasets" },
-  { id:"p22", month:5, diff:"Medium",   tags:["Plotly","Viz"],  title:"Real Estate Dashboard",     desc:"Interactive Plotly dashboard: price by area, yearly trends, filters by BHK/city. Export as standalone HTML file.", skills:["plotly","pandas","numpy"],                           time:"3-4 days", repo:"github.com/plotly/dash" },
-  { id:"p23", month:5, diff:"Medium",   tags:["Finance","NumPy"],"title":"Stock Portfolio Analyzer",desc:"yfinance data: portfolio returns, Sharpe ratio, correlation matrix, Modern Portfolio Theory optimal allocation.", skills:["numpy","pandas","matplotlib","scipy"],               time:"4-5 days", repo:"github.com/ranaroussi/yfinance" },
-  { id:"p24", month:5, diff:"Hard",     tags:["ML Intro"],      title:"House Price Predictor",     desc:"Full ML pipeline: EDA → feature engineering → 5 models → ensemble → SHAP explanations → Streamlit web app.", skills:["scikit-learn","pandas","streamlit","shap"],           time:"8-10 days",repo:"github.com/ageron/handson-ml3" },
-  { id:"p25", month:5, diff:"Hard",     tags:["Report"],        title:"Auto EDA Report Generator", desc:"Input any CSV → auto HTML report: distributions, correlations, outliers, missing data heatmap, summary stats, recommendations.", skills:["pandas","plotly","jinja2"],                         time:"5-6 days", repo:"github.com/ydataai/ydata-profiling" },
-  { id:"p26", month:6, diff:"Medium",   tags:["DSA","Benchmark"],"title":"Algorithm Benchmark Suite",desc:"Compare 10 sorting/searching algorithms on varying input sizes. Beautiful terminal table with timing data and Big-O complexity.", skills:["algorithms","timeit","rich","numpy"],              time:"3-4 days", repo:"github.com/TheAlgorithms/Python" },
-  { id:"p27", month:6, diff:"Medium",   tags:["Portfolio"],     title:"README Generator CLI",      desc:"Answer questions about skills/projects → auto-generate a beautiful GitHub profile README with badges, charts, contribution graph.", skills:["requests","jinja2","click","GitHub API"],           time:"2-3 days", repo:"github.com/nicedoc/awesome-python-projects" },
-  { id:"p28", month:6, diff:"Hard",     tags:["Capstone","Full Stack"],"title":"AI-Powered Task Manager",desc:"FastAPI + rich CLI. NLP-powered task categorization from description. Priority inference. Smart scheduling. Full test suite.", skills:["FastAPI","NLP","SQLAlchemy","Click"],             time:"10-14 days",repo:"github.com/tiangolo/full-stack-fastapi-template" },
-  { id:"p29", month:6, diff:"Hard",     tags:["Open Source"],   title:"Open Source Contribution",  desc:"Find a Python repo with a 'good-first-issue'. Fix a real bug or add a feature. Write tests. Submit a PR and get it merged.", skills:["git","testing","documentation","code review"],      time:"1-2 weeks",repo:"github.com/trending/python" },
-  { id:"p30", month:6, diff:"Very Hard",tags:["Capstone"],      title:"Build Your Own CLI Framework",desc:"Create a Click/Typer-like framework from scratch: plugin system, auto-help generation, arg parsing, colored output, full tests.", skills:["OOP","AST","decorators","testing","packaging"],    time:"2-3 weeks",repo:"github.com/pallets/click" },
-];
+/* ===================================================================
+   ML PATH VIEW (Post-6-month transition guide)
+=================================================================== */
+const MLPathView = () => {
+  const [activeModule, setActiveModule] = useState(0);
 
-const AI_GEN_PROJECT = async (month,skill,diff) => {
-  const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`Generate a Python project idea:
-Month: ${month} of 6-month Python journey
-Difficulty: ${diff}
-Skill focus: ${skill}
+  const ML_MODULES = [
+    {
+      id:0, emoji:"🔢", title:"ML Foundations", color:"#3b82f6",
+      desc:"The mathematical and conceptual foundations of machine learning",
+      topics:["Linear algebra for ML (vectors, matrices, eigenvalues)","Calculus: gradients, chain rule, optimization","Probability & statistics: distributions, Bayes theorem","Information theory: entropy, KL divergence","Numpy & scipy for numerical computing"],
+      resources:["fast.ai Practical Deep Learning (free)","Stanford CS229 lecture notes","3Blue1Brown Linear Algebra series","Andrej Karpathy's YouTube lectures"],
+      project:"Implement linear regression, logistic regression, and k-means from scratch using only NumPy.",
+      xp:600,
+    },
+    {
+      id:1, emoji:"🧠", title:"Deep Learning", color:"#a855f7",
+      desc:"Neural networks, backpropagation, and modern deep learning architectures",
+      topics:["Feedforward networks, activation functions","Backpropagation math & implementation","CNNs, RNNs, LSTMs & Transformers","Batch norm, dropout, residual connections","PyTorch Lightning & training at scale"],
+      resources:["fast.ai Part 2: Deep Learning from the Foundations","Goodfellow's Deep Learning book (free PDF)","PyTorch official tutorials","Andrej Karpathy's 'Neural Networks: Zero to Hero'"],
+      project:"Build a character-level language model from scratch using backpropagation. Then upgrade to a mini GPT.",
+      xp:700,
+    },
+    {
+      id:2, emoji:"🌐", title:"Advanced NLP & LLMs", color:"#10b981",
+      desc:"From BERT to GPT — deep understanding of modern language models",
+      topics:["Attention is All You Need — implement from scratch","BERT: pre-training & fine-tuning in depth","GPT architecture: autoregressive generation","Instruction tuning & RLHF deep dive","Efficient fine-tuning: LoRA, QLoRA, PEFT"],
+      resources:["Hugging Face NLP Course (free)","Annotated Transformer (Harvard NLP)","LLM University by Cohere","Sebastian Ruder's NLP Progress"],
+      project:"Fine-tune a small LLM (Phi-2 or Mistral-7B) on a custom dataset using QLoRA. Evaluate with standard benchmarks.",
+      xp:800,
+    },
+    {
+      id:3, emoji:"⚙️", title:"MLOps & Research", color:"#f59e0b",
+      desc:"Production ML systems, research skills, and contributing to the field",
+      topics:["Experiment tracking: MLflow, W&B","Data versioning: DVC, LakeFS","Model serving: Triton, BentoML, Ray Serve","Distributed training: FSDP, DeepSpeed","Reading & implementing research papers"],
+      resources:["Full Stack Deep Learning (free)","Made With ML MLOps course","ML Engineering by Andriy Burkov","arXiv Sanity Preserver"],
+      project:"Build a full ML pipeline: experiment tracking → model registry → CI/CD → production serving → monitoring.",
+      xp:900,
+    },
+  ];
 
-Return ONLY valid JSON:
-{"title":"name","desc":"2-3 sentence description","skills":["s1","s2","s3"],"time":"X-Y days","steps":["Step 1: ...","Step 2: ...","Step 3: ...","Step 4: ...","Step 5: ..."],"stretch":"one bonus challenge"}`}]})});
-  const data=await res.json();
-  return JSON.parse(data.content.map(c=>c.text||"").join("").trim());
+  const module = ML_MODULES[activeModule];
+
+  const path = [
+    { step:1, label:"Python + LLMs", color:"#3b82f6", emoji:"🐍", done:true },
+    { step:2, label:"AI Engineering", color:"#10b981", emoji:"🧠", done:true },
+    { step:3, label:"ML Foundations", color:"#a855f7", emoji:"📐", done:false },
+    { step:4, label:"Deep Learning", color:"#f59e0b", emoji:"🔥", done:false },
+    { step:5, label:"NLP Research", color:"#ec4899", emoji:"📜", done:false },
+    { step:6, label:"AI Scientist", color:"#00d4ff", emoji:"🌌", done:false },
+  ];
+
+  return (
+    <div className="fade-up" style={{ padding:"clamp(14px,4vw,28px)" }}>
+      <SectionHeader title="🌌 ML Transition Path" sub="After 6 months of Python + AI Engineering, here's your ML journey" />
+
+      {/* Learning path visualization */}
+      <div className="card" style={{ padding:"20px 24px", marginBottom:20, overflow:"hidden" }}>
+        <div style={{ fontSize:13, fontWeight:700, color:T.t2, marginBottom:16, textTransform:"uppercase", letterSpacing:1 }}>
+          Your Full Learning Journey
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:0, overflowX:"auto", paddingBottom:4 }}>
+          {path.map((p, i) => (
+            <div key={p.step} style={{ display:"flex", alignItems:"center" }}>
+              <div style={{ textAlign:"center", flexShrink:0 }}>
+                <div style={{
+                  width:48, height:48, borderRadius:"50%", margin:"0 auto 6px",
+                  background: p.done ? p.color+"30" : "#0a0a20",
+                  border: `2px solid ${p.done ? p.color : T.border}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:22, boxShadow: p.done ? `0 0 14px ${p.color}40` : "none"
+                }}>{p.emoji}</div>
+                <div style={{ fontSize:10, fontWeight:700, color: p.done ? p.color : T.t3, whiteSpace:"nowrap", maxWidth:60, textAlign:"center" }}>
+                  {p.label}
+                </div>
+                {p.done && <div style={{ fontSize:9, color:T.emerald, marginTop:2 }}>✅ Done</div>}
+              </div>
+              {i < path.length-1 && (
+                <div style={{
+                  width:"clamp(20px,4vw,50px)", height:2, flexShrink:0, margin:"0 4px",
+                  background: p.done && path[i+1].done ? `linear-gradient(90deg,${p.color},${path[i+1].color})` : T.border
+                }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Module tabs */}
+      <div className="scroll-row" style={{ marginBottom:16 }}>
+        {ML_MODULES.map((m, i) => (
+          <button key={m.id} onClick={()=>setActiveModule(i)}
+            style={{
+              flex:"0 0 auto", padding:"8px 16px", borderRadius:10, border:"1px solid",
+              borderColor: activeModule===i ? m.color : T.border,
+              background: activeModule===i ? m.color+"22" : T.card,
+              color: activeModule===i ? m.color : T.t2,
+              cursor:"pointer", fontFamily:"'Outfit',sans-serif", fontWeight:700, fontSize:13,
+              display:"flex", alignItems:"center", gap:7, transition:"all .2s"
+            }}>
+            <span>{m.emoji}</span>
+            <span>{m.title}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Module detail */}
+      <div className="card" style={{ padding:"20px 24px", marginBottom:14, borderColor:module.color+"40", boxShadow:`0 0 20px ${module.color}15` }}>
+        <div style={{ display:"flex", alignItems:"flex-start", gap:14, flexWrap:"wrap" }}>
+          <span style={{ fontSize:44 }} className="float">{module.emoji}</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:20, fontWeight:800, color:T.t1, marginBottom:4 }}>{module.title}</div>
+            <p style={{ fontSize:13, color:T.t2, lineHeight:1.6, marginBottom:10 }}>{module.desc}</p>
+            <span style={{ fontSize:12, fontWeight:700, color:T.amber, background:T.amber+"15", padding:"3px 12px", borderRadius:999, border:`1px solid ${T.amber}40` }}>
+              {module.xp} XP reward
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="g2">
+        {/* Topics */}
+        <div>
+          <div className="card" style={{ padding:18, marginBottom:12 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>
+              📋 Core Topics
+            </div>
+            {module.topics.map((t, i) => (
+              <div key={i} style={{ display:"flex", gap:10, marginBottom:8, padding:"8px 12px", background:T.surface, borderRadius:8, border:`1px solid ${T.border}` }}>
+                <span style={{ color:module.color, fontWeight:700, flexShrink:0 }}>{i+1}.</span>
+                <span style={{ fontSize:13, color:T.t1 }}>{t}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="card" style={{ padding:18 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>
+              📚 Best Resources
+            </div>
+            {module.resources.map((r, i) => (
+              <div key={i} style={{ display:"flex", gap:8, marginBottom:8 }}>
+                <span style={{ color:module.color }}>▸</span>
+                <span style={{ fontSize:13, color:T.t2 }}>{r}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Capstone + Prerequisites */}
+        <div>
+          <div className="card" style={{ padding:20, marginBottom:12, borderColor:module.color+"40" }}>
+            <div style={{ fontSize:12, fontWeight:700, color:module.color, marginBottom:8, textTransform:"uppercase", letterSpacing:1 }}>
+              🏆 Module Project
+            </div>
+            <p style={{ fontSize:14, color:T.t1, lineHeight:1.7 }}>{module.project}</p>
+          </div>
+
+          <div className="card" style={{ padding:18 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:12, textTransform:"uppercase", letterSpacing:1 }}>
+              ✅ Prerequisites from Your Journey
+            </div>
+            {[
+              "Python proficiency (Months 1-2) ✅",
+              "LLM APIs & embeddings (Month 3) ✅",
+              "RAG & AI Engineering (Month 4) ✅",
+              "Production deployment (Month 6) ✅",
+            ].map((p, i) => (
+              <div key={i} style={{ display:"flex", gap:8, marginBottom:6, fontSize:13, color:T.emerald }}>
+                <span>✅</span><span>{p.replace(" ✅","")}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop:12, padding:"16px 18px", background:"linear-gradient(135deg,#06061a,#08082a)", border:`1px solid ${T.cyan}30`, borderRadius:12 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.cyan, marginBottom:6 }}>🌌 Career Paths After This</div>
+            {["ML Engineer at FAANG","AI Research Scientist","LLM Fine-tuning Specialist","AI Product Engineer","ML Infrastructure Engineer"].map((p,i)=>(
+              <div key={i} style={{ fontSize:12, color:T.t2, padding:"3px 0", display:"flex", gap:6 }}>
+                <span style={{ color:T.cyan }}>→</span><span>{p}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-const ProjectsView = () => {
-  const [filterMonth, setFilterMonth] = useState(0);
-  const [filterDiff, setFilterDiff]   = useState("All");
-  const [done, saveDone] = useStorage("proj-done-v1", {});
-  const [genLoading, setGenLoading] = useState(false);
-  const [genResult, setGenResult]   = useState(null);
-  const [genMonth, setGenMonth]     = useState(1);
-  const [genSkill, setGenSkill]     = useState("Data Structures");
-  const [genDiff, setGenDiff]       = useState("Medium");
-  const [expandedId, setExpandedId] = useState(null);
+/* ===================================================================
+   MAIN APP
+=================================================================== */
+export default function PythonAIPlatform() {
+  const [nav, setNav] = useState("dashboard");
+  const [trackerData, saveTracker, trackerLoaded] = useStorage("tracker-v2", {});
+  const [solvedChallenges, saveSolved] = useStorage("challenges-v3", {});
+  const [challengeXP, saveChallengeXP] = useStorage("xp-challenges-v3", 0);
 
-  const filtered = ALL_PROJECTS.filter(p=>(filterMonth===0||p.month===filterMonth)&&(filterDiff==="All"||p.diff===filterDiff));
-  const DIFF_C = {Easy:T.green,Medium:T.amber,Hard:"#f87171","Very Hard":"#c084fc"};
+  const totalXP = challengeXP;
+  const solvedCount = Object.values(solvedChallenges).filter(Boolean).length;
+  const streak = 3; // Could be derived from trackerData in future
 
-  const generate = async() => {
-    setGenLoading(true);setGenResult(null);
-    try{const r=await AI_GEN_PROJECT(genMonth,genSkill,genDiff);setGenResult(r);}
-    catch(e){alert("Generation failed. Try again.");}
-    setGenLoading(false);
+  const views = {
+    dashboard:  <DashboardView trackerData={trackerData} solvedChallenges={solvedChallenges} totalXP={totalXP} />,
+    roadmap:    <RoadmapView />,
+    tracker:    <DailyTrackerView trackerData={trackerData} saveTracker={saveTracker} />,
+    challenges: <ChallengesView solvedChallenges={solvedChallenges} saveSolved={saveSolved} totalXP={totalXP} saveXP={saveChallengeXP} />,
+    weekend:    <WeekendView />,
+    mentor:     <AIMentorView totalXP={totalXP} solvedChallenges={solvedChallenges} trackerData={trackerData} />,
+    mlpath:     <MLPathView />,
   };
 
   return (
-    <div className="fade-up" style={{padding:"clamp(12px,4vw,28px)"}}>
-      <div className="syne" style={{fontSize:"clamp(18px,4vw,24px)",fontWeight:800,color:T.t1,marginBottom:4}}>🔨 Project Ideas</div>
-      <p style={{fontSize:13,color:T.t2,marginBottom:18}}>30 curated Python projects across 6 months + AI project generator</p>
-
-      <div style={{display:"flex",gap:12,marginBottom:18,flexWrap:"wrap"}}>
-        {[
-          {l:"Completed",v:`${Object.values(done).filter(Boolean).length}/${ALL_PROJECTS.length}`,c:T.green},
-          {l:"Easy",v:ALL_PROJECTS.filter(p=>p.diff==="Easy").length,c:T.green},
-          {l:"Medium",v:ALL_PROJECTS.filter(p=>p.diff==="Medium").length,c:T.amber},
-          {l:"Hard+",v:ALL_PROJECTS.filter(p=>p.diff==="Hard"||p.diff==="Very Hard").length,c:"#f87171"},
-        ].map(s=>(
-          <div key={s.l} style={{background:T.card,border:`1px solid ${s.c}30`,borderRadius:10,padding:"8px 14px",display:"flex",gap:8,alignItems:"center"}}>
-            <span className="syne" style={{fontSize:18,fontWeight:800,color:s.c}}>{s.v}</span>
-            <span style={{fontSize:12,color:T.t2}}>{s.l}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* AI Generator */}
-      <div style={{background:"linear-gradient(135deg,#07072a,#04041a)",border:`1px solid ${T.blue}40`,borderRadius:14,padding:"18px 20px",marginBottom:18,boxShadow:`0 0 24px ${T.blue}12`}}>
-        <div style={{fontSize:13,fontWeight:700,color:T.blue,marginBottom:12}}>✨ AI Project Generator</div>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
-          <div style={{flex:1,minWidth:120}}>
-            <div style={{fontSize:11,color:T.t2,marginBottom:5}}>Month</div>
-            <select className="inp" value={genMonth} onChange={e=>setGenMonth(+e.target.value)} style={{padding:"7px 10px"}}>
-              {PYTHON_MONTHS.map(m=><option key={m.id} value={m.id}>M{m.id}: {m.title}</option>)}
-            </select>
-          </div>
-          <div style={{flex:2,minWidth:150}}>
-            <div style={{fontSize:11,color:T.t2,marginBottom:5}}>Skill Focus</div>
-            <input className="inp" value={genSkill} onChange={e=>setGenSkill(e.target.value)} placeholder="e.g. asyncio, OOP, pandas..." style={{padding:"7px 10px"}} />
-          </div>
-          <div style={{flex:1,minWidth:100}}>
-            <div style={{fontSize:11,color:T.t2,marginBottom:5}}>Difficulty</div>
-            <select className="inp" value={genDiff} onChange={e=>setGenDiff(e.target.value)} style={{padding:"7px 10px"}}>
-              {["Easy","Medium","Hard","Very Hard"].map(d=><option key={d}>{d}</option>)}
-            </select>
-          </div>
-          <div style={{display:"flex",alignItems:"flex-end"}}>
-            <button className="btn btn-py" onClick={generate} disabled={genLoading}>
-              {genLoading?<><span className="spin">⟳</span>Generating...</>:"✨ Generate"}
-            </button>
-          </div>
-        </div>
-        {genResult&&(
-          <div className="fade-in" style={{background:"#050520",border:`1px solid ${T.blue}50`,borderRadius:12,padding:"16px 18px"}}>
-            <div className="syne" style={{fontSize:16,fontWeight:800,color:T.t1,marginBottom:6}}>{genResult.title}</div>
-            <p style={{fontSize:13,color:T.t2,marginBottom:10,lineHeight:1.6}}>{genResult.desc}</p>
-            <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
-              {genResult.skills?.map(s=><span key={s} style={{fontSize:11,color:T.blue,background:T.blue+"18",padding:"2px 9px",borderRadius:999,border:`1px solid ${T.blue}40`}}>{s}</span>)}
-              <span style={{fontSize:11,color:T.amber,background:T.amber+"15",padding:"2px 9px",borderRadius:999,border:`1px solid ${T.amber}40`}}>⏱ {genResult.time}</span>
-            </div>
-            {genResult.steps?.map((s,i)=><div key={i} style={{display:"flex",gap:8,marginBottom:5,fontSize:12,color:T.t1}}><span style={{color:T.blue,fontWeight:800,flexShrink:0}}>{i+1}.</span><span style={{lineHeight:1.5}}>{s}</span></div>)}
-            {genResult.stretch&&<div style={{marginTop:10,padding:"8px 12px",background:T.amber+"10",border:`1px solid ${T.amber}30`,borderRadius:8,fontSize:12,color:T.amber}}>⭐ Stretch: {genResult.stretch}</div>}
-          </div>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-        <button onClick={()=>setFilterMonth(0)} className="btn btn-sm" style={{background:filterMonth===0?T.blue+"30":"transparent",border:`1px solid ${filterMonth===0?T.blue:T.border}`,color:filterMonth===0?T.blue:T.t2,fontFamily:"'DM Sans',sans-serif"}}>All</button>
-        {PYTHON_MONTHS.map(m=><button key={m.id} onClick={()=>setFilterMonth(m.id)} className="btn btn-sm" style={{background:filterMonth===m.id?m.color+"30":"transparent",border:`1px solid ${filterMonth===m.id?m.color:T.border}`,color:filterMonth===m.id?m.color:T.t2,fontFamily:"'DM Sans',sans-serif"}}>{m.emoji} M{m.id}</button>)}
-      </div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:18}}>
-        {["All","Easy","Medium","Hard","Very Hard"].map(d=><button key={d} onClick={()=>setFilterDiff(d)} className="btn btn-sm" style={{background:filterDiff===d?(DIFF_C[d]||T.blue)+"30":"transparent",border:`1px solid ${filterDiff===d?(DIFF_C[d]||T.blue):T.border}`,color:filterDiff===d?(DIFF_C[d]||T.blue):T.t2,fontFamily:"'DM Sans',sans-serif"}}>{d}</button>)}
-      </div>
-
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {filtered.map(p=>{
-          const dc=DIFF_C[p.diff]||T.blue; const isDone=!!done[p.id]; const isExp=expandedId===p.id;
-          return (
-            <div key={p.id} style={{background:isDone?"#021508":T.card,border:`1px solid ${isDone?T.green+"60":isExp?dc+"50":T.border}`,borderRadius:13,overflow:"hidden",transition:"all .2s"}}>
-              <div style={{padding:"14px 16px",cursor:"pointer",display:"flex",gap:12,alignItems:"flex-start"}} onClick={()=>setExpandedId(isExp?null:p.id)}>
-                <div onClick={e=>{e.stopPropagation();saveDone(prev=>({...prev,[p.id]:!prev[p.id]}))}} style={{width:22,height:22,borderRadius:6,flexShrink:0,marginTop:1,background:isDone?T.green:"transparent",border:`2px solid ${isDone?T.green:T.t2}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#000",fontWeight:900,cursor:"pointer",transition:"all .2s"}}>{isDone?"✓":""}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:5}}>
-                    <span className="syne" style={{fontSize:14,fontWeight:700,color:isDone?T.green:T.t1}}>{p.title}</span>
-                    <span style={{fontSize:10,fontWeight:700,padding:"1px 8px",borderRadius:999,background:dc+"18",color:dc,border:`1px solid ${dc}40`}}>{p.diff}</span>
-                    <span style={{fontSize:10,color:T.t2}}>M{p.month}</span>
-                    <span style={{fontSize:10,color:T.t2}}>⏱ {p.time}</span>
-                  </div>
-                  <p style={{fontSize:12,color:T.t2,lineHeight:1.5}}>{p.desc.slice(0,110)}{p.desc.length>110?"…":""}</p>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:5}}>
-                    {p.tags.map(t=><span key={t} style={{fontSize:10,color:dc,background:dc+"12",padding:"1px 7px",borderRadius:999,border:`1px solid ${dc}30`}}>{t}</span>)}
-                  </div>
-                </div>
-                <span style={{fontSize:11,color:T.t2,flexShrink:0}}>{isExp?"▲":"▼"}</span>
-              </div>
-              {isExp&&(
-                <div className="fade-in" style={{padding:"0 16px 16px",borderTop:`1px solid ${T.border}`}}>
-                  <p style={{fontSize:13,color:T.t1,lineHeight:1.7,margin:"12px 0"}}>{p.desc}</p>
-                  <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>🛠 Skills</div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>{p.skills.map(s=><span key={s} style={{fontSize:11,color:T.blue,background:T.blue+"15",padding:"3px 10px",borderRadius:999,border:`1px solid ${T.blue}40`}}>{s}</span>)}</div>
-                  <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
-                    <a href={`https://${p.repo}`} target="_blank" rel="noreferrer" style={{fontSize:12,color:T.blue,textDecoration:"none"}}>📦 Reference Repo ↗</a>
-                    <button className="btn btn-sm" onClick={()=>saveDone(prev=>({...prev,[p.id]:!prev[p.id]}))} style={{background:isDone?"#1a0404":"#021508",border:`1px solid ${isDone?"#7f1d1d":T.green+"60"}`,color:isDone?"#fca5a5":T.green}}>{isDone?"✗ Mark Undone":"✓ Mark Complete"}</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        {filtered.length===0&&<div style={{textAlign:"center",padding:40,color:T.t3,fontSize:14}}>No projects match these filters.</div>}
-      </div>
-    </div>
-  );
-};
-
-/* ═══════════════════════════════════════════════════════════════════
-   PRACTICE QUESTIONS VIEW
-═══════════════════════════════════════════════════════════════════ */
-const PRACTICE_BANK = [
-  { id:"q1",  cat:"Python Basics",    diff:"Easy",     co:"Google",     time:5,  xp:15,  q:"Write a function that takes a list of numbers and returns the second largest element without sorting." },
-  { id:"q2",  cat:"Python Basics",    diff:"Easy",     co:"Meta",       time:5,  xp:15,  q:"Write a function that checks if a string is a palindrome, ignoring spaces, punctuation and case." },
-  { id:"q3",  cat:"Python Basics",    diff:"Medium",   co:"Amazon",     time:10, xp:30,  q:"Implement a function that flattens a nested list of arbitrary depth: [[1,[2,3]],[[4],5]] → [1,2,3,4,5]." },
-  { id:"q4",  cat:"Python Basics",    diff:"Medium",   co:"Microsoft",  time:10, xp:30,  q:"Write a decorator @retry(n, delay) that retries a function n times with delay seconds between attempts on exception." },
-  { id:"q5",  cat:"Python Basics",    diff:"Hard",     co:"Anthropic",  time:20, xp:60,  q:"Implement a @memoize decorator that handles both positional and keyword arguments correctly, including unhashable types gracefully." },
-  { id:"q6",  cat:"Python Basics",    diff:"Easy",     co:"OpenAI",     time:5,  xp:15,  q:"Given a dictionary, write a function to invert it (swap keys and values), handling duplicate values by collecting them in a list." },
-  { id:"q7",  cat:"Python Basics",    diff:"Medium",   co:"Apple",      time:12, xp:30,  q:"Write a context manager class (using __enter__/__exit__) that measures execution time and raises TimeoutError if it exceeds a given threshold." },
-  { id:"q8",  cat:"Python Basics",    diff:"Hard",     co:"Google",     time:25, xp:60,  q:"Implement a thread-safe Singleton pattern in Python. Show two approaches (using metaclass and using module-level instance) and compare." },
-  { id:"q9",  cat:"Data Structures",  diff:"Easy",     co:"Amazon",     time:8,  xp:15,  q:"Implement a stack using two queues. Support push(), pop(), and peek(). Analyze the time complexity of each operation." },
-  { id:"q10", cat:"Data Structures",  diff:"Easy",     co:"Meta",       time:8,  xp:15,  q:"Given a list of intervals sorted by start time, merge all overlapping intervals. E.g. [[1,3],[2,6],[8,10]] → [[1,6],[8,10]]." },
-  { id:"q11", cat:"Data Structures",  diff:"Medium",   co:"Google",     time:15, xp:30,  q:"Implement a MinStack that supports push(), pop(), top(), and getMin() — all in O(1) time and O(n) space." },
-  { id:"q12", cat:"Data Structures",  diff:"Medium",   co:"Microsoft",  time:12, xp:30,  q:"Given a string with brackets, determine if it is valid. Handle '()', '[]', '{}'. Return True/False." },
-  { id:"q13", cat:"Data Structures",  diff:"Hard",     co:"Anthropic",  time:30, xp:60,  q:"Design a data structure that supports insert(val), remove(val), and getRandom() — all in O(1) average time." },
-  { id:"q14", cat:"Data Structures",  diff:"Hard",     co:"OpenAI",     time:30, xp:60,  q:"Implement a Trie with insert(word), search(word), startsWith(prefix). Then add delete(word) and countWordsWithPrefix(prefix)." },
-  { id:"q15", cat:"Data Structures",  diff:"Medium",   co:"Netflix",    time:15, xp:30,  q:"Find the K most frequent elements in a list in O(n log k) time using a min-heap. Return them in order." },
-  { id:"q16", cat:"Data Structures",  diff:"Easy",     co:"Spotify",    time:8,  xp:15,  q:"Reverse a singly linked list both iteratively and recursively. Return the new head. Compare time and space complexity." },
-  { id:"q17", cat:"Algorithms",       diff:"Easy",     co:"Google",     time:8,  xp:15,  q:"Binary search: find the left-most index to insert a target in a sorted array to keep it sorted. Return the index." },
-  { id:"q18", cat:"Algorithms",       diff:"Medium",   co:"Amazon",     time:15, xp:30,  q:"Given a sorted array rotated at an unknown pivot, find a target element in O(log n) time." },
-  { id:"q19", cat:"Algorithms",       diff:"Medium",   co:"Meta",       time:20, xp:30,  q:"Implement merge sort. Then modify it to count the number of inversions in an array (pairs where arr[i] > arr[j] and i < j)." },
-  { id:"q20", cat:"Algorithms",       diff:"Hard",     co:"Microsoft",  time:35, xp:60,  q:"Find the median of two sorted arrays in O(log(m+n)) time. Explain why the naive O(m+n) approach isn't acceptable at scale." },
-  { id:"q21", cat:"Algorithms",       diff:"Easy",     co:"Airbnb",     time:8,  xp:15,  q:"Two Sum: find two numbers in a list that add up to a target. Return their indices. Solve in O(n) time using a hash map." },
-  { id:"q22", cat:"Algorithms",       diff:"Medium",   co:"Stripe",     time:20, xp:30,  q:"Find the length of the longest substring without repeating characters. Solve with sliding window in O(n)." },
-  { id:"q23", cat:"Algorithms",       diff:"Hard",     co:"Google",     time:35, xp:60,  q:"Given n non-negative integers representing an elevation map where width=1, compute how much rainwater can be trapped." },
-  { id:"q24", cat:"Algorithms",       diff:"Very Hard",co:"Anthropic",  time:45, xp:100, q:"Design and implement a rate limiter supporting sliding window algorithm. Handle concurrent requests safely with minimal overhead." },
-  { id:"q25", cat:"OOP & Design",     diff:"Easy",     co:"Amazon",     time:10, xp:15,  q:"Design a parking lot system with classes for ParkingLot, Floor, Spot, Vehicle. Handle motorcycles, cars, buses differently." },
-  { id:"q26", cat:"OOP & Design",     diff:"Medium",   co:"Uber",       time:20, xp:30,  q:"Implement the Observer pattern: an EventEmitter supporting on(event, cb), emit(event, data), off(event, cb), once(event, cb)." },
-  { id:"q27", cat:"OOP & Design",     diff:"Hard",     co:"Google",     time:40, xp:60,  q:"Design a thread-safe connection pool. Support acquire(), release(), configurable min/max size, timeout, and graceful shutdown." },
-  { id:"q28", cat:"OOP & Design",     diff:"Hard",     co:"Microsoft",  time:35, xp:60,  q:"Implement a command pattern with undo/redo support. Apply it to a simple text editor with insert, delete, replace, bold, italic." },
-  { id:"q29", cat:"Python Advanced",  diff:"Medium",   co:"OpenAI",     time:15, xp:30,  q:"Write a generator function that yields all permutations of a list without using itertools.permutations. Handle duplicates." },
-  { id:"q30", cat:"Python Advanced",  diff:"Medium",   co:"Anthropic",  time:20, xp:30,  q:"Implement an async web crawler using asyncio and aiohttp that crawls URLs from a queue. Include rate limiting and retry on 429." },
-  { id:"q31", cat:"Python Advanced",  diff:"Hard",     co:"Meta",       time:40, xp:60,  q:"Write a metaclass that automatically wraps every public method of any class using it with logging (log name, args, return value, time)." },
-  { id:"q32", cat:"Python Advanced",  diff:"Very Hard",co:"Anthropic",  time:50, xp:100, q:"Design a Python import hook that intercepts module imports and applies automatic type checking to all function calls using __annotations__." },
-  { id:"q33", cat:"APIs & Data",      diff:"Easy",     co:"Stripe",     time:10, xp:15,  q:"Write a function that makes an API call with exponential backoff retry logic (max 5 retries, starting at 1s delay, jitter)." },
-  { id:"q34", cat:"APIs & Data",      diff:"Medium",   co:"Airbnb",     time:20, xp:30,  q:"Design a caching layer for an HTTP API client. Cache GET responses with TTL. Automatically invalidate on POST/PUT/DELETE to same path." },
-  { id:"q35", cat:"APIs & Data",      diff:"Medium",   co:"Uber",       time:25, xp:30,  q:"Write a function that reads a large CSV (>1GB) in chunks using pandas and processes each chunk in parallel with ProcessPoolExecutor." },
-  { id:"q36", cat:"APIs & Data",      diff:"Hard",     co:"Amazon",     time:40, xp:60,  q:"Implement a simple async job queue: FastAPI endpoint to submit jobs, background workers, status polling, dead letter queue for failed jobs." },
-];
-
-const AI_GEN_PRACTICE = async (category,difficulty,topic) => {
-  const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:`Generate a Python coding interview question:
-Category: ${category}
-Difficulty: ${difficulty}
-Topic: ${topic}
-
-Return ONLY valid JSON:
-{"q":"full question","hint":"small hint without answer","approach":"optimal approach in 2-3 sentences","code":"clean Python solution","time_complexity":"O(?)","space_complexity":"O(?)","followup":"one follow-up question"}`}]})});
-  const data=await res.json();
-  return JSON.parse(data.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim());
-};
-
-const PracticeView = () => {
-  const [cat, setCat]           = useState("All");
-  const [diff, setDiff]         = useState("All");
-  const [solved, saveSolved]    = useStorage("pq-solved-v1", {});
-  const [active, setActive]     = useState(null);
-  const [showHint, setShowHint] = useState(false);
-  const [showSol, setShowSol]   = useState(false);
-  const [timer, setTimer]       = useState(0);
-  const [running, setRunning]   = useState(false);
-  const timerRef                = useRef(null);
-  const [genCat, setGenCat]     = useState("Python Basics");
-  const [genDiff2, setGenDiff2] = useState("Medium");
-  const [genTopic, setGenTopic] = useState("");
-  const [genQ, setGenQ]         = useState(null);
-  const [genLoad, setGenLoad]   = useState(false);
-
-  useEffect(()=>{ if(running){timerRef.current=setInterval(()=>setTimer(t=>t+1),1000);}else clearInterval(timerRef.current); return()=>clearInterval(timerRef.current); },[running]);
-
-  const startQ = (q)=>{ setActive(q);setShowHint(false);setShowSol(false);setTimer(0);setRunning(true); };
-  const markSolved = ()=>{ setRunning(false); if(active)saveSolved(prev=>({...prev,[active.id]:{done:true,time:timer}})); setActive(null); };
-
-  const cats  = ["All",...new Set(PRACTICE_BANK.map(q=>q.cat))];
-  const diffs = ["All","Easy","Medium","Hard","Very Hard"];
-  const filtered = PRACTICE_BANK.filter(q=>(cat==="All"||q.cat===cat)&&(diff==="All"||q.diff===diff));
-  const totalXP = Object.keys(solved).reduce((a,id)=>{ const q=PRACTICE_BANK.find(x=>x.id===id); return a+(q?.xp||0); },0);
-  const DIFF_C  = {Easy:T.green,Medium:T.amber,Hard:"#f87171","Very Hard":"#c084fc"};
-  const fmt = s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-
-  const generate2 = async()=>{ setGenLoad(true);setGenQ(null); try{const r=await AI_GEN_PRACTICE(genCat,genDiff2,genTopic||genCat);setGenQ(r);}catch(e){alert("Failed. Try again.");} setGenLoad(false); };
-
-  return (
-    <div className="fade-up" style={{padding:"clamp(12px,4vw,28px)"}}>
-      <div className="syne" style={{fontSize:"clamp(18px,4vw,24px)",fontWeight:800,color:T.t1,marginBottom:4}}>⚡ Practice Questions</div>
-      <p style={{fontSize:13,color:T.t2,marginBottom:18}}>Timed Python interview questions with AI hints + instant solution viewer</p>
-
-      <div className="g4" style={{marginBottom:18,gap:10}}>
-        {[
-          {icon:"✅",val:Object.keys(solved).length,label:"Solved",c:T.green},
-          {icon:"⭐",val:totalXP,label:"XP Earned",c:T.amber},
-          {icon:"🔥",val:PRACTICE_BANK.filter(q=>q.diff==="Hard"||q.diff==="Very Hard").length,label:"Hard Qs",c:"#f87171"},
-          {icon:"📊",val:PRACTICE_BANK.length,label:"Total",c:T.blue},
-        ].map(s=>(
-          <div key={s.label} style={{background:T.card,border:`1px solid ${s.c}30`,borderRadius:12,padding:"12px 14px",textAlign:"center"}}>
-            <div style={{fontSize:20}}>{s.icon}</div>
-            <div className="syne" style={{fontSize:20,fontWeight:800,color:s.c}}>{s.val}</div>
-            <div style={{fontSize:11,color:T.t2}}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Active question overlay */}
-      {active&&(
-        <div style={{position:"fixed",inset:0,background:"#000000e0",zIndex:500,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"50px 16px 16px",overflowY:"auto"}}>
-          <div style={{background:"#08082a",border:`1px solid ${DIFF_C[active.diff]}60`,borderRadius:16,padding:"24px",width:"min(100%,660px)",boxShadow:`0 0 40px ${DIFF_C[active.diff]}20`}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,flexWrap:"wrap",gap:10}}>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                <span className={`badge ${active.diff==="Easy"?"b-easy":active.diff==="Medium"?"b-med":active.diff==="Hard"?"b-hard":"b-vhard"}`}>{active.diff}</span>
-                <span style={{fontSize:11,color:T.t2,background:T.surf,padding:"2px 9px",borderRadius:999,border:`1px solid ${T.border}`}}>{active.cat}</span>
-                <span style={{fontSize:11,color:T.t2,background:T.surf,padding:"2px 9px",borderRadius:999,border:`1px solid ${T.border}`}}>🏢 {active.co}</span>
-                <span style={{fontSize:11,color:T.amber}}>⭐ {active.xp} XP</span>
-              </div>
-              <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                <div className="mono" style={{fontSize:20,fontWeight:700,color:timer>active.time*60?"#f87171":T.green}}>{fmt(timer)}</div>
-                <button onClick={()=>setRunning(r=>!r)} className="btn btn-ghost btn-sm">{running?"⏸ Pause":"▶ Resume"}</button>
-              </div>
-            </div>
-
-            {/* Timer bar */}
-            <div className="pbar" style={{height:5,marginBottom:18}}>
-              <div className="pfill" style={{width:`${Math.min(100,timer/(active.time*60)*100)}%`,background:timer>active.time*60?"#ef4444":DIFF_C[active.diff],transition:"width 1s linear"}}/>
-            </div>
-
-            <p style={{fontSize:15,color:T.t1,lineHeight:1.8,marginBottom:16,fontWeight:500}}>{active.q}</p>
-            <div style={{fontSize:12,color:T.t2,marginBottom:16}}>
-              🎯 Target: <strong style={{color:timer<=active.time*60?T.green:"#f87171"}}>{active.time} min</strong>
-              {timer>active.time*60&&<span style={{color:"#f87171",marginLeft:8}}>⚠ Over target!</span>}
-            </div>
-
-            {showHint&&active.hint&&<div className="fade-in" style={{padding:"10px 14px",background:T.amber+"12",border:`1px solid ${T.amber}40`,borderRadius:9,marginBottom:12,fontSize:13,color:T.amber}}>💡 Hint: {active.hint}</div>}
-            {showSol&&active.approach&&(
-              <div className="fade-in" style={{marginBottom:12}}>
-                <div style={{padding:"10px 14px",background:T.blue+"12",border:`1px solid ${T.blue}40`,borderRadius:9,marginBottom:8,fontSize:13,color:T.t1,lineHeight:1.6}}><strong style={{color:T.blue}}>Approach: </strong>{active.approach}</div>
-                {active.code&&<div className="code">{active.code}</div>}
-              </div>
-            )}
-
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              <button className="btn btn-green" onClick={markSolved}>✅ Mark Solved — +{active.xp} XP</button>
-              {!showHint&&active.hint&&<button className="btn btn-ghost btn-sm" onClick={()=>setShowHint(true)}>💡 Hint</button>}
-              {!showSol&&<button className="btn btn-ghost btn-sm" onClick={()=>setShowSol(true)}>🔑 Solution</button>}
-              <button className="btn" style={{background:"#1a0404",border:"1px solid #7f1d1d",color:"#fca5a5"}} onClick={()=>{setRunning(false);setActive(null);}}>✗ Skip</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AI Generator */}
-      <div style={{background:"linear-gradient(135deg,#07072a,#04041a)",border:`1px solid ${T.green}40`,borderRadius:14,padding:"18px 20px",marginBottom:18,boxShadow:`0 0 24px ${T.green}12`}}>
-        <div style={{fontSize:13,fontWeight:700,color:T.green,marginBottom:12}}>🤖 AI Question Generator — Fresh questions on any topic</div>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:12}}>
-          <div style={{flex:1,minWidth:130}}>
-            <div style={{fontSize:11,color:T.t2,marginBottom:5}}>Category</div>
-            <select className="inp" value={genCat} onChange={e=>setGenCat(e.target.value)} style={{padding:"7px 10px"}}>
-              {cats.filter(c=>c!=="All").map(c=><option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div style={{flex:1,minWidth:100}}>
-            <div style={{fontSize:11,color:T.t2,marginBottom:5}}>Difficulty</div>
-            <select className="inp" value={genDiff2} onChange={e=>setGenDiff2(e.target.value)} style={{padding:"7px 10px"}}>
-              {["Easy","Medium","Hard","Very Hard"].map(d=><option key={d}>{d}</option>)}
-            </select>
-          </div>
-          <div style={{flex:2,minWidth:160}}>
-            <div style={{fontSize:11,color:T.t2,marginBottom:5}}>Topic (optional)</div>
-            <input className="inp" value={genTopic} onChange={e=>setGenTopic(e.target.value)} placeholder="e.g. generators, binary search..." style={{padding:"7px 10px"}} />
-          </div>
-          <div style={{display:"flex",alignItems:"flex-end"}}>
-            <button className="btn btn-green" onClick={generate2} disabled={genLoad}>
-              {genLoad?<><span className="spin">⟳</span>Generating...</>:"✨ Generate"}
-            </button>
-          </div>
-        </div>
-        {genQ&&(
-          <div className="fade-in" style={{background:"#050520",border:`1px solid ${T.green}50`,borderRadius:12,padding:"16px 18px"}}>
-            <p style={{fontSize:14,color:T.t1,lineHeight:1.8,marginBottom:12,fontWeight:500}}>{genQ.q}</p>
-            {genQ.hint&&<div style={{fontSize:12,color:T.amber,marginBottom:10,padding:"8px 12px",background:T.amber+"10",border:`1px solid ${T.amber}30`,borderRadius:8}}>💡 {genQ.hint}</div>}
-            <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>Optimal Approach</div>
-            <p style={{fontSize:13,color:T.t2,lineHeight:1.6,marginBottom:10}}>{genQ.approach}</p>
-            {genQ.code&&<div className="code" style={{marginBottom:10}}>{genQ.code}</div>}
-            <div style={{display:"flex",gap:14,flexWrap:"wrap",fontSize:12,color:T.t2,marginBottom:8}}>
-              <span>⏱ Time: <strong style={{color:T.green}}>{genQ.time_complexity}</strong></span>
-              <span>💾 Space: <strong style={{color:T.blue}}>{genQ.space_complexity}</strong></span>
-            </div>
-            {genQ.followup&&<div style={{fontSize:12,color:"#c084fc",padding:"8px 12px",background:"#120525",border:"1px solid #6b21a8",borderRadius:8}}>🎙 Follow-up: {genQ.followup}</div>}
-          </div>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-        {cats.map(c=><button key={c} onClick={()=>setCat(c)} className="btn btn-sm" style={{background:cat===c?T.blue+"30":"transparent",border:`1px solid ${cat===c?T.blue:T.border}`,color:cat===c?T.blue:T.t2,fontFamily:"'DM Sans',sans-serif"}}>{c}</button>)}
-      </div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:18}}>
-        {diffs.map(d=><button key={d} onClick={()=>setDiff(d)} className="btn btn-sm" style={{background:diff===d?(DIFF_C[d]||T.blue)+"30":"transparent",border:`1px solid ${diff===d?(DIFF_C[d]||T.blue):T.border}`,color:diff===d?(DIFF_C[d]||T.blue):T.t2,fontFamily:"'DM Sans',sans-serif"}}>{d}</button>)}
-      </div>
-
-      {/* Question list */}
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {filtered.map(q=>{
-          const dc=DIFF_C[q.diff]||T.blue; const isSolved=!!solved[q.id]; const sd=solved[q.id];
-          return (
-            <div key={q.id} style={{background:isSolved?"#021208":T.card,border:`1px solid ${isSolved?T.green+"60":T.border}`,borderRadius:12,padding:"13px 16px",display:"flex",gap:12,alignItems:"flex-start",transition:"all .2s",boxShadow:isSolved?`0 0 10px ${T.green}15`:"none"}}>
-              <div style={{width:22,height:22,borderRadius:6,flexShrink:0,marginTop:1,background:isSolved?T.green:"transparent",border:`2px solid ${isSolved?T.green:dc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#000",fontWeight:900}}>{isSolved?"✓":""}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginBottom:6}}>
-                  <span className={`badge ${q.diff==="Easy"?"b-easy":q.diff==="Medium"?"b-med":q.diff==="Hard"?"b-hard":"b-vhard"}`}>{q.diff}</span>
-                  <span style={{fontSize:10,color:T.t2,background:T.surf,padding:"2px 7px",borderRadius:999,border:`1px solid ${T.border}`}}>{q.cat}</span>
-                  <span style={{fontSize:10,color:T.t2}}>🏢 {q.co}</span>
-                  <span style={{fontSize:10,color:T.amber}}>⭐ {q.xp} XP</span>
-                  <span style={{fontSize:10,color:T.t2}}>⏱ {q.time}min</span>
-                  {isSolved&&sd?.time&&<span style={{fontSize:10,color:T.green}}>✅ {fmt(sd.time)}</span>}
-                </div>
-                <p style={{fontSize:13,color:isSolved?T.t2:T.t1,lineHeight:1.6}}>{q.q}</p>
-              </div>
-              <button className="btn btn-sm" onClick={()=>startQ(q)} style={{flexShrink:0,background:isSolved?"transparent":dc+"25",border:`1px solid ${isSolved?T.border:dc+"60"}`,color:isSolved?T.t2:dc,fontFamily:"'DM Sans',sans-serif"}}>
-                {isSolved?"Redo":"▶ Solve"}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-
-/* ─────────────────────────── MAIN APP ─────────────────────────── */
-export default function PythonMasteryApp() {
-  const [tab, setTab] = useState("roadmap");
-  const [topicProgress, saveTopicProgress, loaded] = useStorage("py-topics-v1", {});
-
-  // XP: each completed topic = 20 XP
-  const totalTopics = PYTHON_MONTHS.flatMap(m => m.weeks).flatMap(w => w.topics).length;
-  const solvedTopics = Object.values(topicProgress).filter(Boolean).length;
-  const totalXP = solvedTopics * 20;
-
-  const allPythonDone = PYTHON_MONTHS.every(m =>
-    m.weeks.every(w =>
-      w.topics.filter((_, j) => topicProgress[`m${w.n}-t${j}`]).length >= MIN_PER_WEEK
-    )
-  );
-
-  const monthsDone = PYTHON_MONTHS.filter(m =>
-    m.weeks.every(w =>
-      w.topics.filter((_, j) => topicProgress[`m${w.n}-t${j}`]).length >= MIN_PER_WEEK
-    )
-  ).length;
-
-  if (!loaded) return (
-    <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:"100vh", background:T.bg }}>
-      <div style={{ textAlign:"center" }}>
-        <div style={{ fontSize:32, marginBottom:12 }} className="float">🐍</div>
-        <div style={{ fontSize:14, color:T.t2 }}>Loading Python Mastery...</div>
-      </div>
-    </div>
-  );
-
-  return (
     <div className="app">
-      <style>{CSS}</style>
-      <Header totalXP={totalXP} solvedTopics={solvedTopics} monthsDone={monthsDone} />
-      <div className="wrap">
-        <Sidebar tab={tab} setTab={setTab} topicsDone={solvedTopics} totalTopics={totalTopics} />
-        <div className="main">
-          {tab === "roadmap" && (
-            <RoadmapView topicProgress={topicProgress} saveTopicProgress={saveTopicProgress} />
-          )}
-          {tab === "tracker" && (
-            <TrackerView topicProgress={topicProgress} />
-          )}
-          {tab === "projects" && (
-            <ProjectsView />
-          )}
-          {tab === "practice" && (
-            <PracticeView />
-          )}
-          {tab === "ml" && (
-            <MLPathView allPythonDone={allPythonDone} />
-          )}
+      <style>{GLOBAL_STYLES}</style>
+      <AppHeader totalXP={totalXP} streak={streak} solvedCount={solvedCount} />
+      <div className="layout">
+        <Sidebar active={nav} onNav={setNav} totalXP={totalXP} solvedCount={solvedCount} />
+        <div className="main-content" style={{ paddingBottom:80 }}>
+          {!trackerLoaded
+            ? <div style={{ display:"flex", justifyContent:"center", padding:80, color:T.t3 }}><Spinner size={32}/></div>
+            : (views[nav] || views.dashboard)
+          }
         </div>
       </div>
-      <MobileNav tab={tab} setTab={setTab} />
+      <MobileNav active={nav} onNav={setNav} />
     </div>
   );
 }
