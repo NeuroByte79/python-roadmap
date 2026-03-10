@@ -705,74 +705,53 @@ const PYTHON_MONTHS = [
 ];
 
 /* ─────────────────────────── QUESTION GENERATOR (Claude API) ─────────────────────────── */
-async function generateQuestions(topicText, weekTitle, retries = 3) {
-  const API_KEY = "YOUR_ANTHROPIC_API_KEY";
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": API_KEY,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 8000,
-        temperature: 0.3,
-        messages: [
-          {
-            role: "user",
-            content: `Generate exactly 100 Python interview questions.
+async function generateQuestions(topicText, weekTitle) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4000,
+      messages: [{
+        role: "user",
+        content: `Generate exactly 100 Python interview/practice questions for this specific topic:
 
 Topic: "${topicText}"
-Week: "${weekTitle}"
+Week context: "${weekTitle}"
 
-Return ONLY valid JSON.
+These should be real technical interview questions from Google, OpenAI, Anthropic, Meta, Microsoft style.
 
+Return ONLY valid JSON — no other text, no markdown fences:
 {
- "easy":[{"q":"question","co":"Google"}],
- "medium":[{"q":"question","co":"OpenAI"}],
- "hard":[{"q":"question","co":"Anthropic"}],
- "vhard":[{"q":"question","co":"Meta"}]
+  "easy": [
+    {"q": "question text", "co": "Google"},
+    ... (25 questions)
+  ],
+  "medium": [
+    {"q": "question text", "co": "OpenAI"},
+    ... (30 questions)  
+  ],
+  "hard": [
+    {"q": "question text", "co": "Anthropic"},
+    ... (30 questions)
+  ],
+  "vhard": [
+    {"q": "question text", "co": "Meta"},
+    ... (15 questions)
+  ]
 }
 
-Easy:25
-Medium:30
-Hard:30
-VeryHard:15`
-          }
-        ]
-      })
-    });
-
-    if (!res.ok) {
-      throw new Error("API request failed");
-    }
-
-    const data = await res.json();
-
-    let text = data.content?.[0]?.text || "";
-
-    // Clean possible markdown
-    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-    try {
-      return JSON.parse(text);
-    } catch (parseError) {
-
-      if (retries > 0) {
-        console.log("Retrying API request...");
-        return generateQuestions(topicText, weekTitle, retries - 1);
-      }
-
-      throw new Error("Failed to parse JSON from API response");
-    }
-
-  } catch (err) {
-    console.error("Error generating questions:", err);
-    throw err;
-  }
+Easy: conceptual, definitions, basic syntax. 
+Medium: write code, explain behavior, debug snippets.
+Hard: design problems, optimization, edge cases, real-world systems.
+Very Hard: open-ended system design, research-level, architecture decisions.
+Rotate companies: Google, OpenAI, Anthropic, Meta, Microsoft across all questions.`
+      }]
+    })
+  });
+  const data = await res.json();
+  const text = data.content.map(c => c.text || "").join("").trim();
+  return JSON.parse(text);
 }
 
 /* ─────────────────────────── SHARED COMPONENTS ─────────────────────────── */
@@ -1254,14 +1233,14 @@ async function autoGenerateQuestions(topicText, weekTitle) {
 
   const prompt1 = `Generate 50 Python interview questions for: "${topicText}" (${weekTitle})
 Return ONLY JSON, no markdown:
-{"easy":[{"q":"question text","co":"Company","link":"https://Google.com"}],"medium":[...]}
+{"easy":[{"q":"question text","co":"Company","link":"https://url"}],"medium":[...]}
 easy: 20 questions, medium: 30 questions.
 Companies: ${COMPANIES}. Links from: ${LINKS}.
 Keep each question concise (under 100 chars). Keep links short.`;
 
   const prompt2 = `Generate 50 more Python interview questions for: "${topicText}" (${weekTitle})
 Return ONLY JSON, no markdown:
-{"hard":[{"q":"question text","co":"Company","link":"https://Google.com"}],"vhard":[...]}
+{"hard":[{"q":"question text","co":"Company","link":"https://url"}],"vhard":[...]}
 hard: 35 questions, vhard: 15 questions.
 Companies: ${COMPANIES}. Links from: ${LINKS}.
 Keep each question concise (under 100 chars). Keep links short.`;
