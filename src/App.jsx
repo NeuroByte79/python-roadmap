@@ -123,6 +123,37 @@ body{background:#04040f;overflow-x:hidden}
 
 /* ML unlock banner */
 .ml-banner{background:linear-gradient(135deg,#03190e,#051a0a);border:1px solid #10b98160;border-radius:16px;padding:28px 24px;animation:unlockPulse 1.5s ease 2}
+
+/* Theory section */
+.theory-card{background:#080820;border:1px solid #12123a;border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s}
+.theory-card:hover{border-color:#3b82f660;background:#0a0a24}
+.method-pill{display:inline-block;background:#3b82f612;color:#3b82f6;border:1px solid #3b82f630;border-radius:6px;padding:3px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700}
+
+/* Responsive improvements */
+@media(max-width:480px){
+  .g4{grid-template-columns:repeat(2,1fr)!important}
+  .btn{font-size:12px;padding:6px 12px}
+  .topic-row{padding:9px 10px}
+  .q-row{padding:9px 10px}
+  .tab-b{padding:6px 10px;font-size:12px}
+  .nav-it{padding:8px 10px;font-size:12px}
+}
+@media(max-width:360px){
+  .syne{letter-spacing:0!important}
+  .code{font-size:11px;padding:10px}
+}
+
+/* Better sidebar for tablets */
+@media(min-width:861px) and (max-width:1100px){
+  .sidebar{width:200px}
+}
+
+/* Full-width utility */
+.full{width:100%}
+
+/* Day calendar responsive */
+.day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+@media(max-width:500px){.day-grid{gap:2px}}
 `;
 
 /* ─────────────────────────── THEME ─────────────────────────── */
@@ -677,7 +708,7 @@ const PYTHON_MONTHS = [
 async function generateQuestions(topicText, weekTitle) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4000,
@@ -817,6 +848,7 @@ const Header = ({ totalXP, solvedTopics, monthsDone }) => {
 const NAV = [
   { id:"roadmap",  icon:"🗺️", label:"Python Roadmap" },
   { id:"tracker",  icon:"📅", label:"Progress Tracker" },
+  { id:"theory",   icon:"📖", label:"Python Theory" },
   { id:"projects", icon:"🔨", label:"Project Ideas" },
   { id:"practice", icon:"⚡", label:"Practice Questions" },
   { id:"ml",       icon:"🌌", label:"ML Path", badge:"After Python" },
@@ -876,117 +908,530 @@ const MobileNav = ({ tab, setTab }) => (
 );
 
 /* ─────────────────────────── TOPIC ROW WITH QUESTIONS ─────────────────────────── */
+
+/* ─────────────────────────── TOPIC IDEAS DATA ─────────────────────────── */
+// 10 project ideas per week (24 weeks × 10 = 240 ideas)
+const WEEK_IDEAS = {
+  1:[
+    {t:"Number Guessing Game",h:"Use random.randint() for target. Loop until correct. Count attempts. Add hint: 'too high/low'. Save high score to variable."},
+    {t:"Temperature Converter",h:"Functions for C↔F↔K conversions. Input validation with try/except. Build a menu loop. Extend to a full unit converter."},
+    {t:"Simple Calculator",h:"eval() is unsafe — build your own parser. Handle division by zero. Add memory (M+, M-, MR). Log history to a list."},
+    {t:"Word Counter CLI",h:"Read a .txt file. Count total words, unique words, top-10 frequent. Use split() and Counter from collections."},
+    {t:"Basic Password Generator",h:"Use string.ascii_letters + digits + punctuation. random.choices() with weights. Ensure at least 1 of each type."},
+    {t:"Roman Numeral Converter",h:"Map values dict: {1000:'M', 900:'CM'...}. Loop through divmod. Handle both directions (int↔roman)."},
+    {t:"Simple ATM Simulator",h:"Dict for accounts. if/elif for menu. Deposit/withdraw with balance check. PIN validation. Transaction history list."},
+    {t:"Pattern Printer",h:"Nested loops for pyramids, diamonds, hollow squares. Accept size as input. Print stars (*), numbers, or letters."},
+    {t:"Basic Quiz Game",h:"Store Q&A in a list of dicts. Shuffle with random.shuffle(). Score tracking. Timer with time.time(). Save score to file."},
+    {t:"FizzBuzz Variations",h:"Classic FizzBuzz then extend: custom rules, range input, multiple conditions, output to file, count Fizz vs Buzz."},
+  ],
+  2:[
+    {t:"Mad Libs Generator",h:"Store template strings with {placeholders}. Input multiple words, use .format() or f-strings. Read templates from file."},
+    {t:"Palindrome Checker",h:"Handle spaces/punctuation with re.sub(). Check words AND phrases. Find all palindromes in a paragraph."},
+    {t:"Caesar Cipher",h:"ord()/chr() for ASCII shift. Handle uppercase/lowercase. Add Vigenere cipher upgrade. brute-force decryption mode."},
+    {t:"Anagram Detector",h:"Sort both strings and compare, or use Counter. Find all anagram pairs in a word list. Group anagrams together."},
+    {t:"String Statistics Tool",h:"Count vowels/consonants, longest word, average word length, most common letter. Accept input or read from file."},
+    {t:"Text Formatter CLI",h:"Wrap text at N chars, center/left/right justify, add borders. Implement markdown-lite: **bold**, *italic*."},
+    {t:"URL Parser",h:"Use split() to extract protocol, domain, path, query params. Validate URL format. Rebuild URL from components."},
+    {t:"Emoji Translator",h:"Dict mapping words to emojis. Replace words in sentences. Add reverse mode. Read custom mappings from JSON."},
+    {t:"Pig Latin Translator",h:"Move first consonant cluster to end + 'ay'. Handle vowel-start words. Process entire sentences. Handle punctuation."},
+    {t:"Acronym Generator",h:"Take first letter of each word, uppercase. Skip small words (the, a, of). Generate from sentence or phrase input."},
+  ],
+  3:[
+    {t:"Shopping Cart System",h:"List of dicts for items. add/remove/update quantity functions. calc_total() with tax. Apply discount codes. Print receipt."},
+    {t:"Student Grade Manager",h:"Dict of students → list of grades. Calc mean, median, mode. Letter grade function. Sort by GPA. Export to CSV."},
+    {t:"Contact Book",h:"List of dicts: name, phone, email. CRUD operations. Search by name/phone. Sort alphabetically. Save/load from JSON."},
+    {t:"Inventory System",h:"Dict of items with stock/price. Add/remove stock. Low-stock alert when quantity < threshold. Total value calculation."},
+    {t:"To-Do List with Priorities",h:"List of dicts with task, priority (1-5), due_date, done. Sort by priority. Filter by status. Save to JSON file."},
+    {t:"Movie Watchlist",h:"List of movie dicts: title, genre, rating, watched. Filter by genre. Sort by rating. Random movie suggester."},
+    {t:"Expense Tracker",h:"List of expense dicts with amount, category, date. Monthly totals. Category breakdown. Budget vs actual. CSV export."},
+    {t:"Library Book Tracker",h:"Books dict: title→{author, ISBN, available, borrower}. Borrow/return functions. Overdue detection. Search by author."},
+    {t:"Playlist Manager",h:"List of song dicts. Add/remove/reorder. Shuffle with random.shuffle(). Filter by genre/artist. Play count tracking."},
+    {t:"Recipe Book",h:"Dict of recipes: name→{ingredients, steps, time, servings}. Scale ingredients. Search by ingredient. Filter by cook time."},
+  ],
+  4:[
+    {t:"For Loop Art Generator",h:"Nested loops to draw ASCII art: spirals, checkerboards. Use chr() for characters. Accept pattern type as argument."},
+    {t:"Multiplication Table",h:"Print N×N table using nested loops. Format with f-string padding. Highlight perfect squares. Accept N from user."},
+    {t:"Number Base Converter",h:"Convert decimal to binary/octal/hex manually (no bin()). Use while loop with divmod. Handle negative numbers."},
+    {t:"Prime Number Sieve",h:"Implement Sieve of Eratosthenes. Find all primes up to N. Count primes in range. Check if large number is prime."},
+    {t:"Fibonacci Variations",h:"Iterative, recursive, and generator versions. Memoized version for speed. Detect Fibonacci numbers. Golden ratio calculation."},
+    {t:"Collatz Sequence",h:"3n+1 problem: loop until 1. Count steps. Find longest sequence for numbers 1-1000. Visualize sequence length."},
+    {t:"Number Spiral Matrix",h:"Fill an N×N matrix in a spiral pattern using direction arrays. Print the matrix. Find value at position (r, c)."},
+    {t:"Calendar Printer",h:"Print a month calendar like the cal command. Use datetime. Handle leap years. Highlight today's date with a marker."},
+    {t:"BMI Calculator System",h:"BMI formula + category. Weight history tracking. Ideal weight range. Plot with text-based bar. Store in CSV."},
+    {t:"Countdown Timer",h:"time.sleep(1) loop. Show HH:MM:SS. Accept input in any format. Sound alarm (print bell char). Multiple timers."},
+  ],
+  5:[
+    {t:"Number Properties Explorer",h:"Check: prime, perfect, Armstrong, palindrome, happy. For any number, print all properties. Find all up to N."},
+    {t:"Math Quiz Generator",h:"random operations (+,-,×,÷). Difficulty levels. Timer per question. Hint system. Track weak areas. Adaptive difficulty."},
+    {t:"Statistics Calculator",h:"Implement mean, median, mode, variance, std dev, percentiles from scratch. Compare with statistics module."},
+    {t:"Matrix Operations",h:"2D list matrix: add, multiply, transpose. Input matrix from user. Determinant for 2×2, 3×3. Row reduction."},
+    {t:"Polynomial Evaluator",h:"List of coefficients. Eval at x using Horner's method. Add/multiply polynomials. Find roots by bisection method."},
+    {t:"Budget Planner",h:"Income, fixed/variable expenses input. Net savings calc. Months to reach savings goal. Emergency fund calculator."},
+    {t:"Unit Converter Suite",h:"Length, weight, temperature, volume, speed, area. Two-way conversion. Most common conversions quick-access menu."},
+    {t:"Loan Calculator",h:"Monthly payment with compound interest formula. Total interest paid. Amortization schedule. Extra payment impact."},
+    {t:"Grade Point Calculator",h:"GPA from letter grades + credit hours. Cumulative GPA. Required grades to reach target GPA. Dean's list check."},
+    {t:"Number Puzzle Solver",h:"Magic squares, Sudoku verifier, cross-sum puzzles. Brute-force search with pruning. Puzzle generator."},
+  ],
+  6:[
+    {t:"Function Benchmarker",h:"timeit.timeit() wrapper. Compare multiple implementations. Plot results as ASCII bar chart. Auto-repeat for accuracy."},
+    {t:"Closure-Based Counter",h:"Factory function returning increment/decrement/reset functions sharing state. Rate-limited counter. Thread-safe version."},
+    {t:"Argument Parser Framework",h:"Build argparse-lite: parse sys.argv. Support flags, options, positional args. Help message generation."},
+    {t:"Function Pipeline",h:"Chain functions: pipeline(f, g, h)(x) == h(g(f(x))). Partial application. Composition operator. Lazy evaluation."},
+    {t:"Recursive Data Processor",h:"Deep copy, deep compare, deep merge of nested dicts/lists. Find all values by key path. Flatten nested structure."},
+    {t:"Memoization Library",h:"LRU cache decorator. TTL-based cache. Stats: hits, misses, hit rate. Cache invalidation by key pattern."},
+    {t:"Error Handler Decorator",h:"@retry with backoff, @timeout, @log_errors, @validate_args decorators. Compose multiple decorators."},
+    {t:"Command Dispatcher",h:"Dict mapping command names to functions. Register commands with decorator. Help system. Alias support."},
+    {t:"Mini Test Framework",h:"@test decorator, assert_equal/assert_raises helpers. Test discovery. Pass/fail/skip reporting. Test fixtures."},
+    {t:"Functional Utilities",h:"Implement: curry, compose, pipe, memoize, once, debounce, throttle, partial. Pure Python, no imports."},
+  ],
+  7:[
+    {t:"JSON Config Manager",h:"Load/save nested config. Dot-notation access: config.get('db.host'). Env var override. Schema validation."},
+    {t:"CSV Analyzer",h:"Read large CSVs with csv module. Filter rows, sort, group by column. Summary stats. Write filtered results."},
+    {t:"Log File Parser",h:"Parse nginx/apache logs with regex. Count status codes, top IPs, peak hours. Detect 404 patterns. Alert thresholds."},
+    {t:"Directory Organizer",h:"Scan folder, organize files by extension/date/size. Dry-run mode. Undo log. Duplicate finder with hash check."},
+    {t:"File Synchronizer",h:"Compare two directories using checksums. Copy new/modified. Delete removed. Show diff. Schedule with cron."},
+    {t:"Text File Search Engine",h:"Index words→file positions. Boolean AND/OR/NOT queries. Phrase search. Ranked results by frequency."},
+    {t:"Backup Tool",h:"Zip files/folders with timestamp. Incremental backup (only changed). Restore from backup. Retention policy."},
+    {t:"Markdown to HTML",h:"Parse headings, bold, italic, links, lists. Build element tree. Render to HTML string. Handle nested markdown."},
+    {t:"Configuration File Generator",h:"Jinja2-like templates for .env, .conf, Dockerfile. Variable substitution. Conditional blocks. Include files."},
+    {t:"File Duplicate Finder",h:"MD5/SHA256 hash all files. Group by hash. Show duplicate sets. Interactive delete or hardlink. Size savings report."},
+  ],
+  8:[
+    {t:"Exception Hierarchy Printer",h:"Traverse BaseException.__subclasses__() recursively. Print tree with indentation. Filter by module. Show MRO."},
+    {t:"Custom Exception Library",h:"AppError base class. ValidationError, AuthError, NotFoundError with status codes. Structured logging on raise."},
+    {t:"Safe Math Evaluator",h:"Parse math expressions safely (no eval). AST-based: tokenize → parse → evaluate. Support variables, functions."},
+    {t:"File Operation Safety Wrapper",h:"@safe_open, @atomic_write decorators. Backup before overwrite. Checksum verification. Retry on PermissionError."},
+    {t:"Input Validation Library",h:"Validate: email, phone, URL, IP, date, credit card. Return validation errors list. Chainable validators."},
+    {t:"Retry Mechanism",h:"@retry(max_attempts, delay, backoff, exceptions). Jitter. Circuit breaker pattern. Fallback value support."},
+    {t:"Context Manager Collection",h:"timer(), temp_dir(), env_override(), capture_output(), atomic_file() context managers. Use contextlib."},
+    {t:"Error Logger",h:"Custom logging handler. Format with timestamp/level/file/line. File + console output. Log rotation. Email on CRITICAL."},
+    {t:"Assertion Library",h:"assert_equal, assert_raises, assert_almost_equal, assert_in, assert_is_instance with descriptive error messages."},
+    {t:"Graceful Shutdown Handler",h:"Signal handlers (SIGINT, SIGTERM). Cleanup registry. Timeout for cleanup tasks. State save before exit."},
+  ],
+  9:[
+    {t:"Object Serializer",h:"Custom __repr__, __str__, __eq__, __hash__. JSON serializer for custom objects. Deep copy/compare support."},
+    {t:"Data Class Generator",h:"Implement dataclass-like decorator from scratch: add __init__, __repr__, __eq__ based on class annotations."},
+    {t:"Observer Pattern Framework",h:"Subject/Observer base classes. Event types. Async notification support. Weak references to observers."},
+    {t:"Strategy Pattern Library",h:"Sorting strategies (quick/merge/heap). Interchangeable algorithm objects. Benchmark multiple strategies."},
+    {t:"Builder Pattern",h:"QueryBuilder for SQL, RequestBuilder for HTTP, DocumentBuilder for markdown. Fluent interface (method chaining)."},
+    {t:"Singleton Registry",h:"Thread-safe singleton. Plugin registry pattern. Service locator. Dependency injection container."},
+    {t:"Proxy Pattern",h:"Lazy loading proxy. Caching proxy. Permission checking proxy. Logging proxy. Transparent interface."},
+    {t:"Linked List Library",h:"Singly/doubly linked list. All operations: insert, delete, reverse, cycle detection, merge sorted lists."},
+    {t:"Stack and Queue Library",h:"Stack, Queue, Deque, Priority Queue from scratch using arrays and linked lists. All with proper complexity."},
+    {t:"Binary Tree Toolkit",h:"BST: insert, search, delete. Traversals: in/pre/post/level. Height, balance check. AVL auto-balance."},
+  ],
+  10:[
+    {t:"Decorator Composition Framework",h:"@compose multiple decorators cleanly. Order matters — demonstrate. functools.wraps to preserve metadata."},
+    {t:"Class Decorator Collection",h:"@singleton, @cached_property, @type_check, @abstract_method decorators for classes. Property validators."},
+    {t:"Property Validator",h:"Descriptor protocol: __get__, __set__, __delete__. Typed properties. Range validators. Readonly properties."},
+    {t:"Metaclass Logger",h:"Metaclass that logs all method calls. Track instantiation count. Auto-register subclasses in a registry."},
+    {t:"Function Tracer",h:"Decorator printing call stack depth, arguments, return values. Configurable depth limit. Performance timing."},
+    {t:"Benchmark Decorator",h:"@benchmark(n=100) runs function n times, reports min/max/mean/std. Compares two implementations side by side."},
+    {t:"API Rate Limiter",h:"Token bucket algorithm. Per-user limits. Redis-backed (or dict-backed). Decorator interface. Headers injection."},
+    {t:"Permission System",h:"@requires_role('admin'), @login_required decorators. Role hierarchy. Permission inheritance. Audit log."},
+    {t:"Lazy Loader",h:"__getattr__ on module to lazy-import. Lazy class attributes. Cache after first access. Thread-safe loading."},
+    {t:"Method Missing Handler",h:"__getattr__/__getattribute__ magic. Dynamic method generation. Proxy any object. Record all calls."},
+  ],
+  11:[
+    {t:"Infinite Sequence Generator",h:"fibonacci(), primes(), naturals(), random_walk() generators. Combine with itertools.islice(). Lazy evaluation."},
+    {t:"Data Pipeline with Generators",h:"Chain generators: read_csv | filter | transform | write_csv. Memory-efficient for huge files. Pluggable stages."},
+    {t:"Custom Range Iterator",h:"Implement range-like class with __iter__, __next__, __len__, __contains__. Float step support. Reverse iteration."},
+    {t:"Event-Driven System",h:"Generator-based coroutines. send() values in. yield control back. Simulate async without asyncio."},
+    {t:"Chunked File Processor",h:"Read file in chunks with generator. Process chunks in parallel. Merge results. Memory stays constant regardless of file size."},
+    {t:"Tree Traversal Generator",h:"Yield nodes in DFS/BFS order without recursion. Accept any tree structure. depth parameter. Path tracking."},
+    {t:"Sliding Window Generator",h:"window(seq, n) yields tuples. Supports overlap. Apply stats to each window. Streaming min/max/avg."},
+    {t:"Round Robin Scheduler",h:"cycle() over tasks with weights. Yield task based on priority. Pause/resume tasks. Fairness metrics."},
+    {t:"Tokenizer Generator",h:"Yield tokens from source text: numbers, strings, operators, identifiers. Position tracking. Error recovery."},
+    {t:"Merge K Sorted Iterators",h:"heapq.merge() then custom merge. Handle infinite iterators. Peek without consuming. Priority queue approach."},
+  ],
+  12:[
+    {t:"Async Web Scraper",h:"aiohttp + asyncio.gather(). Semaphore for rate limiting. Retry with backoff. Save results as they come in."},
+    {t:"Async Chat Server",h:"asyncio streams. Multiple clients. Broadcast messages. Private messages. Room support. History buffer."},
+    {t:"Concurrent File Downloader",h:"asyncio + aiohttp to download N URLs. Progress bar per file. Total bandwidth. Retry failed. Checksum verify."},
+    {t:"Async Job Queue",h:"asyncio.Queue producer/consumer. Priority queue. Dead letter queue. Worker pool. Job status tracking."},
+    {t:"Async API Client",h:"Async HTTP client wrapper. Connection pooling. Request/response middleware. Timeout handling. Circuit breaker."},
+    {t:"Event Loop Visualizer",h:"Instrument asyncio event loop. Log: coroutine start/end/await. Show concurrent tasks timeline. Detect blocking."},
+    {t:"Async Rate Limiter",h:"Token bucket with asyncio. Per-endpoint limits. Await when rate exceeded. Burst allowance. Metrics."},
+    {t:"Async Database Pool",h:"Async connection pool. Acquire/release with async context manager. Max connections. Queue waiting requests."},
+    {t:"Task Scheduler",h:"Schedule coroutines at specific times. cron-like syntax. Cancel tasks. Persist schedule. Missed task handling."},
+    {t:"Async Pipeline",h:"Chain async generators: source | transform | filter | sink. Backpressure. Error propagation. Cancellation."},
+  ],
+  13:[
+    {t:"Testing Framework",h:"Discover test_ functions. Fixtures via dependency injection. Parametrize. Mocking. Coverage report. HTML output."},
+    {t:"Test Data Factory",h:"Factory functions for test data. Faker-lite: random names, emails, addresses. Seeded random for reproducibility."},
+    {t:"Mutation Tester",h:"Modify source code (flip operators, change constants). Run tests. Detect which mutations are NOT caught = weak tests."},
+    {t:"Snapshot Tester",h:"Serialize output to JSON. Compare with stored snapshot. Update on --update flag. Diff viewer for changes."},
+    {t:"Property-Based Tester",h:"Generate random inputs. Run property assertions (output always sorted, length preserved). Shrink failing examples."},
+    {t:"Mock Library",h:"Mock object that records calls. assert_called_with(), call_count. Patch context manager. Side effects."},
+    {t:"Performance Test Suite",h:"Measure execution time, memory usage. Assert performance budgets. Compare before/after. Regression detection."},
+    {t:"Integration Test Runner",h:"Start dependencies (mock server, temp DB). Run test suite. Tear down. Report per-test timing and dependencies."},
+    {t:"Coverage Analyzer",h:"Instrument code with sys.settrace(). Track which lines execute. Report uncovered lines. Branch coverage."},
+    {t:"Chaos Engineering Tool",h:"Randomly inject failures: slow functions, raise exceptions, corrupt data. Test system resilience. Recovery metrics."},
+  ],
+  14:[
+    {t:"SQLite ORM",h:"Map Python classes to tables. CRUD via method calls. Query builder. Relationships (FK). Migrations. Connection pool."},
+    {t:"Database Migration Tool",h:"Version-controlled schema changes. Up/down migrations. Apply pending migrations. Rollback. Migration history table."},
+    {t:"Query Builder",h:"Fluent interface: db.select('users').where(age>18).order_by('name').limit(10). Build parameterized SQL. Prevent injection."},
+    {t:"Connection Pool Manager",h:"Min/max connections. Acquire/release. Timeout. Health checks. Auto-reconnect. Metrics: pool size, wait time."},
+    {t:"Data Seeder",h:"Generate realistic test data for any schema. Respect foreign keys. Batch insert. Progress bar. Configurable counts."},
+    {t:"Database Backup Tool",h:"Dump to SQL or CSV. Compress. Encrypt. Schedule. Incremental backup. Restore with validation."},
+    {t:"Schema Visualizer",h:"Read SQLite schema. Generate ASCII ERD diagram. Show tables, columns, types, FK relationships."},
+    {t:"CSV to SQLite Importer",h:"Auto-detect column types. Handle nulls/duplicates. Batch inserts. Progress. Validate constraints. Create indexes."},
+    {t:"SQL Formatter",h:"Parse SQL, reformat with consistent indent/case. Validate syntax. Detect N+1 query patterns. Suggest indexes."},
+    {t:"Audit Log System",h:"Trigger-based change tracking. Who changed what, when, old→new value. Queryable history. Point-in-time recovery."},
+  ],
+  15:[
+    {t:"HTTP Client Library",h:"GET/POST/PUT/DELETE with requests. Session management. Cookie handling. Retry. Timeout. Response validation."},
+    {t:"REST API Wrapper",h:"Base class for API clients. Auth methods (API key, OAuth, JWT). Rate limiting. Pagination. Response caching."},
+    {t:"Webhook Server",h:"FastAPI endpoint receiving webhooks. Verify HMAC signature. Queue events. Retry failed handlers. Dashboard."},
+    {t:"GraphQL Client",h:"HTTP client for GraphQL. Build queries as Python. Handle errors. Introspection. Schema validation."},
+    {t:"API Response Validator",h:"JSON Schema validation. Type checking. Required fields. Custom validators. Detailed error messages. Diff tool."},
+    {t:"API Load Tester",h:"Async concurrent requests. Ramp up/down. Latency percentiles (p50/p95/p99). Error rate. Throughput. Report."},
+    {t:"Retry Middleware",h:"Transparent retry for HTTP. Exponential backoff. Idempotency keys. Circuit breaker. Fallback responses."},
+    {t:"API Mock Server",h:"Define routes with expected responses. Request matching. Delay simulation. Failure injection. Record/replay mode."},
+    {t:"OpenAPI Generator",h:"Read FastAPI app. Generate OpenAPI spec. Generate client SDK. Sync spec with code changes. Validation."},
+    {t:"WebSocket Client",h:"Persistent connection. Ping/pong. Reconnect on disconnect. Message queue. Binary + text support."},
+  ],
+  16:[
+    {t:"Web Scraper Framework",h:"Page fetcher with caching. CSS selector extraction. Pagination handler. Rate limiting. Robots.txt compliance."},
+    {t:"Price Monitor",h:"Scrape product pages every N hours. Track price history. Alert on drop below threshold. Export to CSV/chart."},
+    {t:"News Aggregator",h:"Scrape RSS feeds + HTML. Deduplicate by title similarity. Categorize by keyword. Markdown digest output."},
+    {t:"Job Listing Scraper",h:"Multiple job boards. Normalize fields. Deduplicate. Filter by keywords. Email digest. Store in SQLite."},
+    {t:"Social Media Archiver",h:"Download posts, images, metadata. Deduplicate. Search your archive. Export to various formats. Privacy-safe."},
+    {t:"Wikipedia Summarizer",h:"Fetch Wikipedia page. Extract first 3 paragraphs. Clean HTML. Summarize with sentence scoring. Related articles."},
+    {t:"Real Estate Data Collector",h:"Scrape listings: price, size, location, date. Clean data. Export to pandas. Geographic clustering."},
+    {t:"Academic Paper Downloader",h:"Search arXiv API. Download PDFs. Extract abstract/authors. Citation graph builder. Topic clustering."},
+    {t:"Amazon Review Analyzer",h:"Scrape reviews (with selenium). Sentiment scoring. Keyword extraction. Rating distribution. Fake review detection."},
+    {t:"Sports Stats Scraper",h:"Match results, player stats, league tables. Historical data. Generate stats reports. Prediction model input."},
+  ],
+  17:[
+    {t:"FastAPI To-Do Service",h:"CRUD endpoints. SQLite with SQLAlchemy. Pydantic models. Pagination. Filtering. Tag support. Swagger docs."},
+    {t:"User Auth Service",h:"Register/login/refresh JWT. Password hashing (bcrypt). Email verification. Rate limiting. Session management."},
+    {t:"File Upload Service",h:"Multipart upload. MIME type validation. Virus scan hook. Resize images. S3-compatible storage. CDN URLs."},
+    {t:"URL Shortener",h:"POST long URL → short code (nanoid). GET short → redirect. Analytics: clicks, referrers, geo. Admin dashboard."},
+    {t:"Notification Service",h:"Email (SMTP) and SMS (Twilio) notifications. Templates with Jinja2. Queue-based sending. Delivery tracking."},
+    {t:"Rate Limiter Middleware",h:"Per-IP and per-user rate limits. Token bucket in Redis/dict. HTTP 429 with Retry-After. Whitelist/blacklist."},
+    {t:"Health Check Service",h:"GET /health endpoint. Check DB, cache, external APIs. Circuit breaker status. Version info. SLA monitoring."},
+    {t:"Audit Trail API",h:"Middleware logging every request: user, endpoint, params, response code, duration. Queryable audit log endpoint."},
+    {t:"Feature Flag Service",h:"Enable/disable features per user/percentage. A/B testing support. Real-time updates. Analytics integration."},
+    {t:"Event Streaming API",h:"Server-Sent Events (SSE) endpoint. Broadcast to subscribed clients. Reconnect support. Event history."},
+  ],
+  18:[
+    {t:"Sales Dashboard",h:"pandas: load CSV, group by product/region/date. matplotlib: bar, line, pie charts. Interactive filters. Export PDF."},
+    {t:"COVID Data Analyzer",h:"Download official datasets. Plot cases/deaths/vaccinations over time. Country comparisons. Moving averages."},
+    {t:"Stock Market Analyzer",h:"yfinance OHLC data. Moving averages, RSI, MACD, Bollinger Bands. Backtest simple strategies."},
+    {t:"Weather Pattern Analyzer",h:"Download NOAA weather data. Plot temperature trends. Anomaly detection. Monthly/seasonal averages. Forecasting."},
+    {t:"Social Media Analytics",h:"Follower growth, engagement rates. Best posting times. Hashtag performance. Competitor analysis. Trend detection."},
+    {t:"E-commerce Analytics",h:"Sales by product/category/time. Customer cohort analysis. Churn prediction. LTV calculation. Funnel analysis."},
+    {t:"Log Analytics Dashboard",h:"Parse application logs. Error frequency, latency percentiles. Alert conditions. Time series plotting."},
+    {t:"Survey Data Analyzer",h:"Load CSV responses. Likert scale analysis. Cross-tabulation. Statistical significance tests. Report generation."},
+    {t:"Fitness Tracker Analytics",h:"Import Apple Health / Fitbit export. Plot activity trends. Sleep quality analysis. Goal tracking. Correlations."},
+    {t:"City Transit Analysis",h:"GTFS feed processing. Route efficiency. On-time performance. Passenger load estimation. Map visualization."},
+  ],
+  19:[
+    {t:"NumPy Image Filter",h:"Load image as array. Apply kernels: blur, sharpen, edge detect. Custom filters. Before/after comparison."},
+    {t:"Signal Processing",h:"Generate sine/square/noise signals. FFT frequency analysis. Filter design. Spectrogram. Audio visualization."},
+    {t:"Monte Carlo Simulator",h:"Pi estimation, option pricing, risk analysis. Vectorized operations. Statistical confidence intervals."},
+    {t:"Linear Algebra Visualizer",h:"2D transformations: rotation, scaling, shear. Show eigenvectors. Matrix multiplication as transformations."},
+    {t:"Optimization Solver",h:"Gradient descent visualization. Simulate annealing. Genetic algorithm. Benchmark on classic functions."},
+    {t:"Physics Simulation",h:"Projectile motion, pendulum, N-body gravity. numpy ODE solver. Animate with matplotlib."},
+    {t:"Neural Network from Scratch",h:"numpy only: forward pass, backprop, gradient descent. Train on XOR or MNIST. Plot loss curve."},
+    {t:"Image Compression",h:"SVD-based compression. Show quality vs compression ratio. PCA for dimensionality reduction. PSNR metric."},
+    {t:"Time Series Forecasting",h:"Moving average, exponential smoothing, ARIMA-lite. Evaluate with MAE/RMSE. Confidence intervals."},
+    {t:"Clustering Algorithm",h:"K-means from scratch with numpy. Elbow method for K. Compare with sklearn. Visualize cluster boundaries."},
+  ],
+  20:[
+    {t:"Titanic Survival Model",h:"EDA → feature engineering → logistic regression + decision tree. Cross-validation. Feature importance. Kaggle submission."},
+    {t:"Customer Churn Predictor",h:"Telecom dataset. Feature engineering. Class imbalance (SMOTE). Random forest. SHAP values. Business impact."},
+    {t:"Sentiment Analyzer",h:"Movie/product reviews. TF-IDF + logistic regression. VADER for quick sentiment. Confusion matrix analysis."},
+    {t:"Spam Classifier",h:"Email dataset. Text preprocessing. Naive Bayes + SVM comparison. Precision/recall tradeoff. Real-time prediction."},
+    {t:"House Price Predictor",h:"Ames dataset. Null handling. Feature engineering. Ridge/Lasso/XGBoost. Stacking ensemble. SHAP explanations."},
+    {t:"Image Classifier",h:"scikit-learn: HOG features + SVM. MNIST/CIFAR-10. Confusion matrix. Grad-CAM-like visualization."},
+    {t:"Anomaly Detector",h:"Isolation Forest + One-Class SVM. Credit card fraud dataset. ROC curve. Precision-recall curve. Alert system."},
+    {t:"Recommendation System",h:"Collaborative filtering with matrix factorization. Content-based with TF-IDF. Hybrid approach. A/B test simulation."},
+    {t:"Drug Discovery EDA",h:"Molecule property analysis. Activity cliffs detection. Structure-activity relationships. Model for IC50 prediction."},
+    {t:"Natural Language Classifier",h:"Multi-class text classification. Preprocessing pipeline. Evaluate multiple models. Hyperparameter tuning."},
+  ],
+  21:[
+    {t:"LeetCode Practice Tracker",h:"Track problems by company, difficulty, topic. Spaced repetition schedule. Success rate analytics. Note taking."},
+    {t:"Algorithm Visualizer",h:"Animate sorting/searching algorithms in terminal using curses or HTML output. Step-by-step with comparison count."},
+    {t:"Graph Problems Solver",h:"Implement: DFS/BFS/Dijkstra/A*/Bellman-Ford. Visualize on grid. Compare performance. Handle directed/weighted."},
+    {t:"Dynamic Programming Explorer",h:"Classic DP: knapsack, LCS, edit distance, coin change. Show memoization table. Bottom-up vs top-down."},
+    {t:"Tree Algorithm Library",h:"BST, AVL, Red-Black trees. All operations. Visualization. Balance metrics. Performance vs sorted list."},
+    {t:"String Algorithm Suite",h:"KMP, Rabin-Karp, Z-algorithm pattern matching. Suffix array/trie. Aho-Corasick multi-pattern."},
+    {t:"Competitive Programming Helper",h:"Template generator, test case creator, I/O template, complexity analyzer. Problem tag classifier."},
+    {t:"Backtracking Puzzle Solver",h:"N-Queens, Sudoku, Word Search, Combination Sum, Permutations. Visualize backtrack steps."},
+    {t:"Segment Tree Library",h:"Range sum/min/max queries. Lazy propagation. Point/range updates. Persistent version. Merge sort tree."},
+    {t:"Graph Generation Suite",h:"Random graphs: Erdős-Rényi, Barabási-Albert. Planarity test. Coloring. Community detection. Export."},
+  ],
+  22:[
+    {t:"Huffman Coder",h:"Build frequency table. Min-heap priority queue. Build tree. Generate codes. Encode/decode files. Compression ratio stats."},
+    {t:"Trie Autocomplete",h:"Insert words with frequencies. Suggest top-K completions. Fuzzy matching. Delete words. Serialize/deserialize."},
+    {t:"Skip List Implementation",h:"Probabilistic data structure. Insert/search/delete O(log n). Compare with sorted list. Visualization."},
+    {t:"Bloom Filter",h:"Bit array + k hash functions. False positive rate analysis. Size calculator. Counting variant. Network dedup use case."},
+    {t:"Disjoint Set Union",h:"Union-Find with path compression + union by rank. Applications: Kruskal's MST, connected components, percolation."},
+    {t:"Fenwick Tree",h:"Binary Indexed Tree for prefix sums. Range queries. Point updates. 2D extension. Application to inversion count."},
+    {t:"LRU Cache Implementation",h:"OrderedDict or doubly-linked-list + hashmap. get/put in O(1). LFU variant. TTL support. Thread-safe version."},
+    {t:"Persistent Data Structure",h:"Persistent array, stack, linked list. Structural sharing. Version history. Undo/redo. Functional update semantics."},
+    {t:"Interval Tree",h:"Insert intervals. Query: all overlapping intervals. Delete. Applications: calendar scheduling, genomics."},
+    {t:"Cartesian Tree",h:"Build from array. Min/Max cartesian tree. RMQ with sparse table. LCA using Euler tour + RMQ."},
+  ],
+  23:[
+    {t:"Python Packaging",h:"pyproject.toml, setup.cfg. Build wheel/sdist. Publish to PyPI (test). Entry points. Version management."},
+    {t:"CLI Tool with Click/Typer",h:"Multi-command CLI. Rich output with colors/tables. Progress bars. Config file support. Shell completion."},
+    {t:"Code Formatter/Linter",h:"AST-based code analysis. Style checker: naming, line length, complexity. Auto-fix mode. VS Code extension."},
+    {t:"Documentation Generator",h:"Parse Python docstrings. Generate HTML/Markdown docs. Type hint extraction. Example execution. Cross-references."},
+    {t:"GitHub Actions Workflow",h:"CI pipeline: lint, test, coverage, build. Deploy on tag. Matrix testing Python 3.9-3.12. Cache dependencies."},
+    {t:"Docker Multi-Stage Build",h:"Optimize Python Docker image: slim base, non-root user, multi-stage for builder/runtime. Health check."},
+    {t:"Pre-commit Hook Suite",h:"Custom hooks: check imports sorted, types valid, no debug prints, complexity check. Run in CI too."},
+    {t:"Code Complexity Analyzer",h:"McCabe cyclomatic complexity. Function length. Dependency graph. Coupling/cohesion metrics. Refactor suggestions."},
+    {t:"Import Optimizer",h:"Find unused imports. Sort and group imports (isort-lite). Circular import detector. Lazy import suggester."},
+    {t:"Performance Profiler",h:"cProfile wrapper. Memory profiler. Line profiler. Flame graph generator. Hotspot identification. Report."},
+  ],
+  24:[
+    {t:"System Design Simulator",h:"Simulate: load balancer, cache, DB, CDN. Measure: latency, throughput, availability. Failure injection."},
+    {t:"Portfolio Website Generator",h:"Read your GitHub profile. Auto-generate static site: projects, skills, experience. Deploy to GitHub Pages."},
+    {t:"Technical Blog Engine",h:"Markdown posts → HTML. Syntax highlighting. Tag system. Search. RSS feed. Static site generation."},
+    {t:"Resume Builder",h:"YAML/JSON input → PDF resume via reportlab. Multiple themes. ATS score check. Keyword optimizer."},
+    {t:"Code Review Bot",h:"GitHub webhook. Analyze PR diff: style, complexity, test coverage, security. Post automated comments."},
+    {t:"Mock Interview Platform",h:"Random question from DB. Timer. Hint system. Solution reveal. Score based on time + hints used. Progress."},
+    {t:"Contribution Streak Analyzer",h:"GitHub API: commit history. Streak tracking. Language breakdown. Peak hours. Contribution heatmap calendar."},
+    {t:"Developer Productivity Dashboard",h:"Git commits, PR reviews, issues closed, study hours. Weekly report. Goal tracking. Slack integration."},
+    {t:"Capstone: Full-Stack App",h:"FastAPI backend + CLI + optional React/HTML frontend. Auth, DB, tests, Docker, CI/CD. Deploy on Railway/Render."},
+    {t:"Open Source Starter Kit",h:"Choose repo. Read CONTRIBUTING.md. Fix real issue. Write tests. Submit PR. Document the entire process."},
+  ],
+};
+
+/* ─────────────────────────── AUTO QUESTION GENERATOR ─────────────────────────── */
+async function callClaude(prompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
+    body: JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:4000,
+      messages:[{role:"user", content: prompt}]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({error:{message:"HTTP "+res.status}}));
+    throw new Error(err?.error?.message || "API error " + res.status);
+  }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || "API error");
+  const raw = data.content.map(c=>c.text||"").join("").trim();
+  const cleaned = raw.replace(/```json|```/g,"").trim();
+  const start = cleaned.indexOf("{"); const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("JSON parse failed — response may be truncated. Retry.");
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+async function autoGenerateQuestions(topicText, weekTitle) {
+  // Two calls of 50 questions each — avoids token limit issues
+  const COMPANIES = "Google, Meta, Amazon, Microsoft, OpenAI, Apple, Netflix, Stripe, Uber, Airbnb";
+  const LINKS = "docs.python.org, realpython.com, geeksforgeeks.org/python, leetcode.com/explore";
+
+  const prompt1 = `Generate 50 Python interview questions for: "${topicText}" (${weekTitle})
+Return ONLY JSON, no markdown:
+{"easy":[{"q":"question text","co":"Company","link":"https://url"}],"medium":[...]}
+easy: 20 questions, medium: 30 questions.
+Companies: ${COMPANIES}. Links from: ${LINKS}.
+Keep each question concise (under 100 chars). Keep links short.`;
+
+  const prompt2 = `Generate 50 more Python interview questions for: "${topicText}" (${weekTitle})
+Return ONLY JSON, no markdown:
+{"hard":[{"q":"question text","co":"Company","link":"https://url"}],"vhard":[...]}
+hard: 35 questions, vhard: 15 questions.
+Companies: ${COMPANIES}. Links from: ${LINKS}.
+Keep each question concise (under 100 chars). Keep links short.`;
+
+  const [part1, part2] = await Promise.all([callClaude(prompt1), callClaude(prompt2)]);
+  return {
+    easy:   (part1.easy   || []).slice(0, 25),
+    medium: (part1.medium || []).slice(0, 30),
+    hard:   (part2.hard   || []).slice(0, 30),
+    vhard:  (part2.vhard  || []).slice(0, 15),
+  };
+}
+
+/* ─────────────────────────── UPDATED TOPIC PANEL ─────────────────────────── */
 const TopicPanel = ({ topic, topicIdx, weekN, monthColor, done, onToggle, weekTitle }) => {
   const storKey = `q-${weekN}-${topicIdx}`;
   const [questions, saveQuestions] = useStorage(storKey, null);
   const [loading, setLoading] = useState(false);
   const [qDiff, setQDiff] = useState("easy");
   const [open, setOpen] = useState(false);
+  const [ideaOpen, setIdeaOpen] = useState(false);
 
-  const generate = async () => {
+  const [qError, setQError] = useState(null);
+
+  const loadQuestions = () => {
     setLoading(true);
-    try {
-      const q = await generateQuestions(topic, weekTitle);
-      await saveQuestions(q);
-    } catch (e) {
-      alert("Generation failed. Check your connection.");
-    }
-    setLoading(false);
+    setQError(null);
+    autoGenerateQuestions(topic, weekTitle, weekN, topicIdx)
+      .then(q => { saveQuestions(q); setQError(null); })
+      .catch(e => { setQError(e.message || "Generation failed. Check console."); console.error("Q gen error:", e); })
+      .finally(() => setLoading(false));
   };
 
+  // Auto-load when panel opens (only if not already loaded / errored)
+  useEffect(() => {
+    if (open && !questions && !loading && !qError) {
+      loadQuestions();
+    }
+  }, [open]);
+
   const diffConfig = [
-    { k:"easy",  label:"🟢 Easy",     cls:"b-easy",  count:25 },
-    { k:"medium",label:"🟡 Medium",   cls:"b-med",   count:30 },
-    { k:"hard",  label:"🔴 Hard",     cls:"b-hard",  count:30 },
-    { k:"vhard", label:"🟣 Very Hard",cls:"b-vhard", count:15 },
+    { k:"easy",  label:"🟢 Easy",      cls:"b-easy",  count:25, c:T.green },
+    { k:"medium",label:"🟡 Medium",    cls:"b-med",   count:30, c:T.amber },
+    { k:"hard",  label:"🔴 Hard",      cls:"b-hard",  count:30, c:"#f87171" },
+    { k:"vhard", label:"🟣 Very Hard", cls:"b-vhard", count:15, c:"#c084fc" },
   ];
 
   const displayed = questions?.[qDiff] || [];
+  const weekIdeas = WEEK_IDEAS[weekN] || [];
 
   return (
     <div className={`topic-row ${done ? "done" : ""}`} style={{ flexDirection:"column", cursor:"default" }}>
-      {/* Top row: checkbox + topic text + expand */}
-      <div style={{ display:"flex", gap:12, alignItems:"flex-start", width:"100%" }}>
+      {/* Main row */}
+      <div style={{ display:"flex", gap:10, alignItems:"flex-start", width:"100%", flexWrap:"wrap" }}>
         <div onClick={() => onToggle(`m${weekN}-t${topicIdx}`)}
           style={{
-            width:22, height:22, borderRadius:6, flexShrink:0, marginTop:1, cursor:"pointer",
+            width:22, height:22, borderRadius:6, flexShrink:0, marginTop:2, cursor:"pointer",
             background: done ? T.green : "transparent",
-            border:`2px solid ${done ? T.green : T.t2}`,
+            border:`2px solid ${done ? T.green : "#2a2a60"}`,
             display:"flex", alignItems:"center", justifyContent:"center",
             fontSize:12, color:"#000", fontWeight:900, transition:"all .2s"
           }}>{done ? "✓" : ""}</div>
 
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:13, fontWeight:600, color: done ? T.t1 : T.t2, lineHeight:1.5 }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:14, fontWeight:600, color: done ? T.green : T.t1, lineHeight:1.5 }}>
             {topic}
           </div>
-          {done && <span style={{ fontSize:10, color:T.green }}>✅ Completed</span>}
+          {done && <span style={{ fontSize:10, color:T.green }}>✅ Studied</span>}
         </div>
 
-        <button className="btn btn-ghost btn-sm" onClick={() => setOpen(!open)}
-          style={{ flexShrink:0, fontSize:11 }}>
-          {open ? "▲ Hide" : "📚 100 Questions"}
-        </button>
+        <div style={{ display:"flex", gap:6, flexShrink:0, flexWrap:"wrap" }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setIdeaOpen(!ideaOpen)}
+            style={{ fontSize:11, color:ideaOpen?"#f59e0b":T.t2 }}>
+            💡 {ideaOpen?"Hide":"Ideas"}
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setOpen(!open)}
+            style={{ fontSize:11, color:open?monthColor:T.t2 }}>
+            {open ? "▲ Hide" : "📚 Questions"}
+          </button>
+        </div>
       </div>
 
-      {/* Expanded: 100 questions panel */}
-      {open && (
-        <div className="fade-in" style={{ marginTop:14, paddingTop:14, borderTop:`1px solid ${T.border}`, width:"100%" }}>
-          {/* Generate button */}
-          <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
-            <span style={{ fontSize:12, color:T.t2, flex:1 }}>
-              {questions ? `✅ ${Object.values(questions).flat().length} questions loaded` : "No questions yet — generate them!"}
-            </span>
-            <button className={`btn ${questions ? "btn-ghost" : "btn-py"} btn-sm`}
-              onClick={generate} disabled={loading}>
-              {loading ? <><Spin /> Generating 100 Qs...</> : questions ? "🔄 Regenerate" : "✨ Generate 100 Questions"}
-            </button>
+      {/* Project Ideas Panel */}
+      {ideaOpen && weekIdeas.length > 0 && (
+        <div className="fade-in" style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${T.border}`, width:"100%" }}>
+          <div style={{ fontSize:11, fontWeight:700, color:T.amber, marginBottom:10, letterSpacing:.5 }}>💡 PROJECT IDEAS FOR THIS TOPIC</div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,280px),1fr))", gap:8 }}>
+            {weekIdeas.map((idea, i) => (
+              <div key={i} style={{
+                background:"#070718", border:`1px solid ${T.amber}25`, borderRadius:10, padding:"10px 13px",
+                transition:"border-color .2s"
+              }}>
+                <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:5 }}>
+                  <span style={{ fontSize:10, fontWeight:800, color:T.amber, background:T.amber+"15", padding:"2px 7px", borderRadius:999, flexShrink:0 }}>#{i+1}</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:T.t1, lineHeight:1.3 }}>{idea.t}</span>
+                </div>
+                <p style={{ fontSize:11, color:T.t2, lineHeight:1.6, paddingLeft:4 }}>🔧 {idea.h}</p>
+              </div>
+            ))}
           </div>
+        </div>
+      )}
 
-          {questions && (
+      {/* Questions Panel */}
+      {open && (
+        <div className="fade-in" style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${T.border}`, width:"100%" }}>
+          {loading ? (
+            <div style={{ padding:"20px 0", textAlign:"center" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginBottom:14 }}>
+                <span style={{ fontSize:16, animation:"spin .8s linear infinite", display:"inline-block" }}>⟳</span>
+                <span style={{ fontSize:13, color:T.blue, fontWeight:600 }}>Auto-loading 100 questions for this topic...</span>
+              </div>
+              {[80,60,90,50,70].map((w,i) => (
+                <div key={i} style={{ height:14, background:"#08082a", borderRadius:7, marginBottom:6, overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${w}%`, background:"linear-gradient(90deg,#0d0d30,#1a1a50,#0d0d30)", backgroundSize:"200% 100%", animation:"shimmer 1.2s linear infinite", borderRadius:7 }}/>
+                </div>
+              ))}
+            </div>
+          ) : questions ? (
             <>
-              {/* Difficulty tabs */}
-              <div style={{ display:"flex", gap:4, marginBottom:12, flexWrap:"wrap" }}>
+              {/* Diff tabs */}
+              <div style={{ display:"flex", gap:5, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
                 {diffConfig.map(d => (
-                  <button key={d.k}
-                    onClick={() => setQDiff(d.k)}
-                    className="btn btn-sm"
+                  <button key={d.k} onClick={() => setQDiff(d.k)} className="btn btn-sm"
                     style={{
-                      background: qDiff === d.k ? monthColor+"30" : "transparent",
-                      border:`1px solid ${qDiff === d.k ? monthColor : T.border}`,
-                      color: qDiff === d.k ? monthColor : T.t2,
+                      background: qDiff === d.k ? d.c+"25" : "transparent",
+                      border:`1px solid ${qDiff === d.k ? d.c+"80" : T.border}`,
+                      color: qDiff === d.k ? d.c : T.t2,
                       fontFamily:"'DM Sans',sans-serif"
                     }}>
-                    {d.label} ({questions[d.k]?.length || 0})
+                    {d.label} <span style={{ fontSize:10, opacity:.7 }}>({questions[d.k]?.length || 0})</span>
                   </button>
                 ))}
+                <button className="btn btn-ghost btn-sm" style={{ marginLeft:"auto", fontSize:11 }}
+                  onClick={() => { saveQuestions(null); setQError(null); loadQuestions(); }}>
+                  🔄 Refresh
+                </button>
               </div>
 
-              {/* Questions list */}
-              <div style={{ maxHeight:360, overflowY:"auto", paddingRight:4 }}>
-                {displayed.map((q, i) => (
-                  <div key={i} className="q-row">
-                    <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+              <div style={{ maxHeight:400, overflowY:"auto", paddingRight:4, display:"flex", flexDirection:"column", gap:5 }}>
+                {displayed.map((q, i) => {
+                  const dc = qDiff==="easy"?T.green:qDiff==="medium"?T.amber:qDiff==="hard"?"#f87171":"#c084fc";
+                  return (
+                    <div key={i} className="q-row" style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                       <span className="mono" style={{
-                        fontSize:10, fontWeight:700, padding:"2px 6px", borderRadius:5, flexShrink:0,
-                        background: qDiff==="easy"?"#021a09":qDiff==="medium"?"#180d00":qDiff==="hard"?"#1a0404":"#120525",
-                        color: qDiff==="easy"?T.green:qDiff==="medium"?T.amber:qDiff==="hard"?"#f87171":"#c084fc",
-                        border:`1px solid ${qDiff==="easy"?"#14532d":qDiff==="medium"?"#7c3800":qDiff==="hard"?"#7f1d1d":"#6b21a8"}`
+                        fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:5, flexShrink:0, marginTop:1,
+                        background: dc+"12", color: dc, border:`1px solid ${dc}40`
                       }}>Q{i+1}</span>
                       <p style={{ fontSize:13, color:T.t1, lineHeight:1.6, flex:1 }}>{q.q}</p>
-                      <span className={`badge ${qDiff==="easy"?"b-easy":qDiff==="medium"?"b-med":qDiff==="hard"?"b-hard":"b-vhard"}`}
-                        style={{ flexShrink:0, fontSize:10 }}>{q.co}</span>
+                      <div style={{ display:"flex", flexDirection:"column", gap:4, alignItems:"flex-end", flexShrink:0 }}>
+                        <span style={{ fontSize:10, color:T.t2, background:T.surf, padding:"2px 7px", borderRadius:999, border:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>
+                          🏢 {q.co}
+                        </span>
+                        {q.link && (
+                          <a href={q.link} target="_blank" rel="noreferrer"
+                            style={{ fontSize:10, color:T.blue, background:T.blue+"12", padding:"2px 7px", borderRadius:999, border:`1px solid ${T.blue}40`, textDecoration:"none", whiteSpace:"nowrap" }}>
+                            📖 Study ↗
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+                {displayed.length === 0 && <div style={{ textAlign:"center", padding:20, color:T.t3, fontSize:13 }}>No questions in this difficulty.</div>}
               </div>
             </>
+          ) : (
+            <div className="fade-in" style={{ padding:"18px 0", textAlign:"center" }}>
+              {qError ? (
+                <div>
+                  <div style={{ fontSize:14, marginBottom:8 }}>⚠️</div>
+                  <div style={{ fontSize:13, color:"#f87171", marginBottom:8, lineHeight:1.6, maxWidth:360, margin:"0 auto 12px" }}>{qError}</div>
+                  <div style={{ fontSize:12, color:T.t2, marginBottom:14 }}>
+                    Tip: This usually means the API response was cut off. Try clicking Retry.
+                  </div>
+                  <button className="btn btn-py btn-sm" onClick={loadQuestions}>🔄 Retry</button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize:13, color:T.t2, marginBottom:12 }}>Questions ready to load</div>
+                  <button className="btn btn-py btn-sm" onClick={loadQuestions}>✨ Load 100 Questions</button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
     </div>
   );
 };
+
 
 /* ─────────────────────────── WEEK CARD ─────────────────────────── */
 const MIN_PER_WEEK = 3;
@@ -1671,218 +2116,504 @@ function todayKey(){ return new Date().toISOString().slice(0,10); }
 function formatDate(key){ const d=new Date(key); return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"}); }
 const MOOD_EMOJIS = ["😴","😕","😐","😊","🔥"];
 
+/* ═══════════════════════════════════════════════════════════════════
+   PROGRESS TRACKER — Day 1 to Day 180 system
+═══════════════════════════════════════════════════════════════════ */
+const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function addDays(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function daysBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+function fmtFull(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short", year:"numeric" });
+}
+function fmtShort(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-IN", { day:"numeric", month:"short" });
+}
+
+// Map day number (1-180) to Python curriculum context
+function getDayContext(dayNum) {
+  if (dayNum < 1 || dayNum > 180) return null;
+  const monthIdx = Math.floor((dayNum - 1) / 30);       // 0-5
+  const dayInMonth = ((dayNum - 1) % 30) + 1;            // 1-30
+  const weekIdx = Math.min(3, Math.floor((dayInMonth - 1) / 7)); // 0-3
+  const dayInWeek = (dayInMonth - 1) % 7;                // 0-6
+  const month = PYTHON_MONTHS[monthIdx];
+  const week = month?.weeks[weekIdx];
+  const isStudyDay = dayInWeek < 5;   // Mon-Fri = study, Sat-Sun = practice
+  const topicIdx = isStudyDay ? dayInWeek : null;
+  const topic = isStudyDay ? week?.topics[topicIdx] : null;
+  return { monthIdx, weekIdx, dayInWeek, month, week, topic, isStudyDay };
+}
+
 const TrackerView = ({ topicProgress }) => {
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [logs, saveLogs] = useStorage("tracker-logs-v1", {});
-  const [editDay, setEditDay] = useState(null);
-  const [form, setForm] = useState({ hours:"1", topics:"", notes:"", git:false, mood:3 });
-  const [view, setView] = useState("week");
+  const [startDate, saveStartDate] = useStorage("py-start-v1", null);
+  const [logs, saveLogs]           = useStorage("tracker-logs-v2", {});
+  const [editDay, setEditDay]      = useState(null);
+  const [form, setForm]            = useState({ hours:"2", topics:"", notes:"", git:false, mood:3 });
+  const [view, setView]            = useState("calendar"); // calendar | stats | heatmap
+  const [viewMonth, setViewMonth]  = useState(0); // which of the 6 months to view (0-5)
 
-  const weekStart = getWeekKey(weekOffset);
-  const days = DAYS_OF_WEEK.map((_,i)=>getDateKey(weekStart,i));
   const today = todayKey();
+  const currentDayNum = startDate ? Math.min(180, Math.max(1, daysBetween(startDate, today) + 1)) : 0;
 
-  const saveDay = () => { saveLogs(prev=>({...prev,[editDay]:{...form,date:editDay}})); setEditDay(null); };
-  const openEdit = (key) => { setEditDay(key); setForm(logs[key]||{hours:"1",topics:"",notes:"",git:false,mood:3}); };
+  const saveDay = () => {
+    saveLogs(prev => ({ ...prev, [editDay]: { ...form } }));
+    setEditDay(null);
+  };
+  const openEdit = (dateKey) => {
+    setEditDay(dateKey);
+    setForm(logs[dateKey] || { hours:"2", topics:"", notes:"", git:false, mood:3 });
+  };
 
-  const totalDaysLogged = Object.keys(logs).length;
-  const totalHours = Object.values(logs).reduce((a,l)=>a+parseFloat(l.hours||0),0);
-  const gitPushes = Object.values(logs).filter(l=>l.git).length;
-  const streak = (()=>{ let s=0,d=new Date(); while(true){const k=d.toISOString().slice(0,10); if(!logs[k])break; s++;d.setDate(d.getDate()-1);} return s; })();
+  // Computed stats
+  const allLogs = Object.entries(logs);
+  const totalHours = allLogs.reduce((a,[,l])=>a+parseFloat(l.hours||0), 0);
+  const totalDays  = allLogs.filter(([,l])=>l.topics?.trim()).length;
+  const gitDays    = allLogs.filter(([,l])=>l.git).length;
+  const streak = (() => {
+    let s=0, d=new Date();
+    while(true){ const k=d.toISOString().slice(0,10); if(!logs[k])break; s++; d.setDate(d.getDate()-1); }
+    return s;
+  })();
+  const longestStreak = (() => {
+    if (!startDate) return 0;
+    let max=0, cur=0;
+    for (let i=0; i<180; i++) {
+      const dk = addDays(startDate, i);
+      if (logs[dk]?.topics?.trim()) { cur++; max=Math.max(max,cur); }
+      else cur=0;
+    }
+    return max;
+  })();
+  const completionPct = startDate ? Math.round((totalDays / Math.min(currentDayNum, 180)) * 100) : 0;
 
-  const heatDays = Array.from({length:84},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-83+i); return d.toISOString().slice(0,10); });
+  // ── Onboarding screen ──────────────────────────────────────────
+  if (!startDate) {
+    return (
+      <div className="fade-up" style={{ padding:"clamp(14px,5vw,40px)", maxWidth:600, margin:"0 auto" }}>
+        <div style={{ textAlign:"center", padding:"40px 0" }}>
+          <div style={{ fontSize:56, marginBottom:16 }}>🚀</div>
+          <div className="syne" style={{ fontSize:28, fontWeight:800, color:T.t1, marginBottom:8 }}>
+            Start Your Python Journey
+          </div>
+          <p style={{ fontSize:15, color:T.t2, lineHeight:1.8, marginBottom:28, maxWidth:440, margin:"0 auto 28px" }}>
+            This tracker will map <strong style={{color:T.t1}}>Day 1</strong> to today's date and count through
+            <strong style={{color:T.blue}}> 180 days</strong> (6 months). Each day maps to a specific
+            Python topic, week, and month in your curriculum.
+          </p>
+          <div style={{ background:T.card, border:`1px solid ${T.blue}40`, borderRadius:16, padding:"24px 28px", marginBottom:24, textAlign:"left" }}>
+            <div style={{ fontSize:13, fontWeight:700, color:T.blue, marginBottom:14 }}>📅 What you get:</div>
+            {[
+              "Day 1 = today. Day 180 = 6 months from now",
+              "Every day maps to a specific Python topic",
+              "Daily study log: hours, topics, mood, GitHub push",
+              "Streak tracker and completion percentage",
+              "Monthly progress calendar with topic context"
+            ].map((t,i) => (
+              <div key={i} style={{ display:"flex", gap:10, marginBottom:8, fontSize:13, color:T.t2 }}>
+                <span style={{ color:T.green, flexShrink:0 }}>✓</span>{t}
+              </div>
+            ))}
+          </div>
+          <button className="btn btn-py" style={{ fontSize:15, padding:"12px 32px" }}
+            onClick={() => saveStartDate(today)}>
+            🚀 Begin My Python Journey — Day 1 Starts Today
+          </button>
+          <div style={{ marginTop:12, fontSize:12, color:T.t2 }}>
+            Today: {fmtFull(today)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main tracker layout ─────────────────────────────────────────
+  const endDate = addDays(startDate, 179);
+  const day1Month = new Date(startDate).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  const day180Month = new Date(endDate).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
 
   return (
-    <div className="fade-up" style={{padding:"clamp(12px,4vw,28px)"}}>
-      <div className="syne" style={{fontSize:"clamp(18px,4vw,24px)",fontWeight:800,color:T.t1,marginBottom:4}}>📅 Progress Tracker</div>
-      <p style={{fontSize:13,color:T.t2,marginBottom:18}}>Log daily study sessions, track streaks, and review monthly progress</p>
+    <div className="fade-up" style={{ padding:"clamp(12px,4vw,28px)" }}>
+      {/* Header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12, marginBottom:16 }}>
+        <div>
+          <div className="syne" style={{ fontSize:"clamp(18px,4vw,24px)", fontWeight:800, color:T.t1, marginBottom:2 }}>
+            📅 Progress Tracker
+          </div>
+          <div style={{ fontSize:12, color:T.t2 }}>
+            Day 1: {day1Month} → Day 180: {day180Month}
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <div style={{ background:T.card, border:`1px solid ${T.blue}40`, borderRadius:10, padding:"8px 14px", textAlign:"center" }}>
+            <div className="syne" style={{ fontSize:22, fontWeight:800, color:T.blue, lineHeight:1 }}>{currentDayNum}</div>
+            <div style={{ fontSize:10, color:T.t2 }}>Current Day</div>
+          </div>
+          <button className="btn btn-ghost btn-sm" style={{ fontSize:11 }}
+            onClick={() => { if(window.confirm("Reset tracker? All logs will be lost.")) { saveStartDate(null); saveLogs({}); } }}>
+            ↺ Reset
+          </button>
+        </div>
+      </div>
 
-      <div className="g4" style={{marginBottom:18,gap:10}}>
+      {/* Stat strip */}
+      <div className="g4" style={{ marginBottom:14, gap:8 }}>
         {[
-          {icon:"🔥",val:streak,label:"Day Streak",c:"#f97316"},
-          {icon:"⏱️",val:totalHours.toFixed(1)+"h",label:"Total Hours",c:T.blue},
-          {icon:"📅",val:totalDaysLogged,label:"Days Logged",c:T.green},
-          {icon:"📤",val:gitPushes,label:"Git Pushes",c:"#a855f7"},
-        ].map(s=>(
-          <div key={s.label} style={{background:T.card,border:`1px solid ${s.c}30`,borderRadius:12,padding:"12px 14px",textAlign:"center",boxShadow:`0 0 12px ${s.c}12`}}>
-            <div style={{fontSize:20}}>{s.icon}</div>
-            <div className="syne" style={{fontSize:22,fontWeight:800,color:s.c,lineHeight:1.1}}>{s.val}</div>
-            <div style={{fontSize:11,color:T.t2}}>{s.label}</div>
+          { icon:"🔥", val:streak,   label:"Streak",       c:"#f97316" },
+          { icon:"⏱",  val:`${totalHours.toFixed(0)}h`, label:"Total Hours", c:T.blue },
+          { icon:"📅", val:totalDays,  label:"Days Studied",  c:T.green },
+          { icon:"🏆", val:`${completionPct}%`, label:"On Track", c:"#a855f7" },
+        ].map(s => (
+          <div key={s.label} style={{ background:T.card, border:`1px solid ${s.c}30`, borderRadius:10, padding:"10px 12px", textAlign:"center" }}>
+            <div style={{ fontSize:18 }}>{s.icon}</div>
+            <div className="syne" style={{ fontSize:18, fontWeight:800, color:s.c, lineHeight:1.1 }}>{s.val}</div>
+            <div style={{ fontSize:10, color:T.t2 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="tab-row" style={{marginBottom:16}}>
-        {[{id:"week",l:"📆 This Week"},{id:"month",l:"🔥 Heatmap"},{id:"stats",l:"📊 Monthly Report"}].map(t=>(
+      {/* Full 6-month progress bar */}
+      <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:"12px 16px", marginBottom:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+          <span style={{ fontSize:12, color:T.t2 }}>Day {currentDayNum} of 180</span>
+          <span style={{ fontSize:12, fontWeight:700, color:T.blue }}>{Math.round(currentDayNum/180*100)}% of journey</span>
+        </div>
+        <div className="pbar" style={{ height:10, marginBottom:8 }}>
+          <div className="pfill xp-bar" style={{ width:`${Math.min(100,currentDayNum/180*100)}%`, height:"100%" }} />
+        </div>
+        <div style={{ display:"flex", gap:4 }}>
+          {PYTHON_MONTHS.map((m,i) => {
+            const monthStart = i*30+1;
+            const monthEnd = (i+1)*30;
+            const monthDays = allLogs.filter(([dk])=>{ const n=daysBetween(startDate,dk)+1; return n>=monthStart&&n<=monthEnd&&logs[dk]?.topics?.trim(); }).length;
+            const pct = Math.round(monthDays/30*100);
+            return (
+              <div key={m.id} style={{ flex:1, cursor:"pointer" }} onClick={()=>{setView("calendar");setViewMonth(i);}}>
+                <div style={{ fontSize:9, color:T.t2, textAlign:"center", marginBottom:2 }}>{m.emoji}</div>
+                <div className="pbar" style={{ height:6 }}>
+                  <div style={{ height:"100%", borderRadius:999, width:`${pct}%`, background:m.color, transition:"width .5s" }}/>
+                </div>
+                <div style={{ fontSize:8, color:m.color, textAlign:"center", marginTop:1 }}>{pct}%</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* View tabs */}
+      <div className="tab-row" style={{ marginBottom:14 }}>
+        {[{id:"calendar",l:"📆 Calendar"},{id:"heatmap",l:"🔥 Heatmap"},{id:"stats",l:"📊 Stats"}].map(t=>(
           <button key={t.id} className={`tab-b ${view===t.id?"on":""}`} onClick={()=>setView(t.id)}
             style={view===t.id?{color:T.blue,background:T.blue+"18"}:{}}>{t.l}</button>
         ))}
       </div>
 
-      {view==="week" && (
+      {/* ── CALENDAR VIEW ─────────────────────────────────────────── */}
+      {view==="calendar" && (
         <div>
-          <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:14,flexWrap:"wrap"}}>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setWeekOffset(w=>w-1)}>← Prev</button>
-            <div style={{flex:1,textAlign:"center",fontSize:13,fontWeight:700,color:T.t1}}>
-              Week of {formatDate(days[0])} — {formatDate(days[6])}
-              {weekOffset===0&&<span style={{fontSize:11,color:T.green,marginLeft:8}}>● Current</span>}
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setWeekOffset(w=>Math.min(0,w+1))} disabled={weekOffset===0}>Next →</button>
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,160px),1fr))",gap:10}}>
-            {days.map((dk,i)=>{
-              const log=logs[dk]; const isToday=dk===today; const dayDone=!!log?.topics?.trim();
-              return (
-                <div key={dk} onClick={()=>openEdit(dk)} style={{
-                  background:dayDone?"#021508":isToday?"#07071e":T.card,
-                  border:`1px solid ${dayDone?T.green+"60":isToday?T.blue+"60":T.border}`,
-                  borderRadius:12,padding:"13px 13px",cursor:"pointer",transition:"all .2s",
-                  boxShadow:isToday?`0 0 14px ${T.blue}20`:dayDone?`0 0 12px ${T.green}18`:"none"
+          {/* Month selector */}
+          <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+            {PYTHON_MONTHS.map((m,i) => (
+              <button key={i} onClick={()=>setViewMonth(i)} className="btn btn-sm"
+                style={{
+                  background: viewMonth===i ? m.color+"30" : "transparent",
+                  border:`1px solid ${viewMonth===i ? m.color : T.border}`,
+                  color: viewMonth===i ? m.color : T.t2,
+                  fontFamily:"'DM Sans',sans-serif"
                 }}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <div>
-                      <div style={{fontSize:11,fontWeight:700,color:isToday?T.blue:T.t2}}>{DAYS_OF_WEEK[i]}</div>
-                      <div style={{fontSize:13,fontWeight:800,color:T.t1}}>{formatDate(dk)}</div>
-                    </div>
-                    <div style={{fontSize:18}}>{dayDone?(MOOD_EMOJIS[parseInt(log.mood||3)-1]||"😊"):isToday?"📝":"○"}</div>
-                  </div>
-                  {log?(
-                    <div>
-                      <div style={{fontSize:12,fontWeight:600,color:T.green}}>⏱ {log.hours}h</div>
-                      {log.topics&&<div style={{fontSize:11,color:T.t2,marginTop:3,lineHeight:1.4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{log.topics}</div>}
-                      {log.git&&<div style={{fontSize:10,color:"#a855f7",marginTop:4}}>📤 Git pushed</div>}
-                    </div>
-                  ):(
-                    <div style={{fontSize:11,color:T.t3,marginTop:4}}>{isToday?"Tap to log today":"Click to log"}</div>
-                  )}
-                  {isToday&&!log&&<div style={{marginTop:6,fontSize:10,fontWeight:700,color:T.blue,background:T.blue+"15",padding:"3px 8px",borderRadius:999,display:"inline-block",border:`1px solid ${T.blue}40`}}>Today</div>}
-                </div>
-              );
-            })}
+                {m.emoji} M{m.id}: {m.title.split(" ")[0]}
+              </button>
+            ))}
           </div>
 
-          {days.some(d=>logs[d])&&(
-            <div style={{marginTop:14,padding:"14px 18px",background:T.surf,border:`1px solid ${T.border}`,borderRadius:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:8}}>Week Summary</div>
-              <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
-                <span style={{fontSize:13,color:T.t1}}>⏱ {days.reduce((a,d)=>a+parseFloat(logs[d]?.hours||0),0).toFixed(1)}h studied</span>
-                <span style={{fontSize:13,color:T.t1}}>📅 {days.filter(d=>logs[d]?.topics?.trim()).length}/7 active days</span>
-                <span style={{fontSize:13,color:"#a855f7"}}>📤 {days.filter(d=>logs[d]?.git).length} git pushes</span>
+          {/* Month calendar */}
+          {(() => {
+            const m = PYTHON_MONTHS[viewMonth];
+            const monthStart = viewMonth * 30;
+            const days = Array.from({length:30}, (_,i) => {
+              const dayNum = monthStart + i + 1;
+              const dateKey = addDays(startDate, dayNum - 1);
+              const ctx = getDayContext(dayNum);
+              const log = logs[dateKey];
+              const isToday = dateKey === today;
+              const isPast = dateKey <= today;
+              const isFuture = dateKey > today;
+              const hasLog = log?.topics?.trim();
+              return { dayNum, dateKey, ctx, log, isToday, isPast, isFuture, hasLog };
+            });
+
+            // Group into weeks
+            const weeks = [days.slice(0,7), days.slice(7,14), days.slice(14,21), days.slice(21,28), days.slice(28,30)];
+
+            return (
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                  <div>
+                    <span style={{ fontSize:16, fontWeight:800, color:m.color }}>{m.emoji} Month {m.id}: {m.title}</span>
+                    <span style={{ fontSize:12, color:T.t2, marginLeft:10 }}>Days {viewMonth*30+1}–{(viewMonth+1)*30}</span>
+                  </div>
+                  <span style={{ fontSize:12, color:T.t2 }}>
+                    {fmtShort(addDays(startDate, viewMonth*30))} – {fmtShort(addDays(startDate, viewMonth*30+29))}
+                  </span>
+                </div>
+
+                {/* Week header */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3, marginBottom:4 }}>
+                  {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>(
+                    <div key={d} style={{ fontSize:10, fontWeight:700, color:T.t3, textAlign:"center", padding:"3px 0" }}>{d}</div>
+                  ))}
+                </div>
+
+                {weeks.filter(w=>w.length>0).map((week, wi) => (
+                  <div key={wi}>
+                    <div style={{ fontSize:10, fontWeight:700, color:m.color, opacity:.7, marginBottom:3, marginTop:wi>0?6:0 }}>
+                      Week {wi+1} · {m.weeks[wi]?.title || "Review"}
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:3, marginBottom:3 }}>
+                      {/* Fill empty slots if week 5 is only 2 days */}
+                      {Array.from({length:7}, (_,di) => {
+                        const day = week[di];
+                        if (!day) return <div key={di}/>;
+                        const { dayNum, dateKey, ctx, log, isToday, isPast, isFuture, hasLog } = day;
+                        const bg = hasLog ? "#021508" : isToday ? "#070720" : isFuture ? T.bg : T.card;
+                        const border = hasLog ? T.green+"50" : isToday ? T.blue+"80" : isFuture ? T.border+"40" : T.border;
+                        return (
+                          <div key={di}
+                            onClick={() => isPast || isToday ? openEdit(dateKey) : null}
+                            style={{
+                              background: bg,
+                              border:`1px solid ${border}`,
+                              borderRadius:8,
+                              padding:"6px 4px",
+                              cursor: isPast||isToday ? "pointer":"default",
+                              opacity: isFuture ? .35 : 1,
+                              transition:"all .18s",
+                              minHeight:64,
+                              boxShadow: isToday ? `0 0 10px ${T.blue}30` : hasLog ? `0 0 6px ${T.green}20` : "none"
+                            }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                              <span className="mono" style={{ fontSize:9, fontWeight:800, color:isToday?T.blue:T.t3 }}>D{dayNum}</span>
+                              {hasLog && <span style={{ fontSize:11 }}>{MOOD_EMOJIS[parseInt(log.mood||3)-1]||"😊"}</span>}
+                              {isToday && !hasLog && <span style={{ fontSize:9, color:T.blue, fontWeight:700 }}>TODAY</span>}
+                            </div>
+                            <div style={{ fontSize:9, color:T.t3, marginBottom:3 }}>{fmtShort(dateKey)}</div>
+                            {ctx?.topic && (
+                              <div style={{ fontSize:9, color:hasLog?T.green:T.t3, lineHeight:1.3, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>
+                                {ctx.topic.split(":")[0]}
+                              </div>
+                            )}
+                            {!ctx?.isStudyDay && (
+                              <div style={{ fontSize:9, color:"#a855f7", opacity:.7 }}>🎯 Practice</div>
+                            )}
+                            {hasLog && (
+                              <div style={{ fontSize:9, fontWeight:700, color:T.green, marginTop:2 }}>{log.hours}h ✓</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Month summary */}
+                {(() => {
+                  const mLogs = days.filter(d=>d.hasLog).length;
+                  const mHours = days.reduce((a,d)=>a+parseFloat(d.log?.hours||0),0);
+                  return (
+                    <div style={{ marginTop:10, padding:"10px 14px", background:T.surf, border:`1px solid ${T.border}`, borderRadius:10, display:"flex", gap:16, flexWrap:"wrap" }}>
+                      <span style={{ fontSize:12, color:T.t2 }}>📅 <strong style={{color:T.t1}}>{mLogs}/30</strong> days logged</span>
+                      <span style={{ fontSize:12, color:T.t2 }}>⏱ <strong style={{color:T.t1}}>{mHours.toFixed(1)}h</strong> studied</span>
+                      <span style={{ fontSize:12, color:T.t2 }}>📤 <strong style={{color:"#a855f7"}}>{days.filter(d=>d.log?.git).length}</strong> git pushes</span>
+                    </div>
+                  );
+                })()}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
-      {view==="month" && (
+      {/* ── HEATMAP VIEW ──────────────────────────────────────────── */}
+      {view==="heatmap" && (
         <div>
-          <div style={{fontSize:12,color:T.t2,marginBottom:12}}>Last 84 days — darker green = more study hours</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(14,1fr)",gap:4,marginBottom:12}}>
-            {heatDays.map(dk=>{
-              const log=logs[dk]; const h=parseFloat(log?.hours||0); const isToday=dk===today;
-              const intensity=h===0?0:h<1?1:h<2?2:h<3?3:4;
-              const colors=["#070720","#0d2a18","#0d4a2a","#0d7040","#10b981"];
-              return <div key={dk} onClick={()=>openEdit(dk)} title={`${formatDate(dk)}: ${h}h`} style={{width:"100%",paddingBottom:"100%",borderRadius:3,cursor:"pointer",background:colors[intensity],border:isToday?`1px solid ${T.blue}`:"1px solid transparent"}}/>;
+          <div style={{ fontSize:12, color:T.t2, marginBottom:12 }}>
+            180-day activity map — each cell = 1 day · darker = more hours
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(30,1fr)", gap:2, marginBottom:10 }}>
+            {Array.from({length:180}, (_,i) => {
+              const dayNum = i+1;
+              const dateKey = addDays(startDate, i);
+              const h = parseFloat(logs[dateKey]?.hours||0);
+              const intensity = h===0?0:h<1?1:h<2?2:h<3?3:4;
+              const colors = ["#07071a","#0d2a18","#0d4a2a","#0d7040","#10b981"];
+              const isToday = dateKey===today;
+              return (
+                <div key={i} onClick={()=>dateKey<=today&&openEdit(dateKey)}
+                  title={`Day ${dayNum} · ${fmtShort(dateKey)} · ${h}h`}
+                  style={{
+                    paddingBottom:"100%", borderRadius:2, cursor:dateKey<=today?"pointer":"default",
+                    background: colors[intensity], border:isToday?`1px solid ${T.blue}`:"none",
+                    opacity: dateKey>today ? .2 : 1
+                  }}/>
+              );
             })}
           </div>
-          <div style={{display:"flex",gap:8,alignItems:"center",fontSize:11,color:T.t2}}>
-            <span>Less</span>
-            {["#070720","#0d2a18","#0d4a2a","#0d7040","#10b981"].map(c=><div key={c} style={{width:14,height:14,borderRadius:3,background:c,border:`1px solid ${T.border}`}}/>)}
-            <span>More</span>
+          <div style={{ display:"flex", gap:6, alignItems:"center", fontSize:11, color:T.t2, marginBottom:12 }}>
+            Less {["#07071a","#0d2a18","#0d4a2a","#0d7040","#10b981"].map(c=><div key={c} style={{width:12,height:12,borderRadius:2,background:c,border:`1px solid ${T.border}`}}/>)} More
           </div>
-        </div>
-      )}
-
-      {view==="stats" && (
-        <div className="g2" style={{gap:12}}>
-          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 18px"}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.t1,marginBottom:14}}>📊 Hours per Week (last 8 weeks)</div>
-            {Array.from({length:8},(_,i)=>{
-              const ws=getWeekKey(-7+i);
-              const wdays=DAYS_OF_WEEK.map((_,j)=>getDateKey(ws,j));
-              const hrs=wdays.reduce((a,d)=>a+parseFloat(logs[d]?.hours||0),0);
+          <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+            {PYTHON_MONTHS.map((m,i) => {
+              const st = i*30; const en = st+30;
+              const hrs = Array.from({length:30},(_,j)=>parseFloat(logs[addDays(startDate,st+j)]?.hours||0)).reduce((a,b)=>a+b,0);
+              const studied = Array.from({length:30},(_,j)=>logs[addDays(startDate,st+j)]?.topics?.trim()).filter(Boolean).length;
               return (
-                <div key={i} style={{display:"flex",gap:10,alignItems:"center",marginBottom:8}}>
-                  <div style={{fontSize:10,color:T.t2,width:46,flexShrink:0}}>{formatDate(ws)}</div>
-                  <div style={{flex:1,height:14,background:"#06062a",borderRadius:999,overflow:"hidden"}}>
-                    <div style={{width:`${Math.min(100,(hrs/40)*100)}%`,height:"100%",background:`linear-gradient(90deg,${T.blue},${T.green})`,borderRadius:999,transition:"width .7s ease"}}/>
-                  </div>
-                  <div style={{fontSize:11,fontWeight:700,color:T.blue,width:32,textAlign:"right"}}>{hrs.toFixed(1)}h</div>
+                <div key={i} style={{ flex:"1 1 100px", background:T.card, border:`1px solid ${m.color}30`, borderRadius:9, padding:"8px 10px" }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:m.color }}>{m.emoji} M{m.id}</div>
+                  <div style={{ fontSize:13, fontWeight:800, color:T.t1 }}>{hrs.toFixed(0)}h</div>
+                  <div style={{ fontSize:10, color:T.t2 }}>{studied}/30 days</div>
                 </div>
               );
             })}
           </div>
+        </div>
+      )}
 
-          <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"16px 18px"}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.t1,marginBottom:14}}>📝 Recent Sessions</div>
-            <div style={{maxHeight:300,overflowY:"auto",display:"flex",flexDirection:"column",gap:7}}>
-              {Object.entries(logs).sort(([a],[b])=>b.localeCompare(a)).slice(0,12).map(([dk,log])=>(
-                <div key={dk} style={{padding:"9px 12px",background:T.surf,borderRadius:9,border:`1px solid ${T.border}`}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                    <span style={{fontSize:12,fontWeight:700,color:T.t1}}>{formatDate(dk)}</span>
-                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                      <span style={{fontSize:14}}>{MOOD_EMOJIS[parseInt(log.mood||3)-1]||"😊"}</span>
-                      <span style={{fontSize:11,fontWeight:700,color:T.green}}>{log.hours}h</span>
-                      {log.git&&<span style={{fontSize:10,color:"#a855f7"}}>📤</span>}
-                    </div>
+      {/* ── STATS VIEW ─────────────────────────────────────────────── */}
+      {view==="stats" && (
+        <div className="g2" style={{ gap:12 }}>
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px 18px" }}>
+            <div style={{ fontSize:13, fontWeight:700, color:T.t1, marginBottom:14 }}>📊 Weekly Hours</div>
+            {Array.from({length:8}, (_,i) => {
+              const weekStart = addDays(today, -(7-i)*7);
+              const hrs = Array.from({length:7},(_,j)=>parseFloat(logs[addDays(weekStart,j)]?.hours||0)).reduce((a,b)=>a+b,0);
+              return (
+                <div key={i} style={{ display:"flex", gap:10, alignItems:"center", marginBottom:7 }}>
+                  <div style={{ fontSize:10, color:T.t2, width:46, flexShrink:0 }}>{fmtShort(weekStart)}</div>
+                  <div style={{ flex:1, height:12, background:"#06062a", borderRadius:999, overflow:"hidden" }}>
+                    <div style={{ width:`${Math.min(100,(hrs/40)*100)}%`, height:"100%", background:`linear-gradient(90deg,${T.blue},${T.green})`, borderRadius:999, transition:"width .7s" }}/>
                   </div>
-                  {log.topics&&<div style={{fontSize:11,color:T.t2,lineHeight:1.4}}>{log.topics}</div>}
-                  {log.notes&&<div style={{fontSize:11,color:T.t3,marginTop:3,fontStyle:"italic"}}>{log.notes}</div>}
+                  <div style={{ fontSize:11, fontWeight:700, color:T.blue, width:32, textAlign:"right" }}>{hrs.toFixed(1)}h</div>
                 </div>
-              ))}
-              {Object.keys(logs).length===0&&<div style={{textAlign:"center",padding:20,color:T.t3,fontSize:13}}>No sessions yet. Start by logging today!</div>}
+              );
+            })}
+            <div style={{ marginTop:12, padding:"9px 12px", background:T.surf, borderRadius:8, border:`1px solid ${T.border}` }}>
+              <div style={{ fontSize:11, color:T.t2, marginBottom:4 }}>🏆 Records</div>
+              <div style={{ display:"flex", gap:16, flexWrap:"wrap", fontSize:12 }}>
+                <span style={{ color:T.t1 }}>Longest streak: <strong style={{color:"#f97316"}}>{longestStreak}d</strong></span>
+                <span style={{ color:T.t1 }}>Git pushes: <strong style={{color:"#a855f7"}}>{gitDays}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:"16px 18px" }}>
+            <div style={{ fontSize:13, fontWeight:700, color:T.t1, marginBottom:14 }}>📝 Recent Sessions</div>
+            <div style={{ maxHeight:320, overflowY:"auto", display:"flex", flexDirection:"column", gap:6 }}>
+              {Object.entries(logs).sort(([a],[b])=>b.localeCompare(a)).slice(0,15).map(([dk,log]) => {
+                const dayNum = startDate ? daysBetween(startDate, dk) + 1 : "?";
+                return (
+                  <div key={dk} style={{ padding:"8px 11px", background:T.surf, borderRadius:8, border:`1px solid ${T.border}`, cursor:"pointer" }}
+                    onClick={()=>openEdit(dk)}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                      <div style={{ display:"flex", gap:7, alignItems:"center" }}>
+                        <span className="mono" style={{ fontSize:10, color:T.blue, fontWeight:700 }}>D{dayNum}</span>
+                        <span style={{ fontSize:11, color:T.t1, fontWeight:600 }}>{fmtShort(dk)}</span>
+                      </div>
+                      <div style={{ display:"flex", gap:7, alignItems:"center" }}>
+                        <span style={{ fontSize:13 }}>{MOOD_EMOJIS[parseInt(log.mood||3)-1]||"😊"}</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:T.green }}>{log.hours}h</span>
+                        {log.git && <span style={{ fontSize:10, color:"#a855f7" }}>📤</span>}
+                      </div>
+                    </div>
+                    {log.topics && <div style={{ fontSize:11, color:T.t2, lineHeight:1.4 }}>{log.topics}</div>}
+                  </div>
+                );
+              })}
+              {Object.keys(logs).length===0 && <div style={{ textAlign:"center", padding:20, color:T.t3, fontSize:13 }}>No sessions logged yet. Click any day in the calendar!</div>}
             </div>
           </div>
         </div>
       )}
 
-      {editDay&&(
-        <div style={{position:"fixed",inset:0,background:"#000000cc",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>{if(e.target===e.currentTarget)setEditDay(null);}}>
-          <div style={{background:"#08082a",border:`1px solid ${T.blue}60`,borderRadius:16,padding:24,width:"min(100%,460px)",maxHeight:"90vh",overflowY:"auto",boxShadow:`0 0 40px ${T.blue}20`}}>
-            <div className="syne" style={{fontSize:17,fontWeight:800,color:T.t1,marginBottom:4}}>Log Study Session</div>
-            <div style={{fontSize:12,color:T.t2,marginBottom:18}}>{formatDate(editDay)}{editDay===today?" · Today":""}</div>
+      {/* ── LOG MODAL ─────────────────────────────────────────────── */}
+      {editDay && (
+        <div style={{ position:"fixed", inset:0, background:"#000000cc", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}
+          onClick={e=>{ if(e.target===e.currentTarget)setEditDay(null); }}>
+          <div style={{ background:"#08082a", border:`1px solid ${T.blue}60`, borderRadius:16, padding:24, width:"min(100%,460px)", maxHeight:"90vh", overflowY:"auto", boxShadow:`0 0 40px ${T.blue}20` }}>
+            {(() => {
+              const dayNum = startDate ? daysBetween(startDate, editDay)+1 : "?";
+              const ctx = startDate ? getDayContext(dayNum) : null;
+              return (
+                <>
+                  <div className="syne" style={{ fontSize:17, fontWeight:800, color:T.t1, marginBottom:2 }}>
+                    Log Session — Day {dayNum}
+                  </div>
+                  <div style={{ fontSize:12, color:T.t2, marginBottom:4 }}>{fmtFull(editDay)}</div>
+                  {ctx?.topic && (
+                    <div style={{ fontSize:11, color:T.blue, background:T.blue+"12", padding:"4px 10px", borderRadius:7, marginBottom:14, border:`1px solid ${T.blue}30` }}>
+                      📚 Today's topic: {ctx.topic.split(":")[0]}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>⏱ Hours Studied</div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {["0.5","1","1.5","2","3","4","5","6+"].map(h=>(
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:6 }}>⏱ Hours Studied</div>
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                {["0.5","1","1.5","2","3","4","5","6+"].map(h => (
                   <button key={h} onClick={()=>setForm(f=>({...f,hours:h}))} className="btn btn-sm"
-                    style={{background:form.hours===h?T.blue+"40":T.surf,border:`1px solid ${form.hours===h?T.blue:T.border}`,color:form.hours===h?T.blue:T.t2,fontFamily:"'DM Sans',sans-serif"}}>{h}h</button>
+                    style={{ background:form.hours===h?T.blue+"40":T.surf, border:`1px solid ${form.hours===h?T.blue:T.border}`, color:form.hours===h?T.blue:T.t2, fontFamily:"'DM Sans',sans-serif" }}>
+                    {h}h
+                  </button>
                 ))}
               </div>
             </div>
 
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>😊 Energy Level</div>
-              <div style={{display:"flex",gap:8}}>
-                {[1,2,3,4,5].map(m=>(
-                  <button key={m} onClick={()=>setForm(f=>({...f,mood:m}))} style={{fontSize:24,background:"none",border:`2px solid ${form.mood===m?T.amber:"transparent"}`,borderRadius:8,cursor:"pointer",padding:4}}>{MOOD_EMOJIS[m-1]}</button>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:6 }}>😊 Energy / Mood</div>
+              <div style={{ display:"flex", gap:8 }}>
+                {[1,2,3,4,5].map(m => (
+                  <button key={m} onClick={()=>setForm(f=>({...f,mood:m}))}
+                    style={{ fontSize:24, background:"none", border:`2px solid ${form.mood===m?T.amber:"transparent"}`, borderRadius:8, cursor:"pointer", padding:4 }}>
+                    {MOOD_EMOJIS[m-1]}
+                  </button>
                 ))}
               </div>
             </div>
 
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>📚 Topics Covered</div>
-              <textarea className="inp" rows={2} placeholder="e.g. Decorators, list comprehensions, wrote 2 functions..." value={form.topics} onChange={e=>setForm(f=>({...f,topics:e.target.value}))} />
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:6 }}>📚 What did you study?</div>
+              <textarea className="inp" rows={2} placeholder="Topics covered, chapters read, exercises done..."
+                value={form.topics} onChange={e=>setForm(f=>({...f,topics:e.target.value}))} />
             </div>
 
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.t2,marginBottom:6}}>📝 Notes / Blockers</div>
-              <textarea className="inp" rows={2} placeholder="What was hard? What clicked?" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} />
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.t2, marginBottom:6 }}>📝 Notes / Blockers</div>
+              <textarea className="inp" rows={2} placeholder="What was challenging? What clicked? What to revisit?"
+                value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} />
             </div>
 
-            <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:18}}>
-              <div onClick={()=>setForm(f=>({...f,git:!f.git}))} style={{width:36,height:20,borderRadius:999,background:form.git?"#a855f7":"#1a1a48",cursor:"pointer",position:"relative",transition:"background .2s"}}>
-                <div style={{width:16,height:16,borderRadius:999,background:"#fff",position:"absolute",top:2,left:form.git?18:2,transition:"left .2s"}}/>
+            <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:18 }}>
+              <div onClick={()=>setForm(f=>({...f,git:!f.git}))}
+                style={{ width:36, height:20, borderRadius:999, background:form.git?"#a855f7":"#1a1a48", cursor:"pointer", position:"relative", transition:"background .2s" }}>
+                <div style={{ width:16, height:16, borderRadius:999, background:"#fff", position:"absolute", top:2, left:form.git?18:2, transition:"left .2s" }}/>
               </div>
-              <span style={{fontSize:13,color:form.git?"#a855f7":T.t2,fontWeight:600}}>📤 Pushed to GitHub today</span>
+              <span style={{ fontSize:13, color:form.git?"#a855f7":T.t2, fontWeight:600 }}>📤 Pushed to GitHub today</span>
             </div>
 
-            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-              <button className="btn btn-py" style={{flex:1}} onClick={saveDay}>💾 Save Session</button>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              <button className="btn btn-py" style={{ flex:1 }} onClick={saveDay}>💾 Save Session</button>
               <button className="btn btn-ghost" onClick={()=>setEditDay(null)}>Cancel</button>
-              {logs[editDay]&&<button className="btn" style={{background:"#1a0404",border:"1px solid #7f1d1d",color:"#fca5a5"}} onClick={()=>{saveLogs(p=>{const n={...p};delete n[editDay];return n});setEditDay(null);}}>Delete</button>}
+              {logs[editDay] && <button className="btn" style={{ background:"#1a0404", border:"1px solid #7f1d1d", color:"#fca5a5" }}
+                onClick={()=>{ saveLogs(p=>{const n={...p};delete n[editDay];return n;}); setEditDay(null); }}>Delete</button>}
             </div>
           </div>
         </div>
@@ -1890,6 +2621,7 @@ const TrackerView = ({ topicProgress }) => {
     </div>
   );
 };
+
 
 /* ═══════════════════════════════════════════════════════════════════
    PROJECT IDEAS VIEW
@@ -1983,7 +2715,7 @@ async function batchGenProjects(month, existingCount) {
   const diffs = ["Easy","Easy","Medium","Medium","Hard","Very Hard"];
   const types = PROJ_CATS.slice(0, 8);
   const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST", headers:{"Content-Type":"application/json"},
+    method:"POST", headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
     body: JSON.stringify({
       model:"claude-sonnet-4-20250514", max_tokens:4000,
       messages:[{role:"user", content:`Generate 15 unique Python project ideas for Month ${month}: "${monthData?.title}" (${monthData?.sub}).
@@ -2014,7 +2746,7 @@ async function batchGenQuestions(category, existingCount) {
   const diffs = ["Easy","Easy","Easy","Medium","Medium","Medium","Medium","Hard","Hard","Hard","Hard","Very Hard","Very Hard","Medium","Hard"];
   const cos = COMPANIES.slice(0, 15).map((_,i)=>COMPANIES[i % COMPANIES.length]);
   const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST", headers:{"Content-Type":"application/json"},
+    method:"POST", headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
     body: JSON.stringify({
       model:"claude-sonnet-4-20250514", max_tokens:4000,
       messages:[{role:"user", content:`Generate 15 unique Python interview questions for category: "${category}".
@@ -2117,7 +2849,7 @@ const ProjectsView = () => {
   const aiGenSingle = async () => {
     setAiLoad(true); setAiResult(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,messages:[{role:"user",content:`Generate a Python project idea:
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,messages:[{role:"user",content:`Generate a Python project idea:
 Month ${aiMonth} of 6 (${PYTHON_MONTHS.find(m=>m.id===aiMonth)?.title})
 Difficulty: ${aiDiff}
 Focus: ${aiSkill||"general Python"}
@@ -2374,7 +3106,7 @@ const PracticeView = () => {
   const aiCustomGen = async () => {
     setAiLoad2(true); setAiQ(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:`Python interview question:
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:`Python interview question:
 Category: ${aiCat}, Difficulty: ${aiDiff3}, Topic: ${aiTopic||aiCat}
 Return ONLY valid JSON:
 {"q":"full question","hint":"hint without giving answer","approach":"optimal approach 2 sentences","code":"# Python solution\\ndef solve():\\n    pass","time_complexity":"O(?)","space_complexity":"O(?)","followup":"follow-up question"}`}]})});
@@ -2560,6 +3292,364 @@ Return ONLY valid JSON:
 
 
 
+/* ═══════════════════════════════════════════════════════════════════
+   THEORY SECTION — Python reference with methods + examples
+═══════════════════════════════════════════════════════════════════ */
+const THEORY_DATA = [
+  {
+    id:"variables", cat:"Month 1 · Fundamentals", title:"Variables & Data Types", emoji:"📦",
+    intro:"Python is dynamically typed — variables need no type declaration. Everything is an object.",
+    sections:[
+      { name:"Core Types", items:[
+        { method:"int", desc:"Integer number. Arbitrary precision.", ex:"x = 42\ny = int('100')  # 100\nz = int(3.9)    # 3 (truncates)\n\n# Useful int operations\nabs(-7)         # 7\npow(2, 10)      # 1024\ndivmod(17, 5)   # (3, 2)  quotient, remainder" },
+        { method:"float", desc:"64-bit floating point number.", ex:"pi = 3.14159\nf = float('3.14')   # 3.14\nround(3.14159, 2)   # 3.14\n\nimport math\nmath.floor(3.7)  # 3\nmath.ceil(3.2)   # 4\nmath.sqrt(16)    # 4.0" },
+        { method:"str", desc:"Immutable sequence of Unicode characters.", ex:'name = "Alice"\ns = str(42)       # "42"\nlen(name)         # 5\nname[0]           # "A"\nname[-1]          # "e"\nname[1:3]         # "li"  (slicing)' },
+        { method:"bool", desc:"Subclass of int. True==1, False==0.", ex:"t = True; f = False\nbool(0)      # False\nbool([])     # False  (empty = falsy)\nbool('')     # False\nbool(1)      # True\nbool([1,2])  # True\nnot True     # False" },
+        { method:"None", desc:"Singleton representing 'no value'. Type is NoneType.", ex:"x = None\nif x is None:       # always use 'is', not ==\n    print('empty')\n\ndef greet(name=None):\n    if name is None:\n        name = 'World'\n    return f'Hello, {name}!'" },
+      ]},
+      { name:"Type Functions", items:[
+        { method:"type(obj)", desc:"Returns the exact type of an object.", ex:"type(42)          # <class 'int'>\ntype('hi')        # <class 'str'>\ntype([])          # <class 'list'>\ntype(None)        # <class 'NoneType'>\n\n# Check exact type (not recommended — use isinstance)\ntype(True) == bool  # True" },
+        { method:"isinstance(obj, cls)", desc:"Checks if obj is an instance of cls or its subclasses.", ex:"isinstance(42, int)           # True\nisinstance(True, int)         # True  (bool is subclass of int)\nisinstance(3.14, (int,float)) # True  (tuple of types)\nisinstance('hi', str)         # True\n\n# Prefer over type() for OOP safety" },
+        { method:"id(obj)", desc:"Returns the memory address of an object.", ex:"a = [1,2,3]\nb = a       # same object — alias!\nid(a) == id(b)   # True\n\nc = a.copy() # different object\nid(a) == id(c)   # False\n\n# Small integers (-5 to 256) are cached\nx = 100; y = 100\nid(x) == id(y)   # True (cached)" },
+      ]},
+      { name:"Type Conversion", items:[
+        { method:"int(), float(), str(), bool()", desc:"Explicit type conversion functions.", ex:'# int from string\nint("42")        # 42\nint("0xFF", 16)  # 255 (hex)\nint("0b1010", 2) # 10  (binary)\n\n# str from anything\nstr(3.14)        # "3.14"\nstr([1,2,3])     # "[1, 2, 3]"\n\n# float edge cases\nfloat("inf")     # inf\nfloat("nan")     # nan' },
+      ]},
+    ]
+  },
+  {
+    id:"strings", cat:"Month 1 · Fundamentals", title:"String Methods", emoji:"📝",
+    intro:"Strings are immutable. All string methods return a new string — they never modify in place.",
+    sections:[
+      { name:"Case & Strip", items:[
+        { method:".upper() / .lower()", desc:"Convert to UPPERCASE or lowercase.", ex:'s = "Hello World"\ns.upper()    # "HELLO WORLD"\ns.lower()    # "hello world"\ns.title()    # "Hello World"\ns.swapcase() # "hELLO wORLD"\ns.capitalize() # "Hello world"  (only first letter)' },
+        { method:".strip() / .lstrip() / .rstrip()", desc:"Remove whitespace or specified characters from edges.", ex:'"  hello  ".strip()    # "hello"\n"  hello  ".lstrip()   # "hello  "\n"  hello  ".rstrip()   # "  hello"\n\n# Remove specific chars\n"###Python###".strip("#")  # "Python"\n"abcXYZabc".strip("abc")   # "XYZ"' },
+      ]},
+      { name:"Search & Replace", items:[
+        { method:".find() / .index()", desc:".find() returns -1 if not found; .index() raises ValueError.", ex:'"hello world".find("world")   # 6\n"hello world".find("xyz")     # -1  (not found)\n"hello world".index("world")  # 6\n\n# From position\n"abcabc".find("bc", 2)  # 4  (start from index 2)\n"hello".rfind("l")      # 3  (right-most)' },
+        { method:".replace(old, new, count)", desc:"Replace occurrences. Optional count limits replacements.", ex:'"aababc".replace("a", "X")     # "XXbXbc"\n"aababc".replace("a", "X", 2)  # "XXababc"  (only 2)\n\n# Chain replaces\n"  hello  world  ".replace("  ", " ").strip()  # "hello world"' },
+        { method:".count(sub)", desc:"Count non-overlapping occurrences of substring.", ex:'"banana".count("a")     # 3\n"banana".count("an")    # 2\n"aaaa".count("aa")      # 2  (non-overlapping)\n\n# With start/end\n"hello world hello".count("hello", 5)  # 1' },
+      ]},
+      { name:"Split & Join", items:[
+        { method:".split(sep, maxsplit)", desc:"Split string into a list. Default splits on whitespace.", ex:'"a,b,c".split(",")         # ["a", "b", "c"]\n"hello world".split()      # ["hello", "world"]  (any whitespace)\n"a b c".split(" ", 1)      # ["a", "b c"]  (maxsplit=1)\n\n# splitlines for multi-line text\n"a\\nb\\nc".splitlines()    # ["a", "b", "c"]' },
+        { method:'sep.join(iterable)', desc:"Join an iterable into a string with separator.", ex:'", ".join(["Alice", "Bob", "Charlie"])  # "Alice, Bob, Charlie"\n"".join(["P","y","t","h","o","n"])       # "Python"\n"\\n".join(["line1", "line2"])            # "line1\\nline2"\n\n# Common pattern: list → string\n"-".join(str(n) for n in [1,2,3])      # "1-2-3"' },
+      ]},
+      { name:"Check & Format", items:[
+        { method:".startswith() / .endswith()", desc:"Check prefix/suffix. Accept tuple of strings.", ex:'"hello.py".endswith(".py")         # True\n"hello.py".endswith((".py",".txt")) # True\n"README".startswith(("README","readme"))  # True\n\n# Useful for file type checks\nfilename.endswith((".jpg",".png",".gif"))' },
+        { method:"f-strings (f\"\")", desc:"Modern string formatting. Expressions in curly braces.", ex:'name = "Alice"; score = 95.5\nf"Name: {name}, Score: {score:.1f}"  # "Name: Alice, Score: 95.5"\nf"{2**10}"        # "1024"   (any expression)\nf"{name!r}"       # "\'Alice\'"  (repr)\nf"{score:>10.2f}" # "     95.50"  (alignment)' },
+        { method:".zfill() / .center() / .ljust() / .rjust()", desc:"Padding and alignment.", ex:'"42".zfill(5)          # "00042"\n"hi".center(10)        # "    hi    "\n"hi".center(10, "-")   # "----hi----"\n"hi".ljust(10, ".")    # "hi........"\n"hi".rjust(10)         # "        hi"' },
+      ]},
+    ]
+  },
+  {
+    id:"lists", cat:"Month 2 · Data Structures", title:"List Methods", emoji:"📋",
+    intro:"Lists are ordered, mutable sequences. The most versatile Python data structure.",
+    sections:[
+      { name:"Add / Remove", items:[
+        { method:".append(item)", desc:"Add single item to the END. O(1) amortized.", ex:"lst = [1, 2, 3]\nlst.append(4)    # [1, 2, 3, 4]\nlst.append([5,6])  # [1,2,3,4,[5,6]] — appends the LIST\n\n# vs extend\nlst2 = [1, 2]\nlst2.extend([3,4])  # [1, 2, 3, 4]" },
+        { method:".insert(idx, item)", desc:"Insert item BEFORE index idx. O(n).", ex:"lst = ['a','b','d']\nlst.insert(2, 'c')   # ['a','b','c','d']\nlst.insert(0, 'X')   # ['X','a','b','c','d']  (prepend)\nlst.insert(-1, 'Z')  # inserts before last element" },
+        { method:".remove(value)", desc:"Remove FIRST occurrence. Raises ValueError if not found.", ex:"lst = [1, 2, 3, 2, 1]\nlst.remove(2)    # [1, 3, 2, 1]  (first 2 only)\n\n# Safe remove\nif value in lst:\n    lst.remove(value)" },
+        { method:".pop(idx=-1)", desc:"Remove and return item at index. Default: last item. O(1) for end, O(n) for middle.", ex:"lst = [10, 20, 30, 40]\nlst.pop()     # returns 40, lst=[10,20,30]\nlst.pop(0)    # returns 10, lst=[20,30]\nlst.pop(1)    # returns 30, lst=[20]\n\n# Common pattern: stack\nstack = []\nstack.append(x)  # push\nstack.pop()      # pop" },
+      ]},
+      { name:"Sort & Search", items:[
+        { method:".sort(key, reverse)", desc:"In-place sort. Stable. key is a function.", ex:"nums = [3,1,4,1,5,9]\nnums.sort()                    # [1,1,3,4,5,9]\nnums.sort(reverse=True)        # [9,5,4,3,1,1]\n\nwords = ['banana','apple','cherry']\nwords.sort(key=len)            # ['apple','banana','cherry']\nwords.sort(key=str.lower)\n\n# vs sorted() — returns new list\nsorted([3,1,4], reverse=True)  # [4,3,1]" },
+        { method:".index(value, start, end)", desc:"Return index of first match. Raises ValueError if not found.", ex:"lst = ['a','b','c','b']\nlst.index('b')      # 1\nlst.index('b', 2)   # 3  (search from index 2)\n\n# Safe index with .find()-style:\ntry:\n    i = lst.index('z')\nexcept ValueError:\n    i = -1" },
+        { method:".count(value)", desc:"Count occurrences of value.", ex:"lst = [1,2,3,1,2,1]\nlst.count(1)   # 3\nlst.count(9)   # 0\n\n# Frequency dict (better for many values)\nfrom collections import Counter\ncounts = Counter(lst)  # Counter({1:3, 2:2, 3:1})" },
+      ]},
+      { name:"Copy & Misc", items:[
+        { method:"Slicing [start:stop:step]", desc:"Extract sub-list. Does NOT modify original.", ex:"lst = [0,1,2,3,4,5]\nlst[1:4]     # [1,2,3]\nlst[::2]     # [0,2,4]  (every 2nd)\nlst[::-1]    # [5,4,3,2,1,0]  (reverse copy)\nlst[-3:]     # [3,4,5]  (last 3)\nlst[:]       # shallow copy of entire list" },
+        { method:"List Comprehension", desc:"Concise list creation. Faster than for loop + append.", ex:"# [expression for item in iterable if condition]\nsquares = [x**2 for x in range(10)]\nevens   = [x for x in range(20) if x%2==0]\nmatrix  = [[r*c for c in range(3)] for r in range(3)]\n\n# Flatten nested list\nnested = [[1,2],[3,4],[5,6]]\nflat = [x for row in nested for x in row]  # [1,2,3,4,5,6]" },
+      ]},
+    ]
+  },
+  {
+    id:"dicts", cat:"Month 2 · Data Structures", title:"Dictionary Methods", emoji:"🗂",
+    intro:"Dicts are hash maps: O(1) average lookup/insert. Ordered by insertion (Python 3.7+).",
+    sections:[
+      { name:"Access", items:[
+        { method:".get(key, default)", desc:"Return value for key, or default if missing. Never raises KeyError.", ex:"d = {'a':1, 'b':2}\nd['a']          # 1  — raises KeyError if missing\nd.get('a')      # 1\nd.get('z')      # None  (no KeyError)\nd.get('z', 0)   # 0  (default value)\n\n# Common pattern: count\ncount = {}\nfor ch in 'hello':\n    count[ch] = count.get(ch, 0) + 1" },
+        { method:".keys() / .values() / .items()", desc:"View objects — dynamic, reflect dict changes.", ex:"d = {'a':1,'b':2,'c':3}\nlist(d.keys())    # ['a','b','c']\nlist(d.values())  # [1, 2, 3]\nlist(d.items())   # [('a',1),('b',2),('c',3)]\n\n# Iterate items\nfor key, val in d.items():\n    print(f'{key}: {val}')" },
+      ]},
+      { name:"Modify", items:[
+        { method:".update(other)", desc:"Merge another dict or iterable of key-value pairs.", ex:"d = {'a':1, 'b':2}\nd.update({'b':20, 'c':3})   # {'a':1,'b':20,'c':3}\nd.update(d=4, e=5)          # keyword args also work\n\n# Python 3.9+ merge operator\nd1 = {'a':1}; d2 = {'b':2}\nmerged = d1 | d2    # {'a':1,'b':2}" },
+        { method:".setdefault(key, default)", desc:"Return value if key exists, else insert with default and return it.", ex:"d = {'a':1}\nd.setdefault('a', 99)   # 1  (already exists)\nd.setdefault('b', 99)   # 99 (inserts b:99)\n\n# Common: grouping\ngroups = {}\nfor item in items:\n    groups.setdefault(item.category, []).append(item)" },
+        { method:".pop(key, default)", desc:"Remove and return value. Default prevents KeyError.", ex:"d = {'a':1,'b':2,'c':3}\nd.pop('b')        # 2  — removes 'b'\nd.pop('z', None)  # None — no error if missing\n\n# popitem() — remove last-inserted (LIFO)\nd.popitem()       # ('c', 3) in Python 3.7+" },
+      ]},
+      { name:"Build & Patterns", items:[
+        { method:"Dict Comprehension", desc:"Build dicts concisely.", ex:"# {key_expr: val_expr for item in iterable if cond}\nsquares = {x: x**2 for x in range(5)}\n# {0:0, 1:1, 2:4, 3:9, 4:16}\n\n# Invert a dict\nd = {'a':1,'b':2,'c':3}\ninverted = {v:k for k,v in d.items()}\n# {1:'a', 2:'b', 3:'c'}" },
+        { method:"collections.defaultdict", desc:"Like dict but auto-creates missing keys.", ex:"from collections import defaultdict\n\n# Count characters\ncounts = defaultdict(int)\nfor ch in 'hello':\n    counts[ch] += 1\n\n# Group items\ngroups = defaultdict(list)\nfor name, cat in data:\n    groups[cat].append(name)" },
+        { method:"collections.Counter", desc:"Specialized dict for counting. Most common patterns.", ex:"from collections import Counter\n\nwords = ['apple','banana','apple','cherry','banana','apple']\nc = Counter(words)\nc.most_common(2)     # [('apple',3),('banana',2)]\nc['apple']           # 3\nsum(c.values())      # 6\n\n# Arithmetic\nc1 = Counter(a=3,b=2); c2 = Counter(a=1,b=4)\nc1 + c2  # Counter({'b':6,'a':4})" },
+      ]},
+    ]
+  },
+  {
+    id:"oop", cat:"Month 3 · OOP", title:"Classes & OOP", emoji:"🧱",
+    intro:"Python OOP: everything is an object. Classes define blueprints; instances are objects.",
+    sections:[
+      { name:"Class Basics", items:[
+        { method:"class / __init__ / self", desc:"Define a class. __init__ is the constructor. self is the instance.", ex:"class Dog:\n    species = 'Canis lupus'  # class attribute (shared)\n\n    def __init__(self, name, age):\n        self.name = name        # instance attribute\n        self.age  = age\n\n    def bark(self):\n        return f'{self.name} says Woof!'\n\n    def __repr__(self):\n        return f'Dog({self.name!r}, {self.age})'\n\nrex = Dog('Rex', 3)\nrex.bark()            # 'Rex says Woof!'\nDog.species           # 'Canis lupus'" },
+        { method:"@property", desc:"Computed attribute. Getter/setter/deleter pattern.", ex:"class Circle:\n    def __init__(self, radius):\n        self._radius = radius\n\n    @property\n    def radius(self):\n        return self._radius\n\n    @radius.setter\n    def radius(self, value):\n        if value < 0:\n            raise ValueError('Radius cannot be negative')\n        self._radius = value\n\n    @property\n    def area(self):\n        import math\n        return math.pi * self._radius ** 2\n\nc = Circle(5)\nc.radius = 10   # calls setter\nc.area          # computed, read-only" },
+        { method:"@classmethod / @staticmethod", desc:"Alternative constructors and utility functions.", ex:"class Date:\n    def __init__(self, year, month, day):\n        self.year, self.month, self.day = year, month, day\n\n    @classmethod\n    def from_string(cls, s):  # alternative constructor\n        y, m, d = s.split('-')\n        return cls(int(y), int(m), int(d))\n\n    @staticmethod\n    def is_leap(year):  # utility — no self/cls needed\n        return year%4==0 and (year%100!=0 or year%400==0)\n\nDate.from_string('2024-01-15')  # Date object\nDate.is_leap(2024)               # True" },
+      ]},
+      { name:"Inheritance", items:[
+        { method:"super()", desc:"Call parent class methods. Essential for cooperative multiple inheritance.", ex:"class Animal:\n    def __init__(self, name):\n        self.name = name\n\n    def speak(self):\n        return f'{self.name} makes a sound'\n\nclass Dog(Animal):\n    def __init__(self, name, breed):\n        super().__init__(name)  # call parent __init__\n        self.breed = breed\n\n    def speak(self):           # override\n        return f'{self.name} barks'\n\nclass GoldenRetriever(Dog):\n    def speak(self):\n        return super().speak() + ' (friendly!)'" },
+        { method:"isinstance() / issubclass()", desc:"Check inheritance relationships at runtime.", ex:"class A: pass\nclass B(A): pass\nclass C(B): pass\n\nb = B()\nisinstance(b, B)  # True\nisinstance(b, A)  # True  (A is parent)\nissubclass(C, A)  # True  (C inherits from A)\nissubclass(A, B)  # False\n\n# MRO — Method Resolution Order\nC.__mro__   # (<class C>, <class B>, <class A>, <class object>)" },
+      ]},
+      { name:"Magic Methods", items:[
+        { method:"__str__ / __repr__", desc:"Human-readable and unambiguous string representations.", ex:"class Point:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\n    def __repr__(self):  # for developers\n        return f'Point({self.x}, {self.y})'\n\n    def __str__(self):   # for end users\n        return f'({self.x}, {self.y})'\n\np = Point(3, 4)\nprint(p)    # (3, 4)  — calls __str__\nrepr(p)     # 'Point(3, 4)' — calls __repr__\n[p]         # [Point(3, 4)] — list uses __repr__" },
+        { method:"__eq__ / __hash__ / __lt__", desc:"Comparison and hashing for use in sets/dicts.", ex:"from functools import total_ordering\n\n@total_ordering  # implement < and ==, get rest free\nclass Card:\n    RANKS = '23456789TJQKA'\n    def __init__(self, rank, suit):\n        self.rank = rank; self.suit = suit\n\n    def __eq__(self, other):\n        return self.rank == other.rank\n\n    def __lt__(self, other):\n        return self.RANKS.index(self.rank) < self.RANKS.index(other.rank)\n\n    def __hash__(self):\n        return hash((self.rank, self.suit))" },
+        { method:"__len__ / __getitem__ / __iter__", desc:"Make custom classes behave like sequences.", ex:"class NumberRange:\n    def __init__(self, start, end):\n        self.start, self.end = start, end\n\n    def __len__(self):\n        return self.end - self.start\n\n    def __getitem__(self, idx):\n        if idx < 0: idx += len(self)\n        if not (0 <= idx < len(self)):\n            raise IndexError('index out of range')\n        return self.start + idx\n\n    def __iter__(self):\n        return iter(range(self.start, self.end))\n\nr = NumberRange(5, 10)\nlen(r)     # 5\nr[2]       # 7\nlist(r)    # [5, 6, 7, 8, 9]" },
+      ]},
+    ]
+  },
+  {
+    id:"decorators", cat:"Month 3 · OOP", title:"Decorators", emoji:"🎨",
+    intro:"Decorators are higher-order functions that modify other functions without changing their source code.",
+    sections:[
+      { name:"Core Concepts", items:[
+        { method:"Basic decorator pattern", desc:"A decorator is a function that takes a function and returns a function.", ex:"import functools\n\ndef my_decorator(func):\n    @functools.wraps(func)  # preserve metadata\n    def wrapper(*args, **kwargs):\n        print(f'Before {func.__name__}')\n        result = func(*args, **kwargs)\n        print(f'After {func.__name__}')\n        return result\n    return wrapper\n\n@my_decorator\ndef greet(name):\n    print(f'Hello, {name}!')\n\ngreet('Alice')\n# Before greet\n# Hello, Alice!\n# After greet" },
+        { method:"Decorator factory (with arguments)", desc:"Decorator that accepts its own arguments.", ex:"def repeat(n):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            for _ in range(n):\n                result = func(*args, **kwargs)\n            return result\n        return wrapper\n    return decorator\n\n@repeat(3)\ndef say_hello():\n    print('Hello!')\n\nsay_hello()  # prints Hello! three times" },
+      ]},
+      { name:"Useful Built-ins", items:[
+        { method:"functools.lru_cache", desc:"Memoization decorator. Caches results of expensive calls.", ex:"from functools import lru_cache\n\n@lru_cache(maxsize=None)  # None = unlimited\ndef fib(n):\n    if n < 2: return n\n    return fib(n-1) + fib(n-2)\n\nfib(100)  # instant — without cache this would take ages\n\n# Check cache stats\nfib.cache_info()  # CacheInfo(hits=98, misses=101, ...)\nfib.cache_clear()" },
+        { method:"functools.wraps", desc:"Preserves __name__, __doc__, __annotations__ of wrapped function.", ex:"import functools\n\ndef log(func):\n    @functools.wraps(func)   # without this, wrapper.__name__ == 'wrapper'\n    def wrapper(*args, **kwargs):\n        print(f'Calling {func.__name__}')\n        return func(*args, **kwargs)\n    return wrapper\n\n@log\ndef add(x, y):\n    '''Add two numbers.'''\n    return x + y\n\nadd.__name__  # 'add'  (not 'wrapper')\nadd.__doc__   # 'Add two numbers.'" },
+      ]},
+    ]
+  },
+  {
+    id:"generators", cat:"Month 3 · OOP", title:"Generators & Iterators", emoji:"⚡",
+    intro:"Generators produce values lazily — one at a time, only when requested. Memory efficient for large sequences.",
+    sections:[
+      { name:"Generator Functions", items:[
+        { method:"yield", desc:"Pause function execution, return value, resume on next().", ex:"def countdown(n):\n    while n > 0:\n        yield n     # pause here, return n\n        n -= 1      # resume here on next call\n\ngen = countdown(3)\nnext(gen)   # 3\nnext(gen)   # 2\nnext(gen)   # 1\nnext(gen)   # raises StopIteration\n\nfor x in countdown(5):  # for loop handles StopIteration\n    print(x)" },
+        { method:"Generator expressions", desc:"Like list comprehensions but lazy. Use () instead of [].", ex:"# List comprehension — creates ALL items NOW\nsquares_list = [x**2 for x in range(1_000_000)]  # uses ~8MB\n\n# Generator expression — creates one item AT A TIME\nsquares_gen = (x**2 for x in range(1_000_000))   # uses ~200 bytes\n\n# Both work the same in loops\nsum(x**2 for x in range(100))  # generator in sum — efficient\n\n# Chain generators\nevens = (x for x in range(1000) if x%2==0)\nbig   = (x for x in evens if x > 500)" },
+      ]},
+      { name:"Iterator Protocol", items:[
+        { method:"__iter__ / __next__", desc:"The iterator protocol. __iter__ returns self. __next__ returns next value.", ex:"class Counter:\n    def __init__(self, low, high):\n        self.current = low\n        self.high = high\n\n    def __iter__(self):\n        return self  # object is its own iterator\n\n    def __next__(self):\n        if self.current > self.high:\n            raise StopIteration\n        self.current += 1\n        return self.current - 1\n\nfor n in Counter(1, 5):\n    print(n)  # 1 2 3 4 5" },
+        { method:"itertools module", desc:"Standard library tools for working with iterators.", ex:"import itertools\n\n# chain — concatenate iterables\nlist(itertools.chain([1,2],[3,4],[5]))  # [1,2,3,4,5]\n\n# islice — lazy slicing\nlist(itertools.islice(range(100), 5))  # [0,1,2,3,4]\n\n# cycle — repeat indefinitely\ncycler = itertools.cycle(['Mon','Tue','Wed'])\n\n# accumulate — running totals\nlist(itertools.accumulate([1,2,3,4,5]))  # [1,3,6,10,15]\n\n# product — cartesian product\nlist(itertools.product([1,2],['a','b']))  # [(1,'a'),(1,'b'),...]" },
+      ]},
+    ]
+  },
+  {
+    id:"exceptions", cat:"Month 1-3 · Core", title:"Exception Handling", emoji:"🛡",
+    intro:"Python uses try/except for error handling. Exceptions are objects inheriting from BaseException.",
+    sections:[
+      { name:"try / except / else / finally", items:[
+        { method:"Basic try/except", desc:"Catch specific exceptions. Avoid bare 'except:'.", ex:"try:\n    x = int(input('Enter number: '))\n    result = 10 / x\nexcept ValueError:\n    print('Not a valid number')\nexcept ZeroDivisionError:\n    print('Cannot divide by zero')\nexcept (TypeError, OverflowError) as e:  # multiple exceptions\n    print(f'Math error: {e}')\nelse:\n    print(f'Result: {result}')  # runs if NO exception\nfinally:\n    print('Always runs')  # cleanup code" },
+        { method:"raise / raise from", desc:"Raise exceptions. 'raise from' chains exceptions.", ex:"def divide(a, b):\n    if b == 0:\n        raise ValueError('Divisor cannot be zero')\n    return a / b\n\n# Re-raise same exception\ntry:\n    result = divide(1, 0)\nexcept ValueError:\n    print('Logging error...')\n    raise  # re-raises the same exception\n\n# Exception chaining\ntry:\n    open('missing.txt')\nexcept FileNotFoundError as e:\n    raise RuntimeError('Config failed') from e" },
+      ]},
+      { name:"Custom Exceptions", items:[
+        { method:"Custom exception classes", desc:"Subclass Exception for domain-specific errors.", ex:"class AppError(Exception):\n    '''Base class for application errors.'''\n    pass\n\nclass ValidationError(AppError):\n    def __init__(self, field, message):\n        self.field = field\n        self.message = message\n        super().__init__(f'{field}: {message}')\n\nclass NotFoundError(AppError):\n    def __init__(self, resource, resource_id):\n        self.resource = resource\n        super().__init__(f'{resource} with id {resource_id} not found')\n\n# Usage\ntry:\n    raise ValidationError('email', 'invalid format')\nexcept ValidationError as e:\n    print(e.field, e.message)" },
+      ]},
+    ]
+  },
+  {
+    id:"fileio", cat:"Month 4 · Files & APIs", title:"File I/O & pathlib", emoji:"📁",
+    intro:"Python's pathlib (3.4+) is the modern way to work with file system paths.",
+    sections:[
+      { name:"pathlib.Path", items:[
+        { method:"Path basics", desc:"Create, navigate, and inspect file system paths.", ex:"from pathlib import Path\n\np = Path('/home/user/docs/report.txt')\np.name        # 'report.txt'\np.stem        # 'report'\np.suffix      # '.txt'\np.parent      # Path('/home/user/docs')\np.parts       # ('/', 'home', 'user', 'docs', 'report.txt')\n\n# Build paths with /\nhome = Path.home()\nconfig = home / '.config' / 'app' / 'settings.json'\n\n# Check existence\nconfig.exists()   # True/False\nconfig.is_file()  # True/False\nconfig.is_dir()   # True/False" },
+        { method:"Read / Write files", desc:"Modern file I/O with pathlib.", ex:"from pathlib import Path\n\npath = Path('data.txt')\n\n# Write\npath.write_text('Hello, World!')       # entire file as string\npath.write_bytes(b'binary data')\n\n# Read\ncontent = path.read_text()              # entire file\nbytes_  = path.read_bytes()\nlines   = path.read_text().splitlines() # list of lines\n\n# Classic open() for large files (streaming)\nwith open(path, 'r', encoding='utf-8') as f:\n    for line in f:  # memory efficient\n        process(line)" },
+      ]},
+      { name:"File Operations", items:[
+        { method:"glob / rglob", desc:"Find files matching a pattern.", ex:"from pathlib import Path\n\np = Path('.')\n\n# All Python files in current dir\nlist(p.glob('*.py'))\n\n# All Python files in all subdirs\nlist(p.rglob('*.py'))\n\n# All files in a dir\nlist(p.iterdir())\n\n# Sort by size\nfiles = sorted(p.rglob('*.py'), key=lambda f: f.stat().st_size)" },
+        { method:"mkdir / rename / unlink", desc:"Create, move, delete files and directories.", ex:"from pathlib import Path\n\nPath('new_dir').mkdir(exist_ok=True)\nPath('new_dir/sub').mkdir(parents=True, exist_ok=True)\n\nPath('old.txt').rename(Path('new.txt'))\nPath('file.txt').unlink()           # delete file\nPath('file.txt').unlink(missing_ok=True)  # no error if gone\n\nimport shutil\nshutil.rmtree('directory')          # delete directory tree\nshutil.copy('src.txt', 'dst.txt')   # copy file" },
+      ]},
+    ]
+  },
+  {
+    id:"numpy", cat:"Month 5 · Data Science", title:"NumPy Essentials", emoji:"🔢",
+    intro:"NumPy is the foundation of scientific Python. Vectorized operations on N-dimensional arrays are 10-100× faster than Python loops.",
+    sections:[
+      { name:"Array Creation", items:[
+        { method:"np.array / np.zeros / np.ones / np.arange", desc:"Create arrays from data or patterns.", ex:"import numpy as np\n\nnp.array([1, 2, 3])           # 1D array\nnp.array([[1,2],[3,4]])       # 2D array\nnp.zeros((3, 4))              # 3×4 array of 0s\nnp.ones((2, 3), dtype=float)  # 2×3 array of 1.0s\nnp.arange(0, 10, 2)           # [0, 2, 4, 6, 8]\nnp.linspace(0, 1, 5)          # [0, .25, .5, .75, 1]\nnp.random.randn(3, 3)         # 3×3 standard normal" },
+        { method:"Array shape / reshape / dtype", desc:"Key array attributes and shape manipulation.", ex:"a = np.array([[1,2,3],[4,5,6]])\na.shape     # (2, 3)\na.ndim      # 2\na.size      # 6  (total elements)\na.dtype     # dtype('int64')\n\n# Reshape — total elements must match\na.reshape(3, 2)    # (3,2) array\na.reshape(6)       # 1D array\na.reshape(2,-1)    # -1 = auto-calculate\na.flatten()        # always returns 1D copy\na.ravel()          # 1D view (if possible)" },
+      ]},
+      { name:"Operations", items:[
+        { method:"Vectorized arithmetic", desc:"Operations on entire arrays — no loops needed.", ex:"a = np.array([1, 2, 3, 4])\nb = np.array([10, 20, 30, 40])\n\na + b     # [11, 22, 33, 44]\na * b     # [10, 40, 90, 160]\na ** 2    # [1, 4, 9, 16]\na > 2     # [False, False, True, True]  (boolean mask)\n\n# Broadcasting: different shapes\na = np.ones((3,3))\nb = np.array([1, 2, 3])  # shape (3,)\na + b  # b broadcast to (3,3)" },
+        { method:"np.sum / np.mean / np.std / np.max", desc:"Aggregate functions. axis parameter controls direction.", ex:"a = np.array([[1,2,3],[4,5,6]])\n\nnp.sum(a)          # 21  (all elements)\nnp.sum(a, axis=0)  # [5,7,9]  (sum columns)\nnp.sum(a, axis=1)  # [6,15]   (sum rows)\n\nnp.mean(a)         # 3.5\nnp.std(a)          # standard deviation\nnp.min(a); np.max(a)\nnp.argmin(a); np.argmax(a)  # index of min/max" },
+      ]},
+    ]
+  },
+  {
+    id:"pandas", cat:"Month 5 · Data Science", title:"Pandas Essentials", emoji:"🐼",
+    intro:"Pandas provides DataFrame and Series for tabular data analysis. Think SQL + Excel in Python.",
+    sections:[
+      { name:"Core Structures", items:[
+        { method:"DataFrame / Series", desc:"DataFrame = 2D table. Series = 1D column.", ex:"import pandas as pd\n\n# Create DataFrame\ndf = pd.DataFrame({\n    'name': ['Alice', 'Bob', 'Charlie'],\n    'age':  [25, 30, 35],\n    'score':[90, 85, 92]\n})\n\n# Select column → Series\ndf['age']         # Series with age data\ndf[['name','age']] # multiple cols → DataFrame\n\n# From CSV\ndf = pd.read_csv('data.csv')\ndf = pd.read_csv('data.csv', index_col='id', parse_dates=['date'])" },
+        { method:"df.info() / df.describe() / df.head()", desc:"Quick data inspection methods.", ex:"df.info()      # column types, non-null counts, memory\ndf.describe()  # count, mean, std, min, quartiles, max\ndf.head(5)     # first 5 rows\ndf.tail(3)     # last 3 rows\ndf.shape       # (rows, cols)\ndf.columns     # Index of column names\ndf.dtypes      # dtype of each column\ndf.isnull().sum()  # count missing values per column" },
+      ]},
+      { name:"Select & Filter", items:[
+        { method:".loc[] / .iloc[]", desc:".loc = label-based. .iloc = integer position-based.", ex:"df = pd.DataFrame({'A':[1,2,3],'B':[4,5,6]}, index=['x','y','z'])\n\n# .loc — by label\ndf.loc['x']           # row with label 'x'\ndf.loc['x':'y', 'A']  # rows x to y, column A\ndf.loc[df['A']>1]     # filter rows by condition\n\n# .iloc — by integer position\ndf.iloc[0]            # first row\ndf.iloc[0:2, 0:1]     # rows 0-1, column 0" },
+        { method:"Boolean masking / query()", desc:"Filter rows using conditions.", ex:"# Boolean mask\nmask = df['age'] > 25\ndf[mask]              # rows where age > 25\n\n# Multiple conditions\ndf[(df['age'] > 25) & (df['score'] > 90)]\n\n# .query() — SQL-like string\ndf.query('age > 25 and score > 90')\ndf.query('@min_age < age < @max_age')  # use variables with @" },
+      ]},
+      { name:"Aggregate & Transform", items:[
+        { method:".groupby() / .agg()", desc:"Group data and apply aggregations.", ex:"# groupby + agg\ndf.groupby('category')['sales'].sum()\ndf.groupby('category').agg({'sales':'sum','price':'mean'})\n\n# Multiple agg functions\ndf.groupby('dept').agg(\n    avg_salary=('salary','mean'),\n    headcount=('name','count'),\n    max_salary=('salary','max')\n)\n\n# pivot table\npd.pivot_table(df, values='sales', index='region', columns='month', aggfunc='sum')" },
+      ]},
+    ]
+  },
+  {
+    id:"algorithms", cat:"Month 6 · DSA", title:"Key Algorithms", emoji:"🧮",
+    intro:"Essential algorithms for coding interviews. Know time and space complexity for each.",
+    sections:[
+      { name:"Sorting", items:[
+        { method:"Binary Search", desc:"O(log n) search on sorted array. Always define invariant clearly.", ex:"def binary_search(arr, target):\n    left, right = 0, len(arr) - 1\n    while left <= right:\n        mid = left + (right - left) // 2  # avoid overflow\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n\n# Find insertion point (left-most)\ndef bisect_left(arr, target):\n    lo, hi = 0, len(arr)\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if arr[mid] < target: lo = mid + 1\n        else: hi = mid\n    return lo" },
+        { method:"Merge Sort", desc:"O(n log n). Stable. Good for linked lists and external sorting.", ex:"def merge_sort(arr):\n    if len(arr) <= 1:\n        return arr\n    mid = len(arr) // 2\n    left  = merge_sort(arr[:mid])\n    right = merge_sort(arr[mid:])\n    return merge(left, right)\n\ndef merge(left, right):\n    result = []\n    i = j = 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            result.append(left[i]); i += 1\n        else:\n            result.append(right[j]); j += 1\n    return result + left[i:] + right[j:]" },
+      ]},
+      { name:"Graph Traversal", items:[
+        { method:"BFS (Breadth-First Search)", desc:"O(V+E). Shortest path in unweighted graphs. Level-by-level.", ex:"from collections import deque\n\ndef bfs(graph, start):\n    visited = {start}\n    queue = deque([start])\n    order = []\n    while queue:\n        node = queue.popleft()\n        order.append(node)\n        for neighbor in graph[node]:\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append(neighbor)\n    return order\n\n# Shortest path\ndef bfs_path(graph, start, end):\n    queue = deque([(start, [start])])\n    visited = {start}\n    while queue:\n        node, path = queue.popleft()\n        if node == end: return path\n        for nb in graph[node]:\n            if nb not in visited:\n                visited.add(nb)\n                queue.append((nb, path+[nb]))" },
+        { method:"DFS (Depth-First Search)", desc:"O(V+E). Used for cycle detection, topological sort, connected components.", ex:"def dfs_iterative(graph, start):\n    visited = set()\n    stack = [start]\n    order = []\n    while stack:\n        node = stack.pop()\n        if node not in visited:\n            visited.add(node)\n            order.append(node)\n            stack.extend(reversed(graph[node]))\n    return order\n\n# Recursive DFS\ndef dfs_recursive(graph, node, visited=None):\n    if visited is None: visited = set()\n    visited.add(node)\n    for neighbor in graph[node]:\n        if neighbor not in visited:\n            dfs_recursive(graph, neighbor, visited)\n    return visited" },
+      ]},
+      { name:"Dynamic Programming", items:[
+        { method:"Memoization (top-down DP)", desc:"Recursive with caching. Start with recurrence, add cache.", ex:"from functools import lru_cache\n\n# Fibonacci with memoization\n@lru_cache(maxsize=None)\ndef fib(n):\n    if n < 2: return n\n    return fib(n-1) + fib(n-2)\n\n# Coin change (minimum coins)\ndef coin_change(coins, amount):\n    @lru_cache(maxsize=None)\n    def dp(rem):\n        if rem == 0: return 0\n        if rem < 0: return float('inf')\n        return 1 + min(dp(rem - c) for c in coins)\n    result = dp(amount)\n    return result if result != float('inf') else -1" },
+        { method:"Tabulation (bottom-up DP)", desc:"Iterative DP. Build table from base cases up.", ex:"# Knapsack problem\ndef knapsack(weights, values, capacity):\n    n = len(weights)\n    dp = [[0]*(capacity+1) for _ in range(n+1)]\n    for i in range(1, n+1):\n        for w in range(capacity+1):\n            dp[i][w] = dp[i-1][w]\n            if weights[i-1] <= w:\n                dp[i][w] = max(dp[i][w],\n                    dp[i-1][w-weights[i-1]] + values[i-1])\n    return dp[n][capacity]\n\n# Longest Common Subsequence\ndef lcs(s1, s2):\n    m, n = len(s1), len(s2)\n    dp = [[0]*(n+1) for _ in range(m+1)]\n    for i in range(1, m+1):\n        for j in range(1, n+1):\n            if s1[i-1]==s2[j-1]: dp[i][j]=dp[i-1][j-1]+1\n            else: dp[i][j]=max(dp[i-1][j], dp[i][j-1])\n    return dp[m][n]" },
+      ]},
+    ]
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════════════
+   THEORY VIEW COMPONENT
+═══════════════════════════════════════════════════════════════════ */
+const TheoryView = () => {
+  const [activeTopic, setActiveTopic] = useState(null);
+  const [search, setSearch] = useState("");
+  const [activeSection, setActiveSection] = useState(null);
+
+  const cats = [...new Set(THEORY_DATA.map(t=>t.cat))];
+  const filtered = THEORY_DATA.filter(t =>
+    !search ||
+    t.title.toLowerCase().includes(search.toLowerCase()) ||
+    t.sections?.some(s => s.items?.some(i =>
+      i.method.toLowerCase().includes(search.toLowerCase()) ||
+      i.desc.toLowerCase().includes(search.toLowerCase())
+    ))
+  );
+
+  const topic = THEORY_DATA.find(t=>t.id===activeTopic);
+
+  return (
+    <div className="fade-up" style={{ padding:"clamp(12px,4vw,28px)" }}>
+      <div className="syne" style={{ fontSize:"clamp(18px,4vw,24px)", fontWeight:800, color:T.t1, marginBottom:4 }}>📖 Python Theory Reference</div>
+      <p style={{ fontSize:13, color:T.t2, marginBottom:14 }}>Complete Python reference: every method, syntax, and concept — with examples</p>
+
+      {/* Search */}
+      <input className="inp" value={search} onChange={e=>setSearch(e.target.value)}
+        placeholder="🔍 Search methods, topics, concepts..." style={{ marginBottom:14 }} />
+
+      {activeTopic && topic ? (
+        /* ── Single topic deep-dive ────────────────────────────── */
+        <div>
+          <button className="btn btn-ghost btn-sm" style={{ marginBottom:14 }} onClick={()=>{ setActiveTopic(null); setActiveSection(null); }}>
+            ← Back to all topics
+          </button>
+
+          <div style={{ background:T.card, border:`1px solid ${T.blue}40`, borderRadius:14, padding:"18px 20px", marginBottom:14 }}>
+            <div style={{ display:"flex", gap:12, alignItems:"center", marginBottom:8 }}>
+              <span style={{ fontSize:32 }}>{topic.emoji}</span>
+              <div>
+                <div className="syne" style={{ fontSize:20, fontWeight:800, color:T.t1 }}>{topic.title}</div>
+                <div style={{ fontSize:12, color:T.blue }}>{topic.cat}</div>
+              </div>
+            </div>
+            <p style={{ fontSize:13, color:T.t2, lineHeight:1.7 }}>{topic.intro}</p>
+          </div>
+
+          {/* Section tabs */}
+          <div className="tab-row" style={{ marginBottom:14 }}>
+            {topic.sections.map(s => (
+              <button key={s.name} className={`tab-b ${activeSection===s.name||(!activeSection&&topic.sections[0].name===s.name)?"on":""}`}
+                onClick={()=>setActiveSection(s.name)}
+                style={activeSection===s.name||(!activeSection&&topic.sections[0].name===s.name)?{color:T.blue,background:T.blue+"18"}:{}}>
+                {s.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Method cards */}
+          {(() => {
+            const sec = topic.sections.find(s=>s.name===(activeSection||topic.sections[0].name));
+            return (
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                {sec?.items.map((item, i) => (
+                  <div key={i} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:12, overflow:"hidden" }}>
+                    <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${T.border}` }}>
+                      <div style={{ display:"flex", gap:10, alignItems:"flex-start", flexWrap:"wrap" }}>
+                        <code className="mono" style={{
+                          fontSize:13, fontWeight:700, color:T.blue,
+                          background:T.blue+"12", padding:"3px 10px", borderRadius:6,
+                          border:`1px solid ${T.blue}30`, flexShrink:0
+                        }}>{item.method}</code>
+                        <p style={{ fontSize:13, color:T.t2, lineHeight:1.5, flex:1 }}>{item.desc}</p>
+                      </div>
+                    </div>
+                    <div className="code" style={{ borderRadius:0, borderTop:"none", borderLeft:"none", borderRight:"none" }}>
+                      {item.ex}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        /* ── Topic grid ────────────────────────────────────────── */
+        <div>
+          {cats.map(cat => {
+            const topicsInCat = filtered.filter(t=>t.cat===cat);
+            if (!topicsInCat.length) return null;
+            return (
+              <div key={cat} style={{ marginBottom:20 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:T.t3, textTransform:"uppercase", letterSpacing:1.2, marginBottom:10 }}>
+                  {cat}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,240px),1fr))", gap:8 }}>
+                  {topicsInCat.map(t => {
+                    const methodCount = t.sections?.reduce((a,s)=>a+s.items.length, 0) || 0;
+                    return (
+                      <div key={t.id} onClick={()=>{ setActiveTopic(t.id); setActiveSection(null); }}
+                        style={{
+                          background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:"14px 16px",
+                          cursor:"pointer", transition:"all .2s"
+                        }}
+                        onMouseEnter={e=>{ e.currentTarget.style.borderColor=T.blue+"60"; e.currentTarget.style.background="#0a0a24"; }}
+                        onMouseLeave={e=>{ e.currentTarget.style.borderColor=T.border; e.currentTarget.style.background=T.card; }}>
+                        <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:6 }}>
+                          <span style={{ fontSize:22 }}>{t.emoji}</span>
+                          <div>
+                            <div className="syne" style={{ fontSize:14, fontWeight:700, color:T.t1 }}>{t.title}</div>
+                            <div style={{ fontSize:10, color:T.t2 }}>{methodCount} methods / concepts</div>
+                          </div>
+                        </div>
+                        <p style={{ fontSize:12, color:T.t2, lineHeight:1.5, marginBottom:8 }}>
+                          {t.intro.slice(0, 90)}...
+                        </p>
+                        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+                          {t.sections?.slice(0,3).map(s=>(
+                            <span key={s.name} style={{ fontSize:10, color:T.blue, background:T.blue+"12", padding:"2px 8px", borderRadius:999, border:`1px solid ${T.blue}30` }}>
+                              {s.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div style={{ textAlign:"center", padding:40, color:T.t3, fontSize:14 }}>
+              No topics match "{search}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 /* ─────────────────────────── MAIN APP ─────────────────────────── */
 export default function PythonMasteryApp() {
   const [tab, setTab] = useState("roadmap");
@@ -2603,6 +3693,9 @@ export default function PythonMasteryApp() {
           )}
           {tab === "tracker" && (
             <TrackerView topicProgress={topicProgress} />
+          )}
+          {tab === "theory" && (
+            <TheoryView />
           )}
           {tab === "projects" && (
             <ProjectsView />
