@@ -1254,14 +1254,14 @@ async function autoGenerateQuestions(topicText, weekTitle) {
 
   const prompt1 = `Generate 50 Python interview questions for: "${topicText}" (${weekTitle})
 Return ONLY JSON, no markdown:
-{"easy":[{"q":"question text","co":"Company","link":"https://url"}],"medium":[...]}
+{"easy":[{"q":"question text","co":"Company","link":"https://Google.com"}],"medium":[...]}
 easy: 20 questions, medium: 30 questions.
 Companies: ${COMPANIES}. Links from: ${LINKS}.
 Keep each question concise (under 100 chars). Keep links short.`;
 
   const prompt2 = `Generate 50 more Python interview questions for: "${topicText}" (${weekTitle})
 Return ONLY JSON, no markdown:
-{"hard":[{"q":"question text","co":"Company","link":"https://url"}],"vhard":[...]}
+{"hard":[{"q":"question text","co":"Company","link":"https://Google.com"}],"vhard":[...]}
 hard: 35 questions, vhard: 15 questions.
 Companies: ${COMPANIES}. Links from: ${LINKS}.
 Keep each question concise (under 100 chars). Keep links short.`;
