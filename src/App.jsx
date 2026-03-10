@@ -705,60 +705,74 @@ const PYTHON_MONTHS = [
 ];
 
 /* ─────────────────────────── QUESTION GENERATOR (Claude API) ─────────────────────────── */
-async function generateQuestions(topicText, weekTitle) {
+async function generateQuestions(topicText, weekTitle, retries = 3) {
   const API_KEY = "YOUR_ANTHROPIC_API_KEY";
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 4000,
-      messages: [
-        {
-          role: "user",
-          content: `Generate exactly 100 Python interview/practice questions for this topic.
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": API_KEY,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 8000,
+        temperature: 0.3,
+        messages: [
+          {
+            role: "user",
+            content: `Generate exactly 100 Python interview questions.
 
 Topic: "${topicText}"
-Week context: "${weekTitle}"
+Week: "${weekTitle}"
 
-Return ONLY valid JSON:
+Return ONLY valid JSON.
 
 {
-  "easy": [
-    {"q": "question text", "co": "Google"}
-  ],
-  "medium": [
-    {"q": "question text", "co": "OpenAI"}
-  ],
-  "hard": [
-    {"q": "question text", "co": "Anthropic"}
-  ],
-  "vhard": [
-    {"q": "question text", "co": "Meta"}
-  ]
+ "easy":[{"q":"question","co":"Google"}],
+ "medium":[{"q":"question","co":"OpenAI"}],
+ "hard":[{"q":"question","co":"Anthropic"}],
+ "vhard":[{"q":"question","co":"Meta"}]
 }
 
-Easy: 25 questions
-Medium: 30 questions
-Hard: 30 questions
-Very Hard: 15 questions
+Easy:25
+Medium:30
+Hard:30
+VeryHard:15`
+          }
+        ]
+      })
+    });
 
-Rotate companies: Google, OpenAI, Anthropic, Meta, Microsoft.`
-        }
-      ]
-    })
-  });
+    if (!res.ok) {
+      throw new Error("API request failed");
+    }
 
-  const data = await res.json();
+    const data = await res.json();
 
-  const text = data.content[0].text.trim();
+    let text = data.content?.[0]?.text || "";
 
-  return JSON.parse(text);
+    // Clean possible markdown
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+
+      if (retries > 0) {
+        console.log("Retrying API request...");
+        return generateQuestions(topicText, weekTitle, retries - 1);
+      }
+
+      throw new Error("Failed to parse JSON from API response");
+    }
+
+  } catch (err) {
+    console.error("Error generating questions:", err);
+    throw err;
+  }
 }
 
 /* ─────────────────────────── SHARED COMPONENTS ─────────────────────────── */
