@@ -706,51 +706,58 @@ const PYTHON_MONTHS = [
 
 /* ─────────────────────────── QUESTION GENERATOR (Claude API) ─────────────────────────── */
 async function generateQuestions(topicText, weekTitle) {
-  const res = await fetch("https://acequiz.ai/ai-coding-quiz-generator", {
+  const API_KEY = "YOUR_ANTHROPIC_API_KEY";
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-3-5-sonnet-20241022",
       max_tokens: 4000,
-      messages: [{
-        role: "user",
-        content: `Generate exactly 100 Python interview/practice questions for this specific topic:
+      messages: [
+        {
+          role: "user",
+          content: `Generate exactly 100 Python interview/practice questions for this topic.
 
 Topic: "${topicText}"
 Week context: "${weekTitle}"
 
-These should be real technical interview questions from Google, OpenAI, Anthropic, Meta, Microsoft style.
+Return ONLY valid JSON:
 
-Return ONLY valid JSON — no other text, no markdown fences:
 {
   "easy": [
-    {"q": "question text", "co": "Google"},
-    ... (25 questions)
+    {"q": "question text", "co": "Google"}
   ],
   "medium": [
-    {"q": "question text", "co": "OpenAI"},
-    ... (30 questions)  
+    {"q": "question text", "co": "OpenAI"}
   ],
   "hard": [
-    {"q": "question text", "co": "Anthropic"},
-    ... (30 questions)
+    {"q": "question text", "co": "Anthropic"}
   ],
   "vhard": [
-    {"q": "question text", "co": "Meta"},
-    ... (15 questions)
+    {"q": "question text", "co": "Meta"}
   ]
 }
 
-Easy: conceptual, definitions, basic syntax. 
-Medium: write code, explain behavior, debug snippets.
-Hard: design problems, optimization, edge cases, real-world systems.
-Very Hard: open-ended system design, research-level, architecture decisions.
-Rotate companies: Google, OpenAI, Anthropic, Meta, Microsoft across all questions.`
-      }]
+Easy: 25 questions
+Medium: 30 questions
+Hard: 30 questions
+Very Hard: 15 questions
+
+Rotate companies: Google, OpenAI, Anthropic, Meta, Microsoft.`
+        }
+      ]
     })
   });
+
   const data = await res.json();
-  const text = data.content.map(c => c.text || "").join("").trim();
+
+  const text = data.content[0].text.trim();
+
   return JSON.parse(text);
 }
 
